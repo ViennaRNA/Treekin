@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-10-09 14:25:12 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.20 2003/10/09 17:01:35 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-14 12:20:04 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.21 2003/10/23 10:39:41 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -352,7 +352,7 @@ static double *MxMethodeA (TypeBarData *Data) {
   /*         i->j   prop  e               */
   /****************************************/
   
-  int i,j,real_abs = 0;;
+  int i,j,real_abs = 0;
   double m_saddle, Zabs, abs_rate, *T, *U;
 
   U = (double *) MxNew (dim*dim*sizeof(double));
