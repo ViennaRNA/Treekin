@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-07-14 11:05:20 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.2 2003/07/14 09:48:00 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-15 14:05:26 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.3 2003/07/15 13:20:01 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -249,6 +249,7 @@ void MxIterate ( double *p0, double *S) {
     vmul (tmpVec, CR, p0, dim);
     free(St);
     free(CR);
+    free(S_inv);
   }
   else{  /* absorbing case */
     mcopy(S_inv, S, dim*dim);
