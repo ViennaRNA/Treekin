@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-09-30 12:41:35 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.17 2003/09/30 10:47:20 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-03 19:17:12 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.18 2003/10/06 12:19:34 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -262,7 +262,7 @@ void MxIterate ( double *p0, double *p8, double *S) {
     
     printf(" %e ", time);  /* print p(t) to stdout */
     for (i = 0; i < dim; i++){
-      if(pt[i] < -0.001){
+      if(pt[i] < -0.01){
 	fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, pt[i]);
 	exit(866);
       }
@@ -359,7 +359,7 @@ void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
     /*    mmul (tmpMx, CL, exptL, dim); vmul (pt, tmpMx, tmpVec, dim); */
         
     for (i = 0; i < dim; i++){
-      if(pt[i] < -0.001){
+      if(pt[i] < -0.01){
 	fprintf(stderr, "prob of lmin %i has become negative: %6.4f\n", i+1,pt[i]);exit(866);
       }
       ptFULL[E[i].ag] += pt[i]; /* map individual structure -> gradient basins */
