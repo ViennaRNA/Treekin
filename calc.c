@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-09-24 23:07:14 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.15 2003/09/26 08:59:39 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-30 12:28:50 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.16 2003/09/30 10:32:54 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -183,6 +183,12 @@ double *MxSymmetr ( double *U, double *P8 ) {
   eigen(S, EV, dim);  /* S is overwritten with its eigenvectors */ 
   if (opt.want_verbose){
     MxPrint (S, "Eigenvectors of S", 'm');MxPrint(EV, "Eigenvalues of S", 'v'); }
+  for (i=0;i<dim;i++){
+    if (EV[i] > 1.){
+      fprintf(stderr, "\nEV[%i] is > 1: %20.18g, now setting to 1.\n", i, EV[i]);
+      EV[i] = 1.;
+    }
+  }
   
   /* compensate 4 translation of matrix U */
   for(i = 0; i < dim; i++) EV[i] = EV[i] - 1;
