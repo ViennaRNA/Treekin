@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-09-22 18:52:44 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.11 2003/09/26 14:41:19 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-07 13:16:06 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.12 2003/10/07 16:59:18 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,9 +31,12 @@ int main (int argc, char **argv) {
     U = MxMethodeFULL(InD);
     p0 = MxStartVec ();
     p8 = MxEqDistrFULL (E);
-    if(opt.absrb) MxEVnonsymMx(U, &S);
-    else S = MxSymmetr (U, p8);
-    MxIterate_FULL (p0, p8, S, lmins);
+    if(opt.matexp) MxExponent(p0,p8,U);
+    else{
+      if(opt.absrb) MxEVnonsymMx(U, &S);
+      else S = MxSymmetr (U, p8);
+      MxIterate_FULL (p0, p8, S, lmins);
+    }
     MxMemoryCleanUp();
     
     if (opt.pini != NULL) free(opt.pini);

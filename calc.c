@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-10-03 19:17:12 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.18 2003/10/06 12:19:34 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-07 17:40:42 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.19 2003/10/07 16:59:18 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -142,7 +142,7 @@ double *MxEqDistrFULL (SubInfo *E) {
       tmp += p8[i];
     }
     p8[opt.absrb-1] = 1.0-tmp;
-    /* fprintf(stderr, "set p8[%i] to %e\n", opt.absrb-1, p8[opt.absrb-1]); */
+    fprintf(stderr, "set p8[%i] to %e\n", opt.absrb-1, p8[opt.absrb-1]);
   }
   MxPrint (p8, "p8", 'v');
   return (p8);
@@ -215,10 +215,9 @@ void MxIterate ( double *p0, double *p8, double *S) {
   */
   int i, count = 0, pdiff_counter = 0;
   double time, check = 0.;
-  double *CL, *CR, *exptL, *tmpVec, *tmpVec2, *St;
+  double *CL = NULL , *CR, *exptL, *tmpVec, *tmpVec2, *St;
   double *pt, *pdiff;  /* probability distribution/difference 4 time t */
   
-  CL        = (double *) MxNew (dim*dim*sizeof(double));
   exptL     = (double *) MxNew (dim*dim*sizeof(double));
   tmpVec    = (double *) MxNew (dim*sizeof(double));
   tmpVec2   = (double *) MxNew (dim*sizeof(double));
@@ -226,8 +225,9 @@ void MxIterate ( double *p0, double *p8, double *S) {
   pdiff     = (double *) MxNew (dim*sizeof(double));
 
   if(! opt.absrb){  /* NON-absorbing case */
-    St     = (double *) MxNew (dim*dim*sizeof(double));
+    CL     = (double *) MxNew (dim*dim*sizeof(double));
     CR     = (double *) MxNew (dim*dim*sizeof(double));
+    St     = (double *) MxNew (dim*dim*sizeof(double));
     mcopy(St, S, dim*dim);  trnm(St, dim); /* transpose S */
     mmul (CL, sqrPI_, S, dim);
     mmul (CR, St, _sqrPI, dim);
@@ -300,48 +300,66 @@ void MxIterate ( double *p0, double *p8, double *S) {
   free(pt);
   free(pdiff);
   free(p0);
-/*    free(EV_mesch); */
 }
 
 
 /*==*/
 void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
-  /*
-    solve following equation 4 various times
-    p(t) = sqrPI_ * S * exp(time * EV) * St * _sqrPI * p(0)
-    CL = sqrPI_ * S
-    CR = St * _sqrPI
-    tmpVec = CR * p(0)
+  /*  solve following equation 4 various times
+    ***** NON-ABSORBING CASE: ******
+    p(t)    = sqrPI_ * S * exp(time * EV) * St * _sqrPI * p(0)
+    CL      = sqrPI_ * S
+    CR      = St * _sqrPI
+    tmpVec  = CR * p(0)
+    tmpVec2 = exp(time * EV) * tmpVec
+    p(t)    = CL * tmpVec2
+    ******* ABSORBING CASE: *******
+    p(t)    = S * exp(time * EV) * S_inv * p(0) 
+    tmpVec  = S_inv * p(0)
+    tmpVec2 = exp(time * EV) *tmpVec 
+    p(t)    = S * tmpVec2 
   */
-  int i,  pdiff_counter = 0;
-  double time, *CL, *CR, *exptL, *tmpMx, *tmpVec, *tmpVec2, *pt, *St;
+  int i,  count = 0, pdiff_counter = 0;
+  double time, *CL = NULL, *CR, *exptL, *tmpVec, *tmpVec2, *pt, *St;
   double *ptFULL;    /* prob dist 4 of the effective lmins of the tree at time t */
   double *p8FULL;    /* equ dist 4 gradient basins, full process */
   double *pdiffFULL; /* population prob difference between p8FULL and ptFULL */ 
   double check = 0. , checkp8 = 0.;
   
-  St        = (double *) MxNew (dim*dim*sizeof(double));
-  CL        = (double *) MxNew (dim*dim*sizeof(double));
-  CR        = (double *) MxNew (dim*dim*sizeof(double));
   tmpVec    = (double *) MxNew (dim*sizeof(double));
   tmpVec2   = (double *) MxNew (dim*sizeof(double));
   pt        = (double *) MxNew (dim*sizeof(double));
   exptL     = (double *) MxNew (dim*dim*sizeof(double));
-  tmpMx     = (double *) MxNew (dim*dim*sizeof(double));
   ptFULL    = (double *) MxNew ((lmins+1)*sizeof(double));
   p8FULL    = (double *) MxNew ((lmins+1)*sizeof(double));
   pdiffFULL = (double *) MxNew ((lmins+1)*sizeof(double));
+
+  if(! opt.absrb){  /* NON-absorbing case */
+    CL        = (double *) MxNew (dim*dim*sizeof(double));
+    CR        = (double *) MxNew (dim*dim*sizeof(double));
+    St        = (double *) MxNew (dim*dim*sizeof(double));
+    mcopy(St, S, dim*dim);  trnm(St, dim); /* transpose S */
+    mmul (CL, sqrPI_, S, dim);
+    mmul (CR, St, _sqrPI, dim);
+    vmul (tmpVec, CR, p0, dim);
+    free(St);
+    free(CR);
+  }
+  else{  /* absorbing case */
+    double *S_inv;
+    S_inv  = (double *) MxNew (dim*dim*sizeof(double));
+    mcopy(S_inv, S, dim*dim);
+    minv(S_inv,dim);
+    for(i = 0; i < dim; i++) EV_mesch[i] -= 1;  /* compensate 4 translation of matrix U */
+    free(EV);         /* was allocated in MxInit */
+    EV = EV_mesch;    /* let EV point at EV_mesch */
+    if(opt.want_verbose) MxPrint(EV_mesch, "EV_mesch in MxIterate", 'v');
+    vmul (tmpVec, S_inv, p0, dim);
+    free(S_inv);
+  }
   
-  mcopy(St, S, dim*dim);  trnm(St, dim); /* transpose S */
-  mmul (CL, sqrPI_, S, dim);
-  mmul (CR, St, _sqrPI, dim);
-  free(St);
-  
-  vmul (tmpVec, CR, p0, dim);
-  free(CR);
   /* calculate equilibrium distribution once */
-  for (i = 0; i < dim; i++)
-    p8FULL[E[i].ag] += p8[i]; /* eq distr of the gradient basins */
+  for (i = 0; i < dim; i++)   p8FULL[E[i].ag] += p8[i];
   for (i = 0; i < lmins; i++) checkp8 += fabs(p8FULL[i]);
   if ( ((checkp8-1) < -0.1) || ((checkp8-1) > 0.1) ){
     fprintf(stderr, "overall equilibrium probability is %e != 1. ! exiting\n", checkp8);
@@ -354,13 +372,15 @@ void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
       exptL[dim*i+i] = exp(time*EV[i]);
 
     vmul(tmpVec2, exptL, tmpVec, dim);
-    vmul(pt, CL, tmpVec2, dim);
-    
-    /*    mmul (tmpMx, CL, exptL, dim); vmul (pt, tmpMx, tmpVec, dim); */
-        
+    if(!opt.absrb)  vmul(pt, CL, tmpVec2, dim);
+    else            vmul(pt, S, tmpVec2, dim);
+
+    count++;  /* # of iterations */
+
     for (i = 0; i < dim; i++){
       if(pt[i] < -0.01){
-	fprintf(stderr, "prob of lmin %i has become negative: %6.4f\n", i+1,pt[i]);exit(866);
+	fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, pt[i]);
+	exit(866);
       }
       ptFULL[E[i].ag] += pt[i]; /* map individual structure -> gradient basins */
       check += fabs(pt[i]); 
@@ -374,17 +394,13 @@ void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
       fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
       exit(888);
     }
-    
+    check = 0.;
     /* now check if we have converged yet */
-    /*  printf("#---------------"); */
     for(i = 1; i <= lmins; i++){
       pdiffFULL[i] = p8FULL[i] - ptFULL[i];
-      /*  printf("%7.4f ", pdiffFULL[i]); */
       if (fabs(pdiffFULL[i]) >= 0.001)
 	pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
     }
-    /*   printf("  pdiff_counter: %i", pdiff_counter); */
-    /*     printf("\n"); */
     if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
       break;
     pdiff_counter = 0;
@@ -392,22 +408,22 @@ void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
     /* end check of convergence */
     
     memset(ptFULL, 0, (lmins+1)*sizeof(double));
-    check = 0.;
     fflush(stdout);
   }
-  /* end solve fundamental equation */ 
-  free(E);
-  free(tmpVec2);
+  printf("# of iterations: %d\n", count);
+  /*** end solve fundamental equation ***/
+
   free(EV);
   free(exptL);
   free(CL);
   free(tmpVec);
-  free(tmpMx);
+  free(tmpVec2);
   free(pt);
-  free(ptFULL);
-  free(p8FULL);
   free(pdiffFULL);
   free(p0);
+  free(E);
+  free(ptFULL);
+  free(p8FULL);
 }
 
 /*==*/
@@ -487,20 +503,16 @@ static double *MxMethodeA (TypeBarData *Data) {
 extern double *MxMethodeFULL (InData *InData){
 
   int a, i, j;
-  double *U, biggest;
+  double *U;
   
   U = (double *) MxNew (dim*dim*sizeof(double));
   free(D);
-  biggest = (double)InData[0].rate;
-  
+   
   for(a = 0; a <= in_nr; a++){
     i = InData[a].i;
     j = InData[a].j;
     U[dim*i+j] = InData[a].rate;
-    if(InData[a].rate >= biggest) biggest = InData[a].rate;
   }
-
-  for(a = 0; a < dim*dim; a++) U[a] /= (biggest);
 
   if(opt.absrb){ /*==== absorbing  states ====*/
     for(i = 0; i < dim; i++)
@@ -516,7 +528,7 @@ extern double *MxMethodeFULL (InData *InData){
      U[dim*j+j] = -tmp+1; /* make U a stochastic matrix */
   }
 
-  MxPrint (U, "U with Methode F", 'm');
+  if (opt.want_verbose) MxPrint (U, "U with Methode F", 'm');
   return U;
 }
 
