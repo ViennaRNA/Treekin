@@ -1,6 +1,6 @@
 /* globals.c */
-/* Last changed Time-stamp: <2003-09-10 11:20:57 mtw> */
-/* static char rcsid[] = "$Id: globals.c,v 1.5 2003/09/10 13:54:06 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-14 12:26:23 mtw> */
+/* static char rcsid[] = "$Id: globals.c,v 1.6 2003/10/23 10:40:35 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -220,27 +220,28 @@ static void ini_globs(void) {
 
 /*==============================*/
 static void usage(int status) {
-  printf("\n%s - simulate kinetic folding of RNA with a Markov process\n",
+  printf("\n%s - simulate kinetic folding of RNA as a Markov process\n",
 	 opt.program_name);
   
   printf("Usage: %s [OPTION]... [FILE]  , where [FILE] must have\n", opt.program_name);
-  printf("barriers output-format, i.e. barriers --saddle --bsize --ssize\n"); 
+  printf("barriers output-format, i.e. ");
+  printf("barriers --saddle --bsize --ssize --rates\n"); 
   printf(
          "\nOptions:\n"
 	 "--absorb <int>          Make lmin <int> an absorbing lmin (default none)\n"
 	 "--t0 <float>            Start Time\n"
 	 "--t8 <float>            Stop Time\n"
 	 "--Temp <float>          Temperature in Celsius\n"
-	 "--method <char>         Select method to build transition matrix: (default A)\n"
-	 "                        A ==> Arrhenius-like kinetics\n"
+	 "--method <char>         Select method to build transition matrix:\n");
+  printf("                        A ==> Arrhenius-like kinetics (default)\n"
 	 "                        F ==> Full process kinetics (whole subopt)\n"
 	 "                        I ==> use rates from barriers\n"
 	 "--nlmins <int>          Read <int> local minima (default till EOF)\n"
 	 "--p0 (<int>=<float>)    Populate local minimum <int> with <float>\n"
 	 "                        (NOTE: sum of <float> must equal 1)\n"
 	 "--tinc <float>          Time scaling-factor (for log time-scale)\n"
-	 "-d                      Consider degeracy in transition rates\n"
-	 "-e                      Use matrix-expontent routines, NO diagonalization\n"
+	 "-d                      Consider degeracy in transition rates\n");
+  printf("-e                      Use matrix-expontent routines, NO diagonalization\n"
 	 "-u                      Dump transition matrix U to a binary file matrix.bin\n"
 	 "-v, --verbose           Verbose output (for debugging)\n"
 	 "\n"
