@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-09-10 15:02:38 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.9 2003/09/10 13:52:24 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-11 13:42:21 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.10 2003/09/11 11:45:30 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +47,7 @@ static TypeDegSaddle *saddle;
 
 /*==*/
 void MxInit (int d) {
-
+  int i;
   _kT = 0.00198717*(273.15 + opt.T);
   if (d > 0 ) dim = d;
   else { fprintf(stderr, "dim <= 0\n"); exit(1); }
@@ -55,6 +55,8 @@ void MxInit (int d) {
   EV     = (double *) MxNew (dim*sizeof(double));
   _sqrPI = (double *) MxNew (dim*dim*sizeof(double));
   sqrPI_ = (double *) MxNew (dim*dim*sizeof(double));
+  D      = (double *) MxNew (dim*dim*sizeof(double));
+  for(i=0;i<dim*dim;i++) D[i] = 1.;
 }
 
 /*==*/
@@ -258,15 +260,11 @@ void MxIterate ( double *p0, double *p8, double *S) {
     check = 0.;
     
     /* now check if we have converged yet */
-    /*  printf("#---------------"); */
     for(i=0; i<dim; i++){
       pdiff[i] = p8[i] - pt[i];
-      /*   printf("%7.4f ", pdiff[i]); */
       if (fabs(pdiff[i]) >= 0.0001)
 	pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
     }
-    /*  printf(" # pdiff_counter: %i", pdiff_counter); */
-    /*   printf("\n"); */
     if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
       break;
     pdiff_counter = 0.;
@@ -415,48 +413,52 @@ static double *MxMethodeA (TypeBarData *Data) {
   /*         i->j   prop  e               */
   /****************************************/
   
-  int i,j;
-  double m_saddle, *U;
+  int i,j,real_abs = 0;;
+  double m_saddle, Zabs, abs_rate, *T, *U;
 
   U = (double *) MxNew (dim*dim*sizeof(double));
 
   for(i = 0; i < (dim*dim); i++) U[i] = -1;
   
-  if(opt.want_degenerate) {
-    for( i = 0; i < dim; i++)
-      for( j = i+1; j < dim; j++){
-	m_saddle = max_saddle(i, j, Data);
-	/* rate j -> i */
-	U[dim*i+j] = D[dim*i+j]*exp(-(m_saddle-Data[j].FGr)/_kT); 
-	/* rate i -> j */
-	U[dim*j+i] = D[dim*i+j]*exp(-(m_saddle-Data[i].FGr)/_kT);
-      }
-    if(D != NULL) free(D);
-  }
-  else {
-    for( i = 0; i < dim; i++)
-      for( j = i+1; j < dim; j++){
-	m_saddle = max_saddle(i, j, Data);
-	/* rate j -> i */
-	U[dim*i+j] = exp(-(m_saddle-Data[j].FGr)/_kT);
-	/* rate i -> j */
-	U[dim*j+i] = exp(-(m_saddle-Data[i].FGr)/_kT);
-      }
-  }
-  /*===========================*/
-  /*==== absorbing  states ====*/
-  /*===========================*/
-  if(opt.absrb > 0)
-    for(i = 0; i < dim; i++)
-      U[dim*i+(opt.absrb-1)] = 0.; 
-  /*==========================*/
-  /*== end absorbing states ==*/
-  /*==========================*/
+  for( i = 0; i < dim; i++)
+    for( j = i+1; j < dim; j++){
+      m_saddle = max_saddle(i, j, Data);
+      /* rate j -> i */
+      U[dim*i+j] = D[dim*i+j]*exp(-(m_saddle-Data[j].FGr)/_kT); 
+      /* rate i -> j */
+      U[dim*j+i] = D[dim*i+j]*exp(-(m_saddle-Data[i].FGr)/_kT);
+    }
+  if(D != NULL) free(D);
+
+  MxPrint(U, "original rate matrix", 'm');
   
+  if(opt.absrb){ /*==== absorbing  states ====*/
+    dim++;
+    fprintf(stderr, "dim inceased to %i\n", dim);
+    T = (double *) MxNew(dim*dim*sizeof(double));
+    real_abs = opt.absrb; /* the original absorbing lmin */
+    real_abs--;
+    opt.absrb = dim; /* the 'new' abs state = last row/column of rate matrix */
+    fprintf(stderr, "new absorbing lmin is: %i\n", opt.absrb);
+    Zabs = exp((-Data[real_abs].FGr)/_kT);
+    abs_rate = exp((-Data[real_abs].energy)/_kT)/Zabs;
+
+    for(i = 0; i < (dim-1); i++){ /* all except the last row */ 
+      for(j = 0; j < (dim-1); j++)
+	T[dim*i+j] = U[(dim-1)*i+j];
+      T[(dim-1)*j+(dim-1)] = 0.;
+    }
+    for(j = 0; j < dim; j++) /* last row */
+      T[dim*(dim-1)+j] = 0.;
+    T[dim*(dim-1)+real_abs] = abs_rate;
+    free(U);
+    U = T;
+    MxPrint(U, "aufgeblasene Matrix", 'm');
+    
+  }  /*== end absorbing states ==*/
+   
   /* set diagonal elements to 0 */
   for (i = 0; i < dim; i++) U[dim*i+i] = 0;
-  
-  /* diagonal elements */
   for (j = 0; j < dim; j++) {
     double tmp = 0.00;
     /* calculate colum sum */
@@ -464,8 +466,7 @@ static double *MxMethodeA (TypeBarData *Data) {
     U[dim*j+j] = -tmp+1; /* make U a stochastic matrix */
   }
   
-  if (opt.want_verbose) MxPrint (U,"U with Methode B", 'm');
-  
+  if (opt.want_verbose) MxPrint (U,"U with Methode A", 'm');
   return (U);
 }
 
@@ -509,7 +510,7 @@ extern double *MxMethodeFULL (InData *InData){
 double *MxMethodeINPUT (TypeBarData *Data, double *Input){
   
   int i, j, real_abs = 0;
-  double *U, Zabs, mfe, abs_rate;
+  double *U, Zabs, abs_rate;
 
   U = (double *) MxNew(dim*dim*sizeof(double));
   
@@ -517,7 +518,7 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
 
   if (opt.want_verbose) MxPrint(Input, "Input Matrix", 'm');
 
-  if (opt.absrb > 0) {  /*==== absorbing  states ====*/
+  if (opt.absrb) {  /*==== absorbing  states ====*/
     dim++;
     fprintf(stderr, "dim inceased to %i\n", dim);
     U = (double *) realloc(U,dim*dim*sizeof(double));
@@ -525,7 +526,6 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
     real_abs--;
     opt.absrb = dim; /* the 'new' abs state = last row/column of rate matrix */
     fprintf(stderr, "new absorbing lmin is: %i\n", opt.absrb);
-    mfe = Data[0].energy;
     Zabs = exp((-Data[real_abs].FGr)/_kT);
     abs_rate = exp((-Data[real_abs].energy)/_kT)/Zabs;
 
@@ -551,8 +551,7 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
   for (j = 0; j < dim; j++) {
     double tmp = 0.00;
     /* calculate column sum */
-    for(i = 0; i < dim; i++)
-      tmp += U[dim*i+j];
+    for(i = 0; i < dim; i++)  tmp += U[dim*i+j];
     U[dim*j+j] = -tmp+1.;   /* make Q a stochastic matrix */
   }
   
@@ -658,12 +657,8 @@ void MxMemoryCleanUp (void) {
 /*==*/
 void MxDoDegeneracyStuff(void){
 
-  int i, j,  numsad, count = 0, b, nr, current;
-  numsad = 1;
+  int i, j, b, nr, current, numsad = 1, count = 0;
 
-  D = (double *) MxNew (dim*dim*sizeof(double));
-  for(i = 0; i < (dim*dim); i++) D[i] = 1; /* initialize D */
-  
   numsad = ParseSaddleFile(&saddle);
   /* loop over all elements of structure-array saddle: */
   /* first we fill the upper triangle */
