@@ -1,10 +1,10 @@
 /* barparser.h */
-/* Last changed Time-stamp: <2003-07-16 18:24:31 mtw> */
+/* Last changed Time-stamp: <2003-07-17 01:20:48 mtw> */
 #ifndef _BARPARSER_H_
 #define _BARPARSER_H_
 #define SADDLE_LIST 400
 
-/*  static char rcsid[] = "$Id: barparser.h,v 1.2 2003/07/16 17:14:56 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.h,v 1.3 2003/08/05 08:40:04 mtw Exp $"; */
 
 /* structures */ 
 typedef struct _TypeBarData { /* structure for bar-file */ 
@@ -39,7 +39,7 @@ typedef struct _TypeDegSaddle{ /* structure for processing degeneracy */
 int  ParseBarfile (FILE *fp, TypeBarData **lmin);
 int  ParseInfile(FILE *fp, InData **InD, double **En, int **lmin_nr_so, int **assoc_gradbas);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
-void ParseRatesFile(double *Raten, int dim);
+void ParseRatesFile(double **Raten, int dim);
 #endif
 
 /* End of file */

@@ -1,14 +1,17 @@
 /* barparser.c */
-/* Last changed Time-stamp: <2003-07-16 19:14:08 mtw> */
+/* Last changed Time-stamp: <2003-07-23 18:28:14 mtw> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <barparser.h>
 #include "globals.h"
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.4 2003/07/16 17:14:56 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.5 2003/08/05 08:40:04 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
@@ -146,43 +149,60 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
 }
 
 /*==*/
-void ParseRatesFile(double *Raten, int dim){
-  int i = 0, j = 0, linecount = 0;
-  char *raten_line = NULL, *rate_file = "rates.out";
-  double *tmp_rates;
-  FILE *RATENFILE;
+void ParseRatesFile(double **Raten, int dim){
+  int i = 0, j = 0, read =0;
+  char *cp, *raten_line = NULL, *rate_file = "rates.out";
+  double *rate, *tmp_rates;
 
-  tmp_rates = (double *)calloc(1,dim*dim*sizeof(double));
+  tmp_rates = (double *)calloc(dim*dim,sizeof(double));
   if (tmp_rates == NULL){
     fprintf(stderr, "could not allocate tmp_rates in ParseRatesFile\n");
     exit(888);
   }
-
-  RATENFILE = fopen(rate_file, "r+");
-  while((raten_line = getline(RATENFILE)) != NULL){  /* read rate matrix from barriers */
-    linecount++;
-    for(j = 0; j < dim; j
-
-
+  rate = (double *)calloc(dim,sizeof(double));
+  if (rate == NULL){
+    fprintf(stderr, "could not allocate rate in ParseRatesFile\n");
+    exit(888);
   }
   
+  opt.RATENFILE = fopen(rate_file, "r+");
+  while((raten_line = getline(opt.RATENFILE)) != NULL){ 
+    cp = raten_line;
+    while(sscanf(cp,"%lf%n", rate+j,&read) == 1){
+      tmp_rates[dim*j+i] = *(rate+j);
+      cp+=read;
+      j++;
+    }
+    j=0;
+    i++;
+    memset(rate, 0, (size_t)(dim*sizeof(double)));
+    free(raten_line);
+  }
 
-  fclose(RATENFILE);
+  *Raten = tmp_rates;
+  fclose(opt.RATENFILE);
+  free(rate);
   return;
 }
+
 /*==*/
 int ParseBarfile( FILE *fp, TypeBarData **lmin){
 
-  char *line = NULL, *p, sep[] = " ";
-  int count = 0, v = 0, i;
+  char *line = NULL, *tmpseq = NULL, *p, sep[] = " ";
+  int count = 0, v = 0;
   int size = LMINBASE;
- /*   float mfe; */
   TypeBarData *tmp;
 
   tmp = (TypeBarData *) calloc (LMINBASE, sizeof(TypeBarData));
+  tmpseq = (char *) calloc (500, sizeof(char));
   *lmin = NULL;
-
-  line = getline(fp); /* skip sequence line */
+  line = getline(fp); /* get sequence from first line */
+  if(sscanf(line, "%s", tmpseq) == 0){
+    fprintf(stderr, "could not get sequence from first line of barfile\n");
+    exit(888);
+  }
+  opt.sequence = tmpseq;
+  free(line);
   for (count = 0, line = getline(fp); line != NULL; count++, line = getline(fp)) {
     if (count >= size) {
       tmp = (TypeBarData *) realloc (tmp, size + LMINBASE);
@@ -194,16 +214,8 @@ int ParseBarfile( FILE *fp, TypeBarData **lmin){
     while(p != NULL){
       p = strtok(NULL, sep);
       if (p == NULL) break; 
-      if( *p == '.' || *p == '(' ) continue; /* skip secondary structures */
-      else if ( *p == 'A' || *p == 'U' || *p == 'G' || *p == 'C' || *p == '~'){
-	int count = 1;   /* read sequence from bar-file (saddle of 1st lmin) */
-	while ( *(p+count) != '\0')
-	  count++;
-	opt.sequence = (char *) calloc(count, sizeof(char));
-	for (i = 0; i < count; i++)
-	  *(opt.sequence + i) = *(p + i);  
-	continue;
-      }
+      if (*p == '.' || *p == '(' ) continue; /* skip secondary structures */
+      else if (*p == '~') continue;
       v++;
       switch (v){
       case 2:

@@ -1,6 +1,6 @@
 /* globals.h */
-/* Last changed Time-stamp: <2003-07-12 18:29:29 mtw> */
-/*  static char rcsid[] = "$Id: globals.h,v 1.1 2003/07/14 07:42:20 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-23 16:24:34 mtw> */
+/*  static char rcsid[] = "$Id: globals.h,v 1.2 2003/08/05 08:40:04 mtw Exp $"; */
 
 typedef struct {         /* command-line options */
   short absrb;           /* make one lmin absorbing */
@@ -16,6 +16,7 @@ typedef struct {         /* command-line options */
   float *pini;           /* start population at lmin xxx */
   char method;           /* method to build transition matrix */
   FILE *INFILE;          /* input file (usually bar-file) */
+  FILE *RATENFILE;       /* input file containing rates from barriers */
   char *sequence;        /* sequence */
   char *program_name;    /* name of executable file */ 
 } markov_options;

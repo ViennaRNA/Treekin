@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-07-16 19:14:07 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.3 2003/07/16 17:14:56 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-24 15:50:55 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.4 2003/08/05 08:40:04 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,21 +50,28 @@ int main (int argc, char **argv) {
     if (opt.pini != NULL) free(opt.pini);
     free(p8);
     free(S);
-    free(U);
     free(InD);
     free(Energies);
     free(lmin_nr_so);
     free(assoc_gradbas);
   }
-  else if(opt.method == 'F'){
-    if(opt.absrb != 0) {
-      fprintf(stderr, "absorbing states not yet implemented for input matrix case\n");
-      exit(999);
-    }
+  else if(opt.method == 'I'){      /* rate matrix input process */
     dim = ParseBarfile (opt.INFILE, &Data);
     ParseRatesFile(&R, dim);
     MxInit (dim);
+    U = MxMethodeINPUT(R);
+    p0 = MxStartVec ();
+    p8 = MxEqDistr (Data);
+    if(opt.absrb > 0) MxEVnonsymMx(U, &S);
+    else S = MxSymmetr (U, p8);
+    MxIterate (p0, S);
+    MxMemoryCleanUp();
 
+    free(opt.pini);
+    free(p8);
+    free(U);
+    free(S);
+    free(Data);
   }
   else {                         /* tree process */
     dim = ParseBarfile (opt.INFILE, &Data);
@@ -80,7 +87,6 @@ int main (int argc, char **argv) {
     if (opt.pini != NULL) free(opt.pini);
     free(p8);
     free(S);
-    free(U);
     free(Data);
     /* saddles freen !!! */
   }

@@ -1,6 +1,6 @@
 /* mxccm.h */
-/* Last changed Time-stamp: <2001-10-11 17:17:31 mtw> */
-/* static char rcsid[] = "$Id: mxccm.c,v 1.1 2003/07/14 07:42:20 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-24 18:33:03 mtw> */
+/* static char rcsid[] = "$Id: mxccm.c,v 1.2 2003/08/05 08:40:04 mtw Exp $"; */
 
 #include <stdlib.h>
 #include <math.h>
@@ -15,7 +15,7 @@ void eigen(double *a,double *ev,int n)
 }
 
 int qrevec(double *ev,double *evec,double *dp,int n)
-{ double cc,sc,d,x,y,h,tzr=1.e-15;
+{ double cc,sc=0.,d,x,y,h,tzr=1.e-15;
   int i,j,k,m,mqr=8*n;
   double *p;
   for(j=0,m=n-1;;++j){
@@ -108,7 +108,11 @@ void trnm(double *a,int n)
   int i,j,e;
   for(i=0,e=n-1; i<n-1 ;++i,--e,a+=n+1){
     for(p=a+1,q=a+n,j=0; j<e ;++j){
-      s= *p; *p++ = *q; *q=s; q+=n;
+      s= *p;
+      *p = *q;
+      p++;
+      *q=s;
+      q+=n;
      }
    }
 }

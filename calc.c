@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-07-16 13:59:59 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.4 2003/07/16 12:26:00 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-30 14:21:20 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.5 2003/08/05 08:40:04 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,11 +45,11 @@ static void    MxBinWrite (double *matrix);
 /* private vars and arrays */
 static int      dim = 0;
 static double   _kT = 1.;
-static double  *EV;         /* array 4 eigenvalues */
-static double  *EV_mesch;   /* ev from meschach-routine, ie in other order */
-static double  *_sqrPI;     /* left constant array */
-static double  *sqrPI_;     /* right constant array */
-static double  *D;          /* matrix with degree of degeneacy */
+static double  *EV        = NULL;   /* array 4 eigenvalues */
+static double  *EV_mesch  = NULL;   /* ev from meschach-routine, ie in other order */
+static double  *_sqrPI    = NULL;   /* left constant array */
+static double  *sqrPI_    = NULL;   /* right constant array */
+static double  *D         = NULL;   /* matrix with degree of degeneacy */
 static char    *first_char_of_compare_string = NULL;
 static char    *first_char_of_compare_pt = NULL;
 static char     Aname[30];
@@ -137,7 +137,7 @@ double *MxEqDistr ( TypeBarData *Data ) {
     p8[opt.absrb-1] = 1.0-tmp;
     if(opt.want_verbose) MxPrint (p8, "p8 for absorbing state", 'v'); 
   }
-  
+  MxPrint(p8, "p8", 'v');
   MxMakep0String(p8); /* write p8 to a string which we'll need later to check */
                       /* if our iterations converged yet */
   return (p8);
@@ -179,19 +179,19 @@ double *MxSymmetr ( double *U, double *P8 ) {
   
   S     = (double *) MxNew (dim*dim*sizeof(double));
   tmpMx = (double *) MxNew (dim*dim*sizeof(double));
-
+    
   for(i = 0; i < dim; i++) {
     for(j = 0; j < dim; j++) {
       if( i == j) {
 	sqrPI_[dim*i+j] = sqrt(P8[i]);            /* pos right */
 	_sqrPI[dim*i+j] = 1/(sqrPI_[dim*i+j]);}}} /* neg left */
-  
+  fprintf(stderr,"dim is %d\n", dim);
   mmul(tmpMx, _sqrPI, U, dim); mmul(S, tmpMx, sqrPI_, dim);
-  /*   if (opt.want_verbose) { */
-  /*         MxPrint (_sqrPI, "_sqrPI (= negative Wurzl von pi)", 'm');  */
-  /*         MxPrint (sqrPI_, "sqrPI_ (= Wurzl von pi)", 'm');  */
-  /*         MxPrint (tmpMx, "tmpMx (= negative Wurzl von pi * U)", 'm');  */
-  /*         MxPrint (S, "S before (= tmpMx * Wurzl von pi)", 'm'); } */
+    if (opt.want_verbose) {
+          MxPrint (_sqrPI, "_sqrPI (= negative Wurzl von pi)", 'm');
+          MxPrint (sqrPI_, "sqrPI_ (= Wurzl von pi)", 'm');
+          MxPrint (tmpMx, "tmpMx (= negative Wurzl von pi * U)", 'm');
+          MxPrint (S, "S before (= tmpMx * Wurzl von pi)", 'm'); }
   free(tmpMx);
   /* correct for numerical errors */
   for (i = 0; i < dim; i++) {
@@ -208,7 +208,7 @@ double *MxSymmetr ( double *U, double *P8 ) {
     MxPrint (S, "Eigenvectors of S", 'm');MxPrint(EV, "Eigenvalues of S", 'v'); 
   
   /* compensate 4 translation of matrix U */
-  for(i = 0; i < dim; i++) EV[i] = EV[i] - 1; 
+  for(i = 0; i < dim; i++) EV[i] = EV[i] - 1;
   return (S);
 }
 
@@ -534,11 +534,15 @@ static  int MxCheckIterate_ptlmin(double *ptlmin){
 static void MxMakep0String(double *p8){
 
   char *compare_string;
-  
-  compare_string  = (char *) MxNew(10*sizeof(char)); 
+  compare_string  = (char *) calloc(10,sizeof(char));
+  if (compare_string == NULL){
+    fprintf(stderr, "could not alloc comprare_string\n");
+    exit(888);
+  }
 
   first_char_of_compare_string = compare_string; 
   sprintf(compare_string,"%6.4f ", p8[0]);
+  return;
 }
 
 /*==*/
@@ -746,12 +750,43 @@ extern double *MxMethodeFULL (InData *InData){
     /* make Q a stochastic matrix */
     Q[dim*j+j] = -tmp+1;
   }
-  
+
   if (opt.want_verbose) {
     sprintf (Aname, "%s", "U with Methode F");
     MxPrint (Q, Aname, 'm');
   }
   return Q;
+}
+
+/*==*/
+extern double *MxMethodeINPUT (double *Input){
+  int i,j;
+  double *test;
+
+  test = (double *)calloc(dim,sizeof(double));
+  
+  if (opt.want_verbose)
+    MxPrint(Input, "Input Matrix", 'm'); 
+
+  for(i=0; i<dim*dim; i++)
+    Input[i] /= 100;
+
+  /* diagonal elements */
+  for (i=0; i<dim; i++) Input[dim*i+i] = 0;
+  for (j = 0; j < dim; j++) {
+    double tmp = 0.00;
+    /* calculate column sum */
+    for(i = 0; i < dim; i++)
+      tmp += Input[dim*i+j];
+    /* make Q a stochastic matrix */
+    Input[dim*j+j] = -tmp+1.;
+  }
+  
+  if (opt.want_verbose)
+    MxPrint (Input,"U with Methode I" , 'm');
+
+  free(test);
+  return Input;
 }
 
 /*==*/

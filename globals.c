@@ -1,6 +1,6 @@
 /* globals.c */
-/* Last changed Time-stamp: <2003-07-12 18:30:49 mtw> */
-/* static char rcsid[] = "$Id: globals.c,v 1.1 2003/07/14 07:42:20 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-24 18:32:29 mtw> */
+/* static char rcsid[] = "$Id: globals.c,v 1.2 2003/08/05 08:40:04 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +35,7 @@ static struct option const long_options[] =
 /*==============================*/
 static int decode_switches (int argc, char **argv) {
   int c, atmp, ntmp, p0flag = 0, i = 1, tinc_set = 0;
-  float t0tmp, t8tmp, tinctmp, Ttmp, *pinitmp;
+  float t0tmp, t8tmp, tinctmp, Ttmp, *pinitmp=NULL;
   char mtmp;
   int option_index = 0;
 
@@ -122,7 +122,7 @@ static int decode_switches (int argc, char **argv) {
 	    mtmp = 'Z';
 	    if (sscanf(optarg, "%c", &mtmp) == 0)
 	      usage(EXIT_FAILURE);
-	    else if ( mtmp == 'A' || mtmp == 'B' || mtmp == 'C' || mtmp == 'F' )
+	    else if ( mtmp == 'A' || mtmp == 'B' || mtmp == 'C' || mtmp == 'F' || mtmp == 'I' )
 	      opt.method = mtmp;
 	    else {
 	      fprintf(stderr, "Value of --method must be A|B|C|F, and not  >%d<\n", mtmp);
@@ -156,7 +156,7 @@ static int decode_switches (int argc, char **argv) {
 	    else if (p0flag > 0) {
 	      pinitmp = (float *)realloc(pinitmp, (*pinitmp+2)*sizeof(float));
 	      if (pinitmp == NULL) {
-		fprintf(stderr, "Could not allocate pinitmp!\n");
+		fprintf(stderr, "Could not re-allocate pinitmp!\n");
 		exit(EXIT_FAILURE);
 	      }
 	    }
