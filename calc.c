@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-08-27 16:55:12 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.6 2003/08/27 14:59:08 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-08-27 18:42:32 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.7 2003/08/27 17:08:26 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -266,19 +266,19 @@ void MxIterate ( double *p0, double *p8, double *S) {
     vmul (pt, tmpMx, tmpVec, dim);
     count++;  /* # of iterations */
     
-    printf(" %15.5f ", time);  /* print p(t) to stdout */
+    printf(" %e ", time);  /* print p(t) to stdout */
     for (i = 0; i < dim; i++){
       if(pt[i] < -0.00001){
 	fprintf(stderr, "prob of lmin %i has become negative!\n", i+1);
 	exit(866);
       }
-      printf("%7.5f ", fabs(pt[i]));
+      printf("%e ", fabs(pt[i]));
       check += fabs(pt[i]); 
     }
     printf("\n");
 
-    if ( ((check-1) < -0.01) || ((check-1) > 0.01) ){
-      fprintf(stderr, "probability != 1.  !!!!! exiting\n");
+    if ( ((check-1) < -0.05) || ((check-1) > 0.05) ){
+      fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
       exit(888);
     }
     check = 0.;
@@ -357,7 +357,8 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
     p8FULL[assoc_gradbas[i]] += p8[i]; /* eq distr of the gradient basins */
   for (i = 0; i < lmins; i++) checkp8 += fabs(p8FULL[i]);
   if ( ((checkp8-1) < -0.1) || ((checkp8-1) > 0.1) ){
-    fprintf(stderr, "ckeckp8 probability != 1.  !!!!! exiting\n"); exit(888);
+    fprintf(stderr, "overall equilibrium probability is %e != 1. ! exiting\n", checkp8);
+    exit(888);
   }
   
    /* solve fundamental equation */
@@ -380,12 +381,13 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
       check += fabs(pt[i]); 
     }
     
-    printf(" %15.5f ", time);
-    for(i = 1; i <= lmins; i++) printf("%7.5f ", fabs(ptFULL[i]));
+    printf(" %e ", time);
+    for(i = 1; i <= lmins; i++) printf("%e ", fabs(ptFULL[i]));
     printf("\n");
     
     if ( ((check-1) < -0.01) || ((check-1) > 0.01) ){
-      fprintf(stderr, "ckeck probability != 1.  !!!!! exiting\n");exit(888);
+      fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
+      exit(888);
     }
     
     /* now check if we have converged yet */
