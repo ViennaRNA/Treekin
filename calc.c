@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-09-22 20:16:35 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.12 2003/09/23 16:29:55 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-24 23:07:14 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.13 2003/09/25 07:46:33 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -210,12 +210,11 @@ void MxIterate ( double *p0, double *p8, double *S) {
   */
   int i, count = 0, pdiff_counter = 0;
   double time, check = 0.;
-  double *CL, *CR, *exptL, *tmpVec, *tmpVec2, *St, *S_inv;
+  double *CL, *CR, *exptL, *tmpVec, *tmpVec2, *St;
   double *pt, *pdiff;  /* probability distribution/difference 4 time t */
   
   CL        = (double *) MxNew (dim*dim*sizeof(double));
   exptL     = (double *) MxNew (dim*dim*sizeof(double));
-  S_inv     = (double *) MxNew (dim*dim*sizeof(double));
   tmpVec    = (double *) MxNew (dim*sizeof(double));
   tmpVec2   = (double *) MxNew (dim*sizeof(double));
   pt        = (double *) MxNew (dim*sizeof(double));
@@ -232,6 +231,7 @@ void MxIterate ( double *p0, double *p8, double *S) {
     free(CR);
   }
   else{  /* absorbing case */
+    double *S_inv;
     S_inv  = (double *) MxNew (dim*dim*sizeof(double));
     mcopy(S_inv, S, dim*dim);
     minv(S_inv,dim);
@@ -291,6 +291,7 @@ void MxIterate ( double *p0, double *p8, double *S) {
   free(exptL);
   free(CL);
   free(tmpVec);
+  free(tmpVec2);
   free(pt);
   free(pdiff);
   free(p0);
@@ -523,16 +524,14 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
   int i, j, real_abs = 0;
   double *U, Zabs, abs_rate;
 
-  U = (double *) MxNew(dim*dim*sizeof(double));
-  
-  MxPrint(Input, "Input Matrix", 'm');
+   MxPrint(Input, "Input Matrix", 'm');
 
   if (opt.want_verbose) MxPrint(Input, "Input Matrix", 'm');
 
   if (opt.absrb) {  /*==== absorbing  states ====*/
     dim++;
     fprintf(stderr, "dim inceased to %i\n", dim);
-    U = (double *) realloc(U,dim*dim*sizeof(double));
+    U = (double *) MxNew(dim*dim*sizeof(double));
     real_abs = opt.absrb; /* the original absorbing lmin */
     real_abs--;
     opt.absrb = dim; /* the 'new' abs state = last row/column of rate matrix */
@@ -551,6 +550,7 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
     MxPrint(U, "aufgeblasene Matrix", 'm');
   }      /*== end absorbing states ==*/
   else{  /*== non-absorbing states ==*/
+    U = (double *) MxNew(dim*dim*sizeof(double));
     for(i = 0; i < dim; i++)
       for(j = 0; j < dim; j++)
 	U[dim*i+j] = Input[dim*i+j];
@@ -559,11 +559,12 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
 
   /* diagonal elements */
   for (i = 0; i < dim; i++) U[dim*i+i] = 0;
-  for (j = 0; j < dim; j++) {
+  fprintf(stderr, "dim is %i\n", dim);
+  for (i = 0; i < dim; i++) {
     double tmp = 0.00;
     /* calculate column sum */
-    for(i = 0; i < dim; i++)  tmp += U[dim*i+j];
-    U[dim*j+j] = -tmp+1.;   /* make U a stochastic matrix */
+     for(j = 0; j < dim; j++)  tmp += U[dim*j+i];
+    U[dim*i+i] = -tmp+1.;   /* make U a stochastic matrix */
   }
   
   MxPrint (U,"U with Methode I" , 'm');
