@@ -1,5 +1,5 @@
 /* barparser.c */
-/* Last changed Time-stamp: <2003-09-12 12:36:09 mtw> */
+/* Last changed Time-stamp: <2003-09-16 18:00:49 mtw> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +11,7 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.7 2003/09/15 09:16:04 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.8 2003/09/16 16:02:05 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
@@ -19,7 +19,7 @@ static char *getline(FILE *fp);
 int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, int **assoc_gradbas){
 
   char *line = NULL, *line_tr = NULL, *f_trace = "tracelmins.out", *grad_bas = "assoc_gradbas.out";
-  int dimensione, a, b, c, x, newsize = 500, mem_inc = 1000, uhu;
+  int dimensione, a, b, c, x, newsize = 5000, mem_inc = 10000, uhu;
   int *tmp_trace;     /* tmp array 4 tracelmins */
   int *tmp_gradbas;   /* tmp array 4 associated gradient basins */
   InData *tmp;        /* tmp array 4 rates between two states */ 
@@ -65,6 +65,7 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
     if (line == NULL) break;
     if(a+1 >= uhu){ /* realloc tmp array */ 
       newsize += mem_inc;
+      fprintf(stderr,"realloc: new size: %d\n", newsize);
       tmp =  (InData *) realloc (tmp, newsize*sizeof(InData));
       if(tmp == NULL){
 	fprintf(stderr, "realloc of tmp failed\n");
@@ -73,6 +74,7 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
       uhu = newsize;
     }
     sscanf(line, "%d %d %lf", &tmp[a].j, &tmp[a].i, &tmp[a].rate);
+  /*   fprintf(stderr, "a: %d\n", a); */
     a++;
     if(line != NULL) free(line);
   }
