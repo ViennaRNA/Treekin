@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-07-12 18:53:13 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.1 2003/07/14 07:42:20 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-14 11:05:20 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.2 2003/07/14 09:48:00 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -858,18 +858,18 @@ static void calc_effective_bsize(TypeBarData *Data, int **lmin){
   for(i = 0; i < dim; i++)
     Data[i].eff_bsize = Data[i].bsize;
     
-  for(i = 1; i < dim; i++){ /* look over all lmins */
+  for(i = 1; i <= dim; i++){ /* look over all lmins */
     j = 0;
     while(*(*(lmin+i)+j) != -1){
-      Data[i].eff_bsize -= Data[(*(*(lmin+i)+j))].bsize;
+      Data[i].eff_bsize -= Data[(*(*(lmin+i)+j))-1].bsize;
       j++;
     }
   }
 
   /* check if we still have the same # of structures in sum */
-  for(i = 1; i < dim; i++)
+  for(i = 0; i < dim; i++)
     test += Data[i].eff_bsize;
-  if ( test != Data[1].bsize){
+  if ( test != Data[0].bsize){
     fprintf (stderr, "bsize has changed in calc_effective_bsize \n");
     exit(1);
   }

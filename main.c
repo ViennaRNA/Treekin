@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-07-05 23:27:10 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.1 2003/07/14 07:42:20 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-14 11:07:01 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.2 2003/07/14 09:48:00 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,7 +58,6 @@ int main (int argc, char **argv) {
   }
   else {                         /* tree process */
     dim = ParseBarfile (opt.INFILE, &Data);
-    dim--; /* bescause bar-file contains the sequence-line !!! */ 
     MxInit (dim);
     U = MxBar2Matrix (Data);
     p0 = MxStartVec ();
