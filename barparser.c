@@ -1,5 +1,5 @@
 /* barparser.c */
-/* Last changed Time-stamp: <2003-07-14 11:03:35 mtw> */
+/* Last changed Time-stamp: <2003-07-16 12:24:29 mtw> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +8,7 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.2 2003/07/14 09:48:00 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.3 2003/07/16 12:26:33 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
@@ -29,6 +29,7 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
   line = getline(fp);
   sscanf(line, "%d %*s", &dimensione);
   /* HIER AUCH NOCH opt.sequence herausscannen */
+  if(line != NULL) free(line);
   
   tmp =  (InData *) calloc (dimensione, sizeof(InData));
   if(tmp == NULL){
@@ -50,6 +51,7 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
       fprintf(stderr, "error while reading energies! %d != %d\n", o, p);
       exit(555);
     }
+    if(line != NULL) free(line);
   }
 
   a = 0;
@@ -69,11 +71,12 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
     }
     sscanf(line, "%d %d %lf", &tmp[a].j, &tmp[a].i, &tmp[a].rate);
     a++;
+    if(line != NULL) free(line);
   }
 
   tmp =  (InData *) realloc (tmp, a*sizeof(InData));
   in_nr = a-1;
-  free(line);
+  if(line) free(line);
   
   /* ================================= */
   /* >>> begin read tracelmins.out <<< */
@@ -86,6 +89,8 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
   b = 1;
   lmins = fopen(f_trace, "r+");    /* file pointer for tracelmins.out */
   line_tr = getline(lmins);        /* read first line containing info stuff */
+  if(line_tr != NULL)
+    free(line_tr);
   while((line_tr = getline(lmins)) != NULL){    /* read which lmin is which # in subopt */ 
     sscanf(line_tr, "%*d %6d", &tmp_trace[b]);
     b++;
@@ -93,10 +98,11 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
       fprintf(stderr, " read more than 100 lmins..too many!\n");
       exit(777);
     }
+    free(line_tr);
   }
   tmp_trace[0] = b-1;
   tmp_trace = (int*) realloc (tmp_trace, b*sizeof(int));
-  fclose(lmins);
+  if(lmins != NULL) fclose(lmins);
   /* tmp_trace[0] = # of lmins which are now associated with a # from subopt */ 
   /* >>> end  read tracelmins.out <<< */
   /* ================================ */
@@ -112,15 +118,17 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
   c = 0;
   gradient_basins = fopen(grad_bas, "r+");  /* file pointer for assoc_gradbas.out */
   line_tr = getline(gradient_basins);       /* read first line containing info stuff */
+  if(line_tr != NULL) free(line_tr);
   while((line_tr = getline(gradient_basins)) != NULL){ /* read the gradient basin of each entry from subopt */  
     sscanf(line_tr, "%*d %5d", &tmp_gradbas[c]);
     c++;
+    if(line_tr != NULL) free(line_tr);
   }
   if(c != dimensione){
     fprintf(stderr, " read more than 100 lmins..too many!\n");
     exit(777);
   }
-  fclose(gradient_basins);
+  if(gradient_basins) fclose(gradient_basins);
   /* >>> end read assoc_gradbas.out <<< */
   /* ================================== */ 
 
@@ -131,9 +139,8 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
   *lmin_nr_so = tmp_trace;
   *assoc_gradbas = tmp_gradbas;
   
-  /* fclose(lmins); */
-/*   fclose(gradient_basins); */
-/*   free(line_tr); */
+
+  if(line_tr != NULL) free(line_tr); 
   
   return dimensione;
 }

@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-07-15 14:05:26 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.3 2003/07/15 13:20:01 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-16 13:59:59 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.4 2003/07/16 12:26:00 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,17 +43,17 @@ static int     Mxempty(MAT *matrix);
 static void    MxBinWrite (double *matrix);
 
 /* private vars and arrays */
-static int dim = 0;
-static double _kT = 1.;
-static double *EV;       /* array 4 eigenvalues */
-static double *EV_mesch;  /* ev from meschach-routine, ie in other order */
-static double *_sqrPI;   /* left constant array */
-static double *sqrPI_;   /* right constant array */
-static double *D;        /* matrix with degree of degeneacy */
-static char *first_char_of_compare_string;
-static char *first_char_of_compare_pt;
-static char Aname[30];
-static  TypeDegSaddle *saddle;
+static int      dim = 0;
+static double   _kT = 1.;
+static double  *EV;         /* array 4 eigenvalues */
+static double  *EV_mesch;   /* ev from meschach-routine, ie in other order */
+static double  *_sqrPI;     /* left constant array */
+static double  *sqrPI_;     /* right constant array */
+static double  *D;          /* matrix with degree of degeneacy */
+static char    *first_char_of_compare_string = NULL;
+static char    *first_char_of_compare_pt = NULL;
+static char     Aname[30];
+static TypeDegSaddle *saddle;
 
 /*==*/
 void MxInit (int d) {
@@ -379,7 +379,7 @@ void MxIterate_effective_lmins ( double *p0, double *p8,  double *S, int *lmin_n
   tmpMx =  (double *) MxNew (dim*dim*sizeof(double));
   pt =     (double *) MxNew (dim*sizeof(double));
   ptE =    (double *) MxNew (dim*sizeof(double));
-  ptlmin = (double *) MxNew ((lmin_nr_so[0]+1)*sizeof(double));
+  ptlmin = (double *) MxNew ((lmin_nr_so[0]+2)*sizeof(double));
   p8lmin = (double *) MxNew ((lmin_nr_so[0]+1)*sizeof(double));
   cmp_string_first = (char *) MxNew(10*sizeof(char)); 
   
@@ -464,12 +464,16 @@ void MxIterate_effective_lmins ( double *p0, double *p8,  double *S, int *lmin_n
       checkp8 = 0.;
       status = MxCheckIterate_ptlmin(ptlmin);
       for(i = 1; i <= lmin_nr_so[0]; i++) ptlmin[i] = 0.; /* initialize ptlmin back to 0. */ 
-      if(status) break; /* exit when converged */
+      if(status){
+	free(first_char_of_compare_string);
+	break; /* exit when converged */
+      }
       fflush(stdout);
     }
   }
   /* end solve equation */ 
 
+  free(EV);
   free(exptL);
   free(CL);
   free(tmpVec);
@@ -715,39 +719,39 @@ extern double *MxMethodeFULL (InData *InData){
 
   int a, i, j;
   extern int in_nr;
-  double *U;
+  double *Q;
   float biggest;
   
-  U = (double *) MxNew (dim*dim*sizeof(double));
+  Q = (double *) MxNew (dim*dim*sizeof(double));
 
   biggest = InData[0].rate;
   
   for(a = 0; a <= in_nr; a++){
     i = InData[a].i;
     j = InData[a].j;
-    U[dim*i+j] = InData[a].rate;
+    Q[dim*i+j] = InData[a].rate;
     if(InData[a].rate >= biggest) biggest = InData[a].rate;
   }
 
-  for(a = 0; a <= dim*dim; a++)
-    U[a] /= biggest;
+  for(a = 0; a < dim*dim; a++)
+    Q[a] /= biggest;
   
   /* diagonal elements */
   for (j = 0; j < dim; j++) {
     double tmp = 0.00;
     /* calculate column sum */
     for(i = 0; i < dim; i++){ 
-      tmp += U[dim*i+j];
+      tmp += Q[dim*i+j];
     }
-    /* make U a stochastic matrix */
-    U[dim*j+j] = -tmp+1;
+    /* make Q a stochastic matrix */
+    Q[dim*j+j] = -tmp+1;
   }
   
   if (opt.want_verbose) {
     sprintf (Aname, "%s", "U with Methode F");
-    MxPrint (U, Aname, 'm');
+    MxPrint (Q, Aname, 'm');
   }
-  return U;
+  return Q;
 }
 
 /*==*/
@@ -939,8 +943,7 @@ static char *time_stamp(void) {
 void MxMemoryCleanUp (void) {
   if(_sqrPI) free(_sqrPI);
   if(sqrPI_) free(sqrPI_);
-  if(first_char_of_compare_string) free(first_char_of_compare_string);
-  free(opt.sequence);
+  if(opt.sequence) free(opt.sequence);
   fclose(opt.INFILE);
 }
 
