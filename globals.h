@@ -1,6 +1,6 @@
 /* globals.h */
-/* Last changed Time-stamp: <2003-08-28 11:47:49 mtw> */
-/*  static char rcsid[] = "$Id: globals.h,v 1.4 2003/09/26 08:59:39 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-09 11:15:39 mtw> */
+/*  static char rcsid[] = "$Id: globals.h,v 1.5 2003/10/09 17:01:35 mtw Exp $"; */
 
 typedef struct {         /* command-line options */
   short absrb;           /* make one lmin absorbing */
@@ -24,6 +24,7 @@ typedef struct {         /* command-line options */
 
 markov_options opt;
 int in_nr; /* counts # of elements read from FULL process input */
+int lmins; /* # of lmins in the barrier tree, needed in FULL process */
 
 void parse_commandline(int argc, char **argv);
 

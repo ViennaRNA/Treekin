@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-10-07 17:40:42 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.19 2003/10/07 16:59:18 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-09 14:25:12 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.20 2003/10/09 17:01:35 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,7 +94,7 @@ double *MxStartVec (void) {
     p0[(int)opt.pini[i]-1] = (double)opt.pini[i+1];
   /* -1 because our lmins start with 1, not with 0 (as Data does ) */
 
-  MxPrint (p0, "p0", 'v');
+  if (opt.want_verbose) MxPrint (p0, "p0", 'v');
   return (p0);
 }
 
@@ -131,7 +131,6 @@ double *MxEqDistrFULL (SubInfo *E) {
   
   p8 = (double *) MxNew (dim*sizeof(double));
 
-  /*  for(i = 0; i < dim; i++) fprintf (stderr, "E[%i].energy: %lf\n", i, E[i].energy); */
   for(i = 0; i < dim; i++) Z += exp(-E[i].energy/_kT);
   for(i = 0; i < dim; i++) p8[i] = exp(-E[i].energy/_kT)/Z;
 
@@ -142,9 +141,8 @@ double *MxEqDistrFULL (SubInfo *E) {
       tmp += p8[i];
     }
     p8[opt.absrb-1] = 1.0-tmp;
-    fprintf(stderr, "set p8[%i] to %e\n", opt.absrb-1, p8[opt.absrb-1]);
   }
-  MxPrint (p8, "p8", 'v');
+  if(opt.want_verbose) MxPrint (p8, "p8", 'v');
   return (p8);
 }
 
@@ -196,115 +194,9 @@ double *MxSymmetr ( double *U, double *P8 ) {
 }
 
 /*==*/
-/* S which comes into this function contains the (right) eigenvectors  */
-/* calculated either by ccmath (non-abs) or meschach (absorbing case) */
-void MxIterate ( double *p0, double *p8, double *S) {
-  /*  solve following equation 4 various times
-    ***** NON-ABSORBING CASE: ******
-    p(t)    = sqrPI_ * S * exp(time * EV) * St * _sqrPI * p(0)
-    CL      = sqrPI_ * S
-    CR      = St * _sqrPI
-    tmpVec  = CR * p(0)
-    tmpVec2 = exp(time * EV) * tmpVec
-    p(t)    = CL * tmpVec2
-    ******* ABSORBING CASE: *******
-    p(t)    = S * exp(time * EV) * S_inv * p(0) 
-    tmpVec  = S_inv * p(0)
-    tmpVec2 = exp(time * EV) *tmpVec 
-    p(t)    = S * tmpVec2 
-  */
-  int i, count = 0, pdiff_counter = 0;
-  double time, check = 0.;
-  double *CL = NULL , *CR, *exptL, *tmpVec, *tmpVec2, *St;
-  double *pt, *pdiff;  /* probability distribution/difference 4 time t */
-  
-  exptL     = (double *) MxNew (dim*dim*sizeof(double));
-  tmpVec    = (double *) MxNew (dim*sizeof(double));
-  tmpVec2   = (double *) MxNew (dim*sizeof(double));
-  pt        = (double *) MxNew (dim*sizeof(double));
-  pdiff     = (double *) MxNew (dim*sizeof(double));
-
-  if(! opt.absrb){  /* NON-absorbing case */
-    CL     = (double *) MxNew (dim*dim*sizeof(double));
-    CR     = (double *) MxNew (dim*dim*sizeof(double));
-    St     = (double *) MxNew (dim*dim*sizeof(double));
-    mcopy(St, S, dim*dim);  trnm(St, dim); /* transpose S */
-    mmul (CL, sqrPI_, S, dim);
-    mmul (CR, St, _sqrPI, dim);
-    vmul (tmpVec, CR, p0, dim);
-    free(St);
-    free(CR);
-  }
-  else{  /* absorbing case */
-    double *S_inv;
-    S_inv  = (double *) MxNew (dim*dim*sizeof(double));
-    mcopy(S_inv, S, dim*dim);
-    minv(S_inv,dim);
-    for(i = 0; i < dim; i++) EV_mesch[i] -= 1;  /* compensate 4 translation of matrix U */
-    free(EV);         /* was allocated in MxInit */
-    EV = EV_mesch;    /* let EV point at EV_mesch */
-    if(opt.want_verbose) MxPrint(EV_mesch, "EV_mesch in MxIterate", 'v');
-    vmul (tmpVec, S_inv, p0, dim);
-    free(S_inv);
-  }
-  
-  /*** solve fundamental equation ***/  /* using logarithmic time-scale */
-  print_settings();
-  for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
-    for (i = 0; i < dim; i++) 
-      exptL[dim*i+i] = exp(time*EV[i]);
-
-    vmul(tmpVec2, exptL, tmpVec, dim);
-    if(!opt.absrb)  vmul(pt, CL, tmpVec2, dim);
-    else            vmul(pt, S, tmpVec2, dim);
- 
-    count++;  /* # of iterations */
-    
-    printf(" %e ", time);  /* print p(t) to stdout */
-    for (i = 0; i < dim; i++){
-      if(pt[i] < -0.01){
-	fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, pt[i]);
-	exit(866);
-      }
-      printf("%e ", fabs(pt[i]));
-      check += fabs(pt[i]); 
-    }
-    printf("\n");
-
-    if ( ((check-1) < -0.05) || ((check-1) > 0.05) ){
-      fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
-      exit(888);
-    }
-    check = 0.;
-    
-    /* now check if we have converged yet */
-    for(i=0; i<dim; i++){
-      pdiff[i] = p8[i] - pt[i];
-      if (fabs(pdiff[i]) >= 0.001)
-	pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
-    }
-    if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
-      break;
-    pdiff_counter = 0.;
-    memset(pdiff, 0, dim*sizeof(double));
-    /* end check of convergence */
-  }
-  printf("# of iterations: %d\n", count);
-  /*** end solve fundamental equation ***/ 
-
-  free(EV);
-  free(exptL);
-  free(CL);
-  free(tmpVec);
-  free(tmpVec2);
-  free(pt);
-  free(pdiff);
-  free(p0);
-}
-
-
-/*==*/
-void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
+/* S which comes into this function contains the (right) eigenvectors  
+calculated either by ccmath (non-abs) or meschach (absorbing case) */
+void MxIterate (double *p0, double *p8, double *S) {
   /*  solve following equation 4 various times
     ***** NON-ABSORBING CASE: ******
     p(t)    = sqrPI_ * S * exp(time * EV) * St * _sqrPI * p(0)
@@ -320,20 +212,22 @@ void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
     p(t)    = S * tmpVec2 
   */
   int i,  count = 0, pdiff_counter = 0;
-  double time, *CL = NULL, *CR, *exptL, *tmpVec, *tmpVec2, *pt, *St;
-  double *ptFULL;    /* prob dist 4 of the effective lmins of the tree at time t */
-  double *p8FULL;    /* equ dist 4 gradient basins, full process */
-  double *pdiffFULL; /* population prob difference between p8FULL and ptFULL */ 
-  double check = 0. , checkp8 = 0.;
+  double time, check = 0.;
+  double *CL = NULL, *CR, *exptL, *tmpVec, *tmpVec2, *pt, *St, *pdiff;
+  double *ptFULL = NULL;  /* prob dist 4 of the effective lmins of the tree at time t */
+  double *p8FULL = NULL;  /* equ dist 4 gradient basins, full process */
   
   tmpVec    = (double *) MxNew (dim*sizeof(double));
   tmpVec2   = (double *) MxNew (dim*sizeof(double));
   pt        = (double *) MxNew (dim*sizeof(double));
   exptL     = (double *) MxNew (dim*dim*sizeof(double));
-  ptFULL    = (double *) MxNew ((lmins+1)*sizeof(double));
-  p8FULL    = (double *) MxNew ((lmins+1)*sizeof(double));
-  pdiffFULL = (double *) MxNew ((lmins+1)*sizeof(double));
-
+  if(opt.method=='F'){
+    ptFULL    = (double *) MxNew ((lmins+1)*sizeof(double));
+    p8FULL    = (double *) MxNew ((lmins+1)*sizeof(double));
+    pdiff     = (double *) MxNew ((lmins+1)*sizeof(double));
+  }
+  else pdiff   = (double *) MxNew (dim*sizeof(double));
+  
   if(! opt.absrb){  /* NON-absorbing case */
     CL        = (double *) MxNew (dim*dim*sizeof(double));
     CR        = (double *) MxNew (dim*dim*sizeof(double));
@@ -357,16 +251,18 @@ void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
     vmul (tmpVec, S_inv, p0, dim);
     free(S_inv);
   }
-  
-  /* calculate equilibrium distribution once */
-  for (i = 0; i < dim; i++)   p8FULL[E[i].ag] += p8[i];
-  for (i = 0; i < lmins; i++) checkp8 += fabs(p8FULL[i]);
-  if ( ((checkp8-1) < -0.1) || ((checkp8-1) > 0.1) ){
-    fprintf(stderr, "overall equilibrium probability is %e != 1. ! exiting\n", checkp8);
-    exit(888);
+  if(opt.method=='F'){  /* calculate equilibrium distribution once */
+    for (i = 0; i < dim; i++)   p8FULL[E[i].ag] += p8[i];
+    for (i = 0; i < lmins; i++) check += fabs(p8FULL[i]);
+    if ( ((check-1) < -0.1) || ((check-1) > 0.1) ){
+      fprintf(stderr, "overall equilibrium probability is %e != 1. ! exiting\n", check);
+      exit(888);
+    }
   }
+  check = 0.;
   
    /* solve fundamental equation */
+  print_settings();
   for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
     for (i = 0; i < dim; i++) 
       exptL[dim*i+i] = exp(time*EV[i]);
@@ -376,54 +272,66 @@ void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
     else            vmul(pt, S, tmpVec2, dim);
 
     count++;  /* # of iterations */
-
+    
+    printf(" %e ", time);  /* print p(t) to stdout */
     for (i = 0; i < dim; i++){
       if(pt[i] < -0.01){
 	fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, pt[i]);
 	exit(866);
       }
-      ptFULL[E[i].ag] += pt[i]; /* map individual structure -> gradient basins */
+       if(opt.method=='F') ptFULL[E[i].ag] += pt[i]; /* map individual structure -> gradient basins */
+       else   printf("%e ", fabs(pt[i]));
       check += fabs(pt[i]); 
     }
- 
-    printf(" %e ", time);
-    for(i = 1; i <= lmins; i++) printf("%e ", fabs(ptFULL[i]));
+    if(opt.method=='F') 
+      for(i = 1; i <= lmins; i++) printf("%e ", fabs(ptFULL[i]));
     printf("\n");
     
-    if ( ((check-1) < -0.01) || ((check-1) > 0.01) ){
+    if ( ((check-1) < -0.05) || ((check-1) > 0.05) ){
       fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
       exit(888);
     }
     check = 0.;
     /* now check if we have converged yet */
-    for(i = 1; i <= lmins; i++){
-      pdiffFULL[i] = p8FULL[i] - ptFULL[i];
-      if (fabs(pdiffFULL[i]) >= 0.001)
-	pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
+    if(opt.method=='F'){
+      for(i = 1; i <= lmins; i++){
+	pdiff[i] = p8FULL[i] - ptFULL[i];
+	if (fabs(pdiff[i]) >= 0.001)
+	  pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
+      }
+    }
+    else{
+      for(i = 0; i < dim; i++){
+	pdiff[i] = p8[i] - pt[i];
+	if (fabs(pdiff[i]) >= 0.001)
+	  pdiff_counter++;
+      }
     }
     if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
       break;
     pdiff_counter = 0;
-    memset(pdiffFULL, 0, (lmins+1)*sizeof(double));
+    memset(pdiff, 0, (lmins+1)*sizeof(double));
     /* end check of convergence */
-    
-    memset(ptFULL, 0, (lmins+1)*sizeof(double));
+
+    if(opt.method=='F') memset(ptFULL, 0, (lmins+1)*sizeof(double));
     fflush(stdout);
   }
   printf("# of iterations: %d\n", count);
   /*** end solve fundamental equation ***/
 
+  if(opt.method=='F'){
+     free(ptFULL);
+     free(p8FULL);
+     free(E);
+  }
   free(EV);
   free(exptL);
   free(CL);
   free(tmpVec);
   free(tmpVec2);
-  free(pt);
-  free(pdiffFULL);
+  free(pdiff);
+  if(pt != NULL) free(pt);
   free(p0);
-  free(E);
-  free(ptFULL);
-  free(p8FULL);
 }
 
 /*==*/
@@ -459,8 +367,6 @@ static double *MxMethodeA (TypeBarData *Data) {
     }
   if(D != NULL) free(D);
 
-  MxPrint(U, "original rate matrix", 'm');
-  
   if(opt.absrb){ /*==== absorbing  states ====*/
     dim++;
     fprintf(stderr, "dim inceased to %i\n", dim);
@@ -538,8 +444,6 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
   int i, j, real_abs = 0;
   double *U, Zabs, abs_rate;
 
-   MxPrint(Input, "Input Matrix", 'm');
-
   if (opt.want_verbose) MxPrint(Input, "Input Matrix", 'm');
 
   if (opt.absrb) {  /*==== absorbing  states ====*/
@@ -568,7 +472,6 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
     for(i = 0; i < dim; i++)
       for(j = 0; j < dim; j++)
 	U[dim*i+j] = Input[dim*i+j];
-    MxPrint(U, "input Matrix before Verschoenerung", 'm');
   }      /*== end non-absorbing states ==*/
 
   /* diagonal elements */
@@ -581,7 +484,7 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
     U[dim*i+i] = -tmp+1.;   /* make U a stochastic matrix */
   }
   
-  MxPrint (U,"U with Methode I" , 'm');
+  if(opt.want_verbose) MxPrint (U,"U with Methode I" , 'm');
   if (opt.dumpU) MxBinWrite(U);
 
   free(Input);

@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-10-07 13:16:06 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.12 2003/10/07 16:59:18 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-09 18:27:35 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.13 2003/10/09 17:01:35 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,49 +20,40 @@ int main (int argc, char **argv) {
 
   TypeBarData *Data;
   InData *InD;
-  double *U, *S, *p0, *p8, *R;
-  int  dim,lmins;
+  double *U, *S, *p0, *p8, *R = NULL;
+  int  dim;
   
   parse_commandline(argc, argv);
  
-  if(opt.method == 'F'){         /* full process */
-    dim = ParseInfile(opt.INFILE, &InD, &lmins);
-    MxInit (dim);
-    U = MxMethodeFULL(InD);
-    p0 = MxStartVec ();
-    p8 = MxEqDistrFULL (E);
-    if(opt.matexp) MxExponent(p0,p8,U);
-    else{
-      if(opt.absrb) MxEVnonsymMx(U, &S);
-      else S = MxSymmetr (U, p8);
-      MxIterate_FULL (p0, p8, S, lmins);
-    }
-    MxMemoryCleanUp();
-    
-    if (opt.pini != NULL) free(opt.pini);
-    free(U);free(S);free(p8);
-    free(InD);
-  }
-  else {                   /* tree/rates  process */
+  if(opt.method == 'F')      /* full process */
+    dim = ParseInfile(opt.INFILE, &InD);
+  else
     dim = ParseBarfile (opt.INFILE, &Data);
-    if(opt.method == 'I')  ParseRatesFile(&R, dim);
-    MxInit (dim);
+  if(opt.method == 'I')  ParseRatesFile(&R, dim);
+  MxInit (dim);
+  if(opt.method == 'F')
+    U = MxMethodeFULL(InD);
+  else
     U = MxBar2Matrix (Data, R);
-    p0 = MxStartVec ();
+  p0 = MxStartVec ();
+  if(opt.method == 'F') 
+    p8 = MxEqDistrFULL (E);
+  else
     p8 = MxEqDistr (Data);
-    if(opt.matexp) MxExponent(p0,p8,U);
-    else{
-      if(opt.absrb) MxEVnonsymMx(U, &S);
-      else S = MxSymmetr (U, p8);
-      MxIterate (p0, p8, S);
-      free(S);free(p8);
-    }
-    MxMemoryCleanUp();
-    
-    if (opt.pini != NULL) free(opt.pini);
-    free(U);
-    free(Data);
+  
+  if(opt.matexp) MxExponent(p0,p8,U);
+  else{
+    if(opt.absrb) MxEVnonsymMx(U, &S);
+    else S = MxSymmetr (U, p8);
+    MxIterate (p0, p8, S);
+    free(S);free(p8);
   }
+  MxMemoryCleanUp();
+  
+  if (opt.pini != NULL) free(opt.pini);
+  free(U);
+  if(opt.method == 'F') free(InD);
+  else free(Data);
   return 0;
 }
 

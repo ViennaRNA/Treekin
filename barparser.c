@@ -1,5 +1,5 @@
 /* barparser.c */
-/* Last changed Time-stamp: <2003-10-03 13:08:01 mtw> */
+/* Last changed Time-stamp: <2003-10-09 11:19:04 mtw> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,12 +11,12 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.12 2003/10/03 13:18:23 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.13 2003/10/09 17:01:35 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
 /*==*/
-int ParseInfile(FILE *fp, InData **transition, int *lmins){
+int ParseInfile(FILE *fp, InData **transition){
 
   char *line = NULL, *line_tr = NULL, *grad_bas = "assoc_gradbas.out";
   int dimensione, c, i, l, newsize = 5000, limit;
@@ -99,9 +99,9 @@ int ParseInfile(FILE *fp, InData **transition, int *lmins){
   /* ================================== */ 
 
   *transition = tmp;
-  *lmins = l;
+  lmins = l;
   E = tmp_subI;
-  fprintf(stderr, "read %d items, dimension = %d, lmins = %d \n", i, dimensione, *lmins);
+  fprintf(stderr, "read %d items, dimension = %d, lmins = %d \n", i, dimensione, lmins);
   
   if(line_tr != NULL) free(line_tr); 
   
