@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-10-14 12:20:04 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.21 2003/10/23 10:39:41 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-23 13:03:32 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.22 2003/10/23 11:04:22 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,6 @@
 #include "mxccm.h"      /* functions for eigen-problems stolen from ccmath */
 #include "barparser.h"  /* functions for input */
 #include "matrix.h"     /* basic matrix functions from meschach */
-#include "matrix2.h"    /* advances matrix functions from meschach */
 #include "calc.h"       /* does all matrix stuff for markov process */
 #include "globals.h"    /* contains getopt-stuff */
 
@@ -33,6 +32,7 @@ static char   *time_stamp(void);
 static void    MxDoDegeneracyStuff(void);
 static int     Mxempty(MAT *matrix);
 static void    MxBinWrite (double *matrix);
+/* static void    MxKotzOutMathematica(double *matrix); */
 
 /* private vars and arrays */
 static int      dim = 0;
@@ -55,8 +55,10 @@ void MxInit (int d) {
   EV     = (double *) MxNew (dim*sizeof(double));
   _sqrPI = (double *) MxNew (dim*dim*sizeof(double));
   sqrPI_ = (double *) MxNew (dim*dim*sizeof(double));
-  D      = (double *) MxNew (dim*dim*sizeof(double));
-  for(i=0;i<dim*dim;i++) D[i] = 1.;
+  if(opt.method == 'A'){
+    D      = (double *) MxNew (dim*dim*sizeof(double));
+    for(i=0;i<dim*dim;i++) D[i] = 1.;
+  }
 }
 
 /*==*/
@@ -388,7 +390,7 @@ static double *MxMethodeA (TypeBarData *Data) {
     T[dim*(dim-1)+real_abs] = abs_rate;
     free(U);
     U = T;
-    MxPrint(U, "aufgeblasene Matrix", 'm');
+    if(opt.want_verbose) MxPrint(U, "aufgeblasene Matrix", 'm');
     
   }  /*== end absorbing states ==*/
    
@@ -465,7 +467,7 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
     for(j = 0; j < dim; j++) /* last row */
       U[dim*(dim-1)+j] = 0.;
     U[dim*(dim-1)+real_abs] = abs_rate;
-    MxPrint(U, "aufgeblasene Matrix", 'm');
+    if(opt.want_verbose) MxPrint(U, "aufgeblasene Matrix", 'm');
   }      /*== end absorbing states ==*/
   else{  /*== non-absorbing states ==*/
     U = (double *) MxNew(dim*dim*sizeof(double));
@@ -527,7 +529,7 @@ static void MxPrint(double *mx, char *name, char T) {
     fprintf(stderr,"%s:\n", name);
     for (k = 0; k < dim; k++) {
       for (l=0; l< dim; l++) {
-	fprintf(stderr,"%10.5f ", mx[dim*k+l]);
+	fprintf(stderr,"%15.10lf ", mx[dim*k+l]);
       }
       fprintf(stderr,"\n");
     }
@@ -584,7 +586,7 @@ void MxMemoryCleanUp (void) {
 }
 
 /*==*/
-void MxDoDegeneracyStuff(void){
+static void MxDoDegeneracyStuff(void){
 
   int i, j, b, nr, current, numsad = 1, count = 0;
 
@@ -680,7 +682,7 @@ static void MxPrintMeschachMat(MAT *matrix, char *name) {
     fprintf(stderr, "%s (meschach):\n", name);
     for (i = 0; i < dim; i++){
       for (j = 0; j < dim; j++)
-	fprintf(stderr,"%10.5f ", matrix->me[i][j]);
+	fprintf(stderr,"%15.10lf ", matrix->me[i][j]);
       fprintf(stderr, "\n");
     }
      fprintf(stderr,"---\n");
@@ -691,7 +693,7 @@ static void MxPrintMeschachMat(MAT *matrix, char *name) {
 static void MxPrintMeschachVec(VEC* vector, char *name){
   int i;
   fprintf(stderr, "%s (meschach):\n", name);
-  for(i = 0; i < dim; i++) fprintf(stderr,"%10.5f ", vector->ve[i]);
+  for(i = 0; i < dim; i++) fprintf(stderr,"%15.10lf ", vector->ve[i]);
   fprintf(stderr,"\n---\n");
 }
 
@@ -702,7 +704,9 @@ void MxEVnonsymMx(double *origU, double **_S){
   double *tmp, *tmp_vec;
   MAT *A, *T, *Q, *X_re, *X_im;
   VEC *evals_re, *evals_im;
- 
+  
+  /* MxKotzOutMathematica(origU); */
+  
   tmp =     (double *) MxNew (dim*dim*sizeof(double));
   tmp_vec = (double *) MxNew (dim * sizeof(double));
 
@@ -829,6 +833,37 @@ void  MxExponent(double *p0, double *p8, double *U){
   free(Uexp);
   free(pt);
 }
+
+/*==*/
+/* static void MxKotzOutMathematica(double *matrix){ */
+/*   int i,j; */
+/*   FILE *MATHEMATICA_OUT; */
+/*   char *mathematica_file = "trans_mat.txt"; */
+  
+/*   MATHEMATICA_OUT = fopen(mathematica_file, "w"); */
+/*   if (!MATHEMATICA_OUT){ */
+/*     fprintf(stderr, "could not open file pointer 4 Matematica outfile\n"); */
+/*     exit(101); */
+/*   } */
+/*   fprintf(MATHEMATICA_OUT, "{"); */
+/*   for(i=0;i<dim;i++){ */
+/*     fprintf(MATHEMATICA_OUT, "{"); */
+/*     for(j=0;j<dim;j++){ */
+/*       if (j != (dim-1)) */
+/* 	fprintf(MATHEMATICA_OUT, "%25.22lf, ", matrix[dim*i+j]); */
+/*       else */
+/* 	fprintf(MATHEMATICA_OUT, "%25.22f}", matrix[dim*i+j]); */
+/*     } */
+/*     if (i != (dim-1)) */
+/*       fprintf(MATHEMATICA_OUT, ",\n"); */
+/*     else */
+/*       fprintf(MATHEMATICA_OUT, "}\n"); */
+	
+/*   } */
+
+  
+/*   fclose(MATHEMATICA_OUT); */
+/* } */
 
 
 /* End of file */
