@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-09-12 16:07:59 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.11 2003/09/15 09:16:04 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-22 20:16:35 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.12 2003/09/23 16:29:55 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,7 +101,6 @@ double *MxStartVec (void) {
 /*==*/
 /* calculate equilibrium distribution */
 double *MxEqDistr ( TypeBarData *Data ) {
-
   int i;
   double *p8, Z = 0.;
   
@@ -121,7 +120,7 @@ double *MxEqDistr ( TypeBarData *Data ) {
     }
     p8[opt.absrb-1] = 1.0-tmp;
   }
-  MxPrint(p8, "p8", 'v');
+  if(opt.want_verbose) MxPrint(p8, "p8", 'v');
   return (p8);
 }
 
@@ -135,7 +134,17 @@ double *MxEqDistrFULL (double *energi) {
 
   for(i = 0; i < dim; i++) Z += exp(-((double)energi[i]/_kT));
   for(i = 0; i < dim; i++) p8[i] = exp(-((double) energi[i]/_kT))/Z;
-  MxPrint (p8, "p8", 'v');
+
+  if(opt.absrb){
+    double tmp = 0.;
+    for(i = 0; i < dim; i++){
+      p8[i] = ABS_VAL;
+      tmp += p8[i];
+    }
+    p8[opt.absrb-1] = 1.0-tmp;
+    fprintf(stderr, "set p8[%i] to %e\n", opt.absrb-1, p8[opt.absrb-1]);
+  }
+  if(opt.want_verbose) MxPrint (p8, "p8", 'v');
   return (p8);
 }
 
@@ -187,28 +196,30 @@ double *MxSymmetr ( double *U, double *P8 ) {
 void MxIterate ( double *p0, double *p8, double *S) {
   /*  solve following equation 4 various times
     ***** NON-ABSORBING CASE: ******
-    p(t)   = sqrPI_ * S * exp(time * EV) * St * _sqrPI * p(0)
-    CL     = sqrPI_ * S
-    CR     = St * _sqrPI
-    tmpVec = CR * p(0)
+    p(t)    = sqrPI_ * S * exp(time * EV) * St * _sqrPI * p(0)
+    CL      = sqrPI_ * S
+    CR      = St * _sqrPI
+    tmpVec  = CR * p(0)
+    tmpVec2 = exp(time * EV) * tmpVec
+    p(t)    = CL * tmpVec2
     ******* ABSORBING CASE: *******
-    p(t)   = S * exp(time * EV) * S_inv * p(0) 
-    tmpMx  = S * exp(time * EV) 
-    tmpVec = S_inv * p(0)
-    p(t)   = tmpMx * tmpVec 
+    p(t)    = S * exp(time * EV) * S_inv * p(0) 
+    tmpVec  = S_inv * p(0)
+    tmpVec2 = exp(time * EV) *tmpVec 
+    p(t)    = S * tmpVec2 
   */
-  int i, j, count = 0, pdiff_counter = 0;
+  int i, count = 0, pdiff_counter = 0;
   double time, check = 0.;
-  double *CL, *CR, *exptL, *tmpMx, *tmpVec, *St, *S_inv; /* transposed of S */
+  double *CL, *CR, *exptL, *tmpVec, *tmpVec2, *St, *S_inv;
   double *pt, *pdiff;  /* probability distribution/difference 4 time t */
   
-  CL     = (double *) MxNew (dim*dim*sizeof(double));
-  exptL  = (double *) MxNew (dim*dim*sizeof(double));
-  tmpMx  = (double *) MxNew (dim*dim*sizeof(double));
-  S_inv  = (double *) MxNew (dim*dim*sizeof(double));
-  tmpVec = (double *) MxNew (dim*sizeof(double));
-  pt     = (double *) MxNew (dim*sizeof(double));
-  pdiff  = (double *) MxNew (dim*sizeof(double));
+  CL        = (double *) MxNew (dim*dim*sizeof(double));
+  exptL     = (double *) MxNew (dim*dim*sizeof(double));
+  S_inv     = (double *) MxNew (dim*dim*sizeof(double));
+  tmpVec    = (double *) MxNew (dim*sizeof(double));
+  tmpVec2   = (double *) MxNew (dim*sizeof(double));
+  pt        = (double *) MxNew (dim*sizeof(double));
+  pdiff     = (double *) MxNew (dim*sizeof(double));
 
   if(! opt.absrb){  /* NON-absorbing case */
     St     = (double *) MxNew (dim*dim*sizeof(double));
@@ -235,15 +246,13 @@ void MxIterate ( double *p0, double *p8, double *S) {
   /*** solve fundamental equation ***/  /* using logarithmic time-scale */
   print_settings();
   for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
-    for (i = 0; i < dim; i++) {
-      for (j = 0 ; j < dim; j++) {
-	if ( i == j) exptL[dim*i+j] = exp(time*EV[i]);
-	else exptL[dim*i+j] = 0.;
-      }
-    }
-    if(!opt.absrb) mmul (tmpMx, CL, exptL, dim);
-    else mmul (tmpMx, S, exptL, dim);
-    vmul (pt, tmpMx, tmpVec, dim);
+    for (i = 0; i < dim; i++) 
+      exptL[dim*i+i] = exp(time*EV[i]);
+
+    vmul(tmpVec2, exptL, tmpVec, dim);
+    if(!opt.absrb)  vmul(pt, CL, tmpVec2, dim);
+    else            vmul(pt, S, tmpVec2, dim);
+ 
     count++;  /* # of iterations */
     
     printf(" %e ", time);  /* print p(t) to stdout */
@@ -282,7 +291,6 @@ void MxIterate ( double *p0, double *p8, double *S) {
   free(exptL);
   free(CL);
   free(tmpVec);
-  free(tmpMx);
   free(pt);
   free(pdiff);
   free(p0);
@@ -299,10 +307,10 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
     CR = St * _sqrPI
     tmpVec = CR * p(0)
   */
-  int i, j, lmins, pdiff_counter = 0;
-  double time, *CL, *CR, *exptL, *tmpMx, *tmpVec, *pt, *St;
+  int i, lmins, pdiff_counter = 0;
+  double time, *CL, *CR, *exptL, *tmpMx, *tmpVec, *tmpVec2, *pt, *St;
   double *ptFULL;    /* prob dist 4 of the effective lmins of the tree at time t */
-  double *p8FULL;    /* euqilibrium distr 4 gradient basins, calculated from full process */
+  double *p8FULL;    /* equ dist 4 gradient basins, full process */
   double *pdiffFULL; /* population prob difference between p8FULL and ptFULL */ 
   double check = 0. , checkp8 = 0.;
   
@@ -312,9 +320,10 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
   CL        = (double *) MxNew (dim*dim*sizeof(double));
   CR        = (double *) MxNew (dim*dim*sizeof(double));
   tmpVec    = (double *) MxNew (dim*sizeof(double));
+  tmpVec2   = (double *) MxNew (dim*sizeof(double));
+  pt        = (double *) MxNew (dim*sizeof(double));
   exptL     = (double *) MxNew (dim*dim*sizeof(double));
   tmpMx     = (double *) MxNew (dim*dim*sizeof(double));
-  pt        = (double *) MxNew (dim*sizeof(double));
   ptFULL    = (double *) MxNew ((lmins+1)*sizeof(double));
   p8FULL    = (double *) MxNew ((lmins+1)*sizeof(double));
   pdiffFULL = (double *) MxNew ((lmins+1)*sizeof(double));
@@ -326,7 +335,6 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
   
   vmul (tmpVec, CR, p0, dim);
   free(CR);
-
   /* calculate equilibrium distribution once */
   for (i = 0; i < dim; i++)
     p8FULL[assoc_gradbas[i]] += p8[i]; /* eq distr of the gradient basins */
@@ -338,15 +346,13 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
   
    /* solve fundamental equation */
   for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
-    for (i = 0; i < dim; i++) {
-      for (j = 0 ; j < dim; j++) {
-	if ( i == j) exptL[dim*i+j] = exp(time*EV[i]);
-	else exptL[dim*i+j] = 0.;
-      }
-    }
+    for (i = 0; i < dim; i++) 
+      exptL[dim*i+i] = exp(time*EV[i]);
+
+    vmul(tmpVec2, exptL, tmpVec, dim);
+    vmul(pt, CL, tmpVec2, dim);
     
-    mmul (tmpMx, CL, exptL, dim);
-    vmul (pt, tmpMx, tmpVec, dim);
+    /*    mmul (tmpMx, CL, exptL, dim); vmul (pt, tmpMx, tmpVec, dim); */
         
     for (i = 0; i < dim; i++){
       if(pt[i] < -0.001){
@@ -355,7 +361,7 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
       ptFULL[assoc_gradbas[i]] += pt[i]; /* map individual structure -> gradient basins */
       check += fabs(pt[i]); 
     }
-    
+ 
     printf(" %e ", time);
     for(i = 1; i <= lmins; i++) printf("%e ", fabs(ptFULL[i]));
     printf("\n");
@@ -386,7 +392,7 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
     fflush(stdout);
   }
   /* end solve fundamental equation */ 
-  
+  free(tmpVec2);
   free(EV);
   free(exptL);
   free(CL);
@@ -477,35 +483,38 @@ extern double *MxMethodeFULL (InData *InData){
 
   int a, i, j;
   extern int in_nr;
-  double *Q;
-  float biggest;
+  double *U, biggest;
   
-  Q = (double *) MxNew (dim*dim*sizeof(double));
-
-  biggest = InData[0].rate;
+  U = (double *) MxNew (dim*dim*sizeof(double));
+  free(D);
+  biggest = (double)InData[0].rate;
   
   for(a = 0; a <= in_nr; a++){
     i = InData[a].i;
     j = InData[a].j;
-    Q[dim*i+j] = InData[a].rate;
+    U[dim*i+j] = InData[a].rate;
     if(InData[a].rate >= biggest) biggest = InData[a].rate;
   }
 
-  for(a = 0; a < dim*dim; a++) Q[a] /= biggest;
+  for(a = 0; a < dim*dim; a++) U[a] /= biggest;
+
+  if(opt.absrb){ /*==== absorbing  states ====*/
+    for(i = 0; i < dim; i++)
+      U[dim*i+(opt.absrb-1)] = 0. ;
+    fprintf(stderr, "MxMethodeFULL: made lmin %i absorbing\n", opt.absrb);
+  } /*== end absorbing states ==*/
   
-  /* diagonal elements */
+  /* set diagonal elements  to 0 */
+  for (i = 0; i < dim; i++) U[dim*i+i] = 0;
   for (j = 0; j < dim; j++) {
     double tmp = 0.00;
     /* calculate column sum */
-    for(i = 0; i < dim; i++){ 
-      tmp += Q[dim*i+j];
-    }
-    /* make Q a stochastic matrix */
-    Q[dim*j+j] = -tmp+1;
+    for(i = 0; i < dim; i++) tmp += U[dim*i+j];
+     U[dim*j+j] = -tmp+1; /* make U a stochastic matrix */
   }
 
-  if (opt.want_verbose) MxPrint (Q, "U with Methode F", 'm');
-  return Q;
+  MxPrint (U, "U with Methode F", 'm');
+  return U;
 }
 
 /*==*/
@@ -554,7 +563,7 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
     double tmp = 0.00;
     /* calculate column sum */
     for(i = 0; i < dim; i++)  tmp += U[dim*i+j];
-    U[dim*j+j] = -tmp+1.;   /* make Q a stochastic matrix */
+    U[dim*j+j] = -tmp+1.;   /* make U a stochastic matrix */
   }
   
   MxPrint (U,"U with Methode I" , 'm');

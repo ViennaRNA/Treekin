@@ -1,8 +1,8 @@
-# $Id: makefile,v 1.10 2003/09/16 16:02:05 mtw Exp $
+# $Id: makefile,v 1.11 2003/09/23 16:29:55 mtw Exp $
 CC      = gcc
 SCRDIR  = .
 INCDIR  = -I$(SCRDIR) -I/scratch/mtw/meschach-1.2b
-CDEBUG  = -g3
+CDEBUG  = -g3 -O
 COPTIM  = -O3 -march=i686
 CFLAGS  = -Wall $(INCDIR) $(CDEBUG)
 LIBS    = -lm /scratch/mtw/meschach-1.2b/meschach.a 
