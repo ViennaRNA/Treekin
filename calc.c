@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-09-11 13:42:21 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.10 2003/09/11 11:45:30 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-12 16:07:59 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.11 2003/09/15 09:16:04 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -107,10 +107,13 @@ double *MxEqDistr ( TypeBarData *Data ) {
   
   p8 = (double *) MxNew (dim*sizeof(double));
 
+  if(opt.absrb) dim--; /* because it was inceased before and we */
+  /* only have dim lmins in bar-file, not dim+1 */
   for(i = 0; i < dim; i++) Z += exp(-((double)Data[i].FGr/_kT));
   for(i = 0; i < dim; i++) p8[i] = exp(-((double) Data[i].FGr/_kT))/Z;
-
-  if(opt.absrb > 0){
+  if(opt.absrb) dim++;
+  
+  if(opt.absrb){
     double tmp = 0.;
     for(i = 0; i < dim; i++){
       p8[i] = ABS_VAL;
@@ -199,9 +202,7 @@ void MxIterate ( double *p0, double *p8, double *S) {
   double *CL, *CR, *exptL, *tmpMx, *tmpVec, *St, *S_inv; /* transposed of S */
   double *pt, *pdiff;  /* probability distribution/difference 4 time t */
   
-  St     = (double *) MxNew (dim*dim*sizeof(double));
   CL     = (double *) MxNew (dim*dim*sizeof(double));
-  CR     = (double *) MxNew (dim*dim*sizeof(double));
   exptL  = (double *) MxNew (dim*dim*sizeof(double));
   tmpMx  = (double *) MxNew (dim*dim*sizeof(double));
   S_inv  = (double *) MxNew (dim*dim*sizeof(double));
@@ -210,18 +211,21 @@ void MxIterate ( double *p0, double *p8, double *S) {
   pdiff  = (double *) MxNew (dim*sizeof(double));
 
   if(! opt.absrb){  /* NON-absorbing case */
+    St     = (double *) MxNew (dim*dim*sizeof(double));
+    CR     = (double *) MxNew (dim*dim*sizeof(double));
     mcopy(St, S, dim*dim);  trnm(St, dim); /* transpose S */
     mmul (CL, sqrPI_, S, dim);
     mmul (CR, St, _sqrPI, dim);
     vmul (tmpVec, CR, p0, dim);
     free(St);
     free(CR);
-    free(S_inv);
   }
   else{  /* absorbing case */
+    S_inv  = (double *) MxNew (dim*dim*sizeof(double));
     mcopy(S_inv, S, dim*dim);
     minv(S_inv,dim);
     for(i = 0; i < dim; i++) EV_mesch[i] -= 1;  /* compensate 4 translation of matrix U */
+    free(EV);         /* was allocated in MxInit */
     EV = EV_mesch;    /* let EV point at EV_mesch */
     if(opt.want_verbose) MxPrint(EV_mesch, "EV_mesch in MxIterate", 'v');
     vmul (tmpVec, S_inv, p0, dim);
@@ -418,8 +422,6 @@ static double *MxMethodeA (TypeBarData *Data) {
 
   U = (double *) MxNew (dim*dim*sizeof(double));
 
-  for(i = 0; i < (dim*dim); i++) U[i] = -1;
-  
   for( i = 0; i < dim; i++)
     for( j = i+1; j < dim; j++){
       m_saddle = max_saddle(i, j, Data);

@@ -1,5 +1,5 @@
 /* barparser.c */
-/* Last changed Time-stamp: <2003-09-03 14:10:20 mtw> */
+/* Last changed Time-stamp: <2003-09-12 12:36:09 mtw> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +11,7 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.6 2003/09/04 11:04:14 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.7 2003/09/15 09:16:04 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
