@@ -1,6 +1,6 @@
 /* main.c */
 /* Last changed Time-stamp: <2003-09-22 18:52:44 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.10 2003/09/26 08:59:39 mtw Exp $"; */
+/* static char rcsid[] = "$Id: main.c,v 1.11 2003/09/26 14:41:19 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +15,7 @@
 #include "dmalloc.h"
 #endif
 
+/* ============= main begins here ============== */
 int main (int argc, char **argv) {
 
   TypeBarData *Data;
@@ -24,7 +25,7 @@ int main (int argc, char **argv) {
   
   parse_commandline(argc, argv);
  
-  if(opt.method == 'F'){             /* full process */
+  if(opt.method == 'F'){         /* full process */
     dim = ParseInfile(opt.INFILE, &InD, &lmins);
     MxInit (dim);
     U = MxMethodeFULL(InD);
@@ -39,7 +40,7 @@ int main (int argc, char **argv) {
     free(U);free(S);free(p8);
     free(InD);
   }
-  else {                         /* tree/rates  process */
+  else {                   /* tree/rates  process */
     dim = ParseBarfile (opt.INFILE, &Data);
     if(opt.method == 'I')  ParseRatesFile(&R, dim);
     MxInit (dim);

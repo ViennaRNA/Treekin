@@ -11,7 +11,7 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.10 2003/09/26 08:59:39 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.11 2003/09/26 14:41:19 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
@@ -19,13 +19,12 @@ static char *getline(FILE *fp);
 int ParseInfile(FILE *fp, InData **transition, int *lmins){
 
   char *line = NULL, *line_tr = NULL, *grad_bas = "assoc_gradbas.out";
-  int dimensione, a, c, l,x, newsize = 5000, mem_inc = 10000, uhu;
+  int dimensione, c, i, l, newsize = 5000, limit;
   InData *tmp;        /* tmp array 4 rates between two states */ 
   SubInfo *tmp_subI;  /* tmp array 4 info on energies of all subopts */
   FILE *gb_FP;        /* file pointer 4 associated gradient basins */
   
-  /* read first line */
-  line = getline(fp);
+  line = getline(fp);  /* read first line */
   sscanf(line, "%d %*s", &dimensione);
   /* HIER AUCH NOCH opt.sequence herausscannen */
   if(line != NULL) free(line);
@@ -42,10 +41,10 @@ int ParseInfile(FILE *fp, InData **transition, int *lmins){
   }
   
   /* read energies of the different states into array tmp_subI from stdin (data.out) */ 
-  for(x = 0; x < dimensione; x++){
+  for(i = 0; i < dimensione; i++){
     int o, p;
     line = getline(stdin);
-    sscanf(line, "%d %d %lf", &o, &p, &tmp_subI[x].energy);
+    sscanf(line, "%d %d %lf", &o, &p, &tmp_subI[i].energy);
     if(o != p) {
       fprintf(stderr, "error while reading energies from data.out: %d != %d\n", o, p);
       exit(555);
@@ -53,30 +52,29 @@ int ParseInfile(FILE *fp, InData **transition, int *lmins){
     if(line != NULL) free(line);
   }
 
-  a = 0;
-  uhu = dimensione;
+  i = 0;
+  limit = dimensione;
   /* read states and transition between them */ 
   while(line != NULL){
     line = getline(stdin);
     if (line == NULL) break;
-    if(a+1 >= uhu){ /* realloc tmp array */ 
-      newsize += mem_inc;
-      fprintf(stderr,"realloc: new size: %d\n", newsize);
+    if(i+1 >= limit){ /* realloc tmp array */ 
+      newsize *= 3;
+      fprintf(stderr,"realloc data array: new size is %d\n", newsize);
       tmp =  (InData *) realloc (tmp, newsize*sizeof(InData));
       if(tmp == NULL){
-	fprintf(stderr, "realloc of tmp failed\n");
+	fprintf(stderr, "realloc of data array in barparser failed\n");
 	exit(888);
       }
-      uhu = newsize;
+      limit = newsize;
     }
-    sscanf(line, "%d %d %lf", &tmp[a].j, &tmp[a].i, &tmp[a].rate);
-  /*   fprintf(stderr, "a: %d\n", a); */
-    a++;
+    sscanf(line, "%d %d %lf", &tmp[i].j, &tmp[i].i, &tmp[i].rate);
+    i++;
     if(line != NULL) free(line);
   }
 
-  tmp =  (InData *) realloc (tmp, a*sizeof(InData));
-  in_nr = a-1;
+  tmp =  (InData *) realloc (tmp, i*sizeof(InData));
+  in_nr = i-1;
   if(line) free(line);
   
   /* ==================================== */
@@ -103,7 +101,7 @@ int ParseInfile(FILE *fp, InData **transition, int *lmins){
   *transition = tmp;
   *lmins = l;
   E = tmp_subI;
-  fprintf(stderr, "read %d items, dimension = %d, lmins = %d \n", a, dimensione, *lmins);
+  fprintf(stderr, "read %d items, dimension = %d, lmins = %d \n", i, dimensione, *lmins);
   
   if(line_tr != NULL) free(line_tr); 
   
