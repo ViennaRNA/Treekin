@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-09-30 12:28:50 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.16 2003/09/30 10:32:54 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-30 12:41:35 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.17 2003/09/30 10:47:20 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -280,7 +280,7 @@ void MxIterate ( double *p0, double *p8, double *S) {
     /* now check if we have converged yet */
     for(i=0; i<dim; i++){
       pdiff[i] = p8[i] - pt[i];
-      if (fabs(pdiff[i]) >= 0.0001)
+      if (fabs(pdiff[i]) >= 0.001)
 	pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
     }
     if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
@@ -380,7 +380,7 @@ void MxIterate_FULL (double *p0, double *p8, double *S, int lmins) {
     for(i = 1; i <= lmins; i++){
       pdiffFULL[i] = p8FULL[i] - ptFULL[i];
       /*  printf("%7.4f ", pdiffFULL[i]); */
-      if (fabs(pdiffFULL[i]) >= 0.0001)
+      if (fabs(pdiffFULL[i]) >= 0.001)
 	pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
     }
     /*   printf("  pdiff_counter: %i", pdiff_counter); */
