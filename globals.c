@@ -1,6 +1,6 @@
 /* globals.c */
-/* Last changed Time-stamp: <2003-08-28 11:58:05 mtw> */
-/* static char rcsid[] = "$Id: globals.c,v 1.4 2003/09/04 11:04:14 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-10 11:20:57 mtw> */
+/* static char rcsid[] = "$Id: globals.c,v 1.5 2003/09/10 13:54:06 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -117,10 +117,10 @@ static int decode_switches (int argc, char **argv) {
 	    mtmp = 'Z';
 	    if (sscanf(optarg, "%c", &mtmp) == 0)
 	      usage(EXIT_FAILURE);
-	    else if ( mtmp == 'A' || mtmp == 'B' || mtmp == 'C' || mtmp == 'F' || mtmp == 'I' )
+	    else if ( mtmp == 'A' ||  mtmp == 'F' || mtmp == 'I' )
 	      opt.method = mtmp;
 	    else {
-	      fprintf(stderr, "Value of --method must be A|B|C|F, and not  >%d<\n", mtmp);
+	      fprintf(stderr, "Value of --method must be A|F|I, and not  >%d<\n", mtmp);
 	      usage (EXIT_FAILURE);
 	    }
 	  }
@@ -213,7 +213,7 @@ static void ini_globs(void) {
   opt.t8              = 1000000000.;
    opt.want_degenerate =         0; 
   opt.tinc            =          1.02;
-  opt.method          =          'B';
+  opt.method          =          'A';
   opt.dumpU           =          0;
   opt.matexp          =          0;
 }
@@ -231,7 +231,10 @@ static void usage(int status) {
 	 "--t0 <float>            Start Time\n"
 	 "--t8 <float>            Stop Time\n"
 	 "--Temp <float>          Temperature in Celsius\n"
-	 "--method <char>         Select method to build transition matrix\n"
+	 "--method <char>         Select method to build transition matrix: (default A)\n"
+	 "                        A ==> Arrhenius-like kinetics\n"
+	 "                        F ==> Full process kinetics (whole subopt)\n"
+	 "                        I ==> use rates from barriers\n"
 	 "--nlmins <int>          Read <int> local minima (default till EOF)\n"
 	 "--p0 (<int>=<float>)    Populate local minimum <int> with <float>\n"
 	 "                        (NOTE: sum of <float> must equal 1)\n"
