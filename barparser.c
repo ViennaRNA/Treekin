@@ -11,22 +11,19 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.8 2003/09/16 16:02:05 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.9 2003/09/25 13:51:01 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
 /*==*/
-int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, int **assoc_gradbas){
+int ParseInfile(FILE *fp, InData **transition, int *lmins){
 
-  char *line = NULL, *line_tr = NULL, *f_trace = "tracelmins.out", *grad_bas = "assoc_gradbas.out";
-  int dimensione, a, b, c, x, newsize = 5000, mem_inc = 10000, uhu;
-  int *tmp_trace;     /* tmp array 4 tracelmins */
-  int *tmp_gradbas;   /* tmp array 4 associated gradient basins */
+  char *line = NULL, *line_tr = NULL, *grad_bas = "assoc_gradbas.out";
+  int dimensione, a, c, l,x, newsize = 5000, mem_inc = 10000, uhu;
   InData *tmp;        /* tmp array 4 rates between two states */ 
-  double *Etmp;       /* tmp array 4 Energies */ 
+  SubInfo *tmp_subI;  /* tmp array 4 info on energies of all subopts */
   extern int in_nr;
-  FILE *lmins;        /* file pointer 4 tracelmins.out */
-  FILE *gradient_basins;  /* file pointer 4 associated gradient basins */
+  FILE *gb_FP;        /* file pointer 4 associated gradient basins */
   
   /* read first line */
   line = getline(fp);
@@ -39,19 +36,19 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
     fprintf(stderr, "tmp could not be allocated\n");
     exit(888);
   }
-  Etmp = (double *) calloc (dimensione, sizeof(double));
-  if(Etmp == NULL){
-    fprintf(stderr, "Etmp could not be allocated\n");
+  tmp_subI = (SubInfo *) calloc (dimensione, sizeof(SubInfo));
+  if(tmp_subI == NULL){
+    fprintf(stderr, "struct tmp_subI could not be allocated in barparser.c\n");
     exit(888);
   }
   
-  /* read energies of the different states into array Etmp */ 
+  /* read energies of the different states into array tmp_subI from stdin (data.out) */ 
   for(x = 0; x < dimensione; x++){
     int o, p;
     line = getline(stdin);
-    sscanf(line, "%d %d %lf", &o, &p, &Etmp[x]);
+    sscanf(line, "%d %d %lf", &o, &p, &tmp_subI[x].energy);
     if(o != p) {
-      fprintf(stderr, "error while reading energies! %d != %d\n", o, p);
+      fprintf(stderr, "error while reading energies from data.out: %d != %d\n", o, p);
       exit(555);
     }
     if(line != NULL) free(line);
@@ -83,68 +80,31 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
   in_nr = a-1;
   if(line) free(line);
   
-  /* ================================= */
-  /* >>> begin read tracelmins.out <<< */
-  tmp_trace = (int*) calloc (LMINBASE, sizeof(int));
-  if(tmp_trace == NULL){
-    fprintf(stderr, "tmp_trace could not be allocated\n");
-    exit(888);
-  }
-
-  b = 1;
-  lmins = fopen(f_trace, "r+");    /* file pointer for tracelmins.out */
-  line_tr = getline(lmins);        /* read first line containing info stuff */
-  if(line_tr != NULL)
-    free(line_tr);
-  while((line_tr = getline(lmins)) != NULL){    /* read which lmin is which # in subopt */ 
-    sscanf(line_tr, "%*d %6d", &tmp_trace[b]);
-    b++;
-    if(b >= LMINBASE){
-      fprintf(stderr, " read more than 100 lmins..too many!\n");
-      exit(777);
-    }
-    free(line_tr);
-  }
-  tmp_trace[0] = b-1;
-  tmp_trace = (int*) realloc (tmp_trace, b*sizeof(int));
-  if(lmins != NULL) fclose(lmins);
-  /* tmp_trace[0] = # of lmins which are now associated with a # from subopt */ 
-  /* >>> end  read tracelmins.out <<< */
-  /* ================================ */
-  
   /* ==================================== */
   /* >>> begin read assoc_gradbas.out <<< */
-  tmp_gradbas = (int *) calloc (dimensione, sizeof(int));
-  if(tmp_gradbas == NULL){
-    fprintf(stderr, "tmp_gradbas could not be allocated\n");
-    exit(888);
-  }
-  
-  c = 0;
-  gradient_basins = fopen(grad_bas, "r+");  /* file pointer for assoc_gradbas.out */
-  line_tr = getline(gradient_basins);       /* read first line containing info stuff */
+  c = 0; l = 0;
+  gb_FP = fopen(grad_bas, "r+");  /* file pointer for assoc_gradbas.out */
+  line_tr = getline(gb_FP);       /* read first line containing info stuff */
   if(line_tr != NULL) free(line_tr);
-  while((line_tr = getline(gradient_basins)) != NULL){ /* read the gradient basin of each entry from subopt */  
-    sscanf(line_tr, "%*d %5d", &tmp_gradbas[c]);
+  while((line_tr = getline(gb_FP)) != NULL){ /* read the gradient basin of each entry from subopt */  
+    sscanf(line_tr, "%*d %5d", &tmp_subI[c].ag);
+    if (tmp_subI[c].ag > l) l = tmp_subI[c].ag;
     c++;
     if(line_tr != NULL) free(line_tr);
   }
   if(c != dimensione){
-    fprintf(stderr, " read more than 100 lmins..too many!\n");
+    fprintf(stderr, " read more lines from gradient basin file than our dim is!\n");
     exit(777);
   }
-  if(gradient_basins) fclose(gradient_basins);
+  if(gb_FP) fclose(gb_FP);
   /* >>> end read assoc_gradbas.out <<< */
   /* ================================== */ 
 
-  fprintf(stderr, "read %d items, dimension = %d\n", a, dimensione);
-
   *transition = tmp;
-  *En = Etmp;
-  *lmin_nr_so = tmp_trace;
-  *assoc_gradbas = tmp_gradbas;
+  *lmins = l;
+  E = tmp_subI;
+  fprintf(stderr, "read %d items, dimension = %d, lmins = %d \n", a, dimensione, *lmins);
   
-
   if(line_tr != NULL) free(line_tr); 
   
   return dimensione;

@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.11 2003/09/23 16:29:55 mtw Exp $
+# $Id: makefile,v 1.12 2003/09/25 13:51:01 mtw Exp $
 CC      = gcc
 SCRDIR  = .
 INCDIR  = -I$(SCRDIR) -I/scratch/mtw/meschach-1.2b
@@ -9,10 +9,10 @@ LIBS    = -lm /scratch/mtw/meschach-1.2b/meschach.a
 EXE     = treekin
 OBJS    = \
 	 main.o\
+	 barparser.o\
 	 calc.o\
 	 mxccm.o\
 	 globals.o\
-	 barparser.o\
 	 exp_matrix.o	
 
 %.o : $(SCRDIR)%.c

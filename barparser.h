@@ -4,7 +4,7 @@
 #define _BARPARSER_H_
 #define SADDLE_LIST 400
 
-/*  static char rcsid[] = "$Id: barparser.h,v 1.4 2003/09/15 09:16:04 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.h,v 1.5 2003/09/25 13:51:01 mtw Exp $"; */
 
 /* structures */ 
 typedef struct _TypeBarData { /* structure for bar-file */ 
@@ -35,9 +35,16 @@ typedef struct _TypeDegSaddle{ /* structure for processing degeneracy */
   int list[100];     /* string containing lmins which are connected by the saddle */
 } TypeDegSaddle;
 
+typedef struct _SubInfo{ /* struct containing info on all subopt structures */
+  double energy;         /* just needed in FULL process */
+  int    ag;             /* associated gradient basin */
+} SubInfo;
+
+SubInfo *E; 
+ 
 /* functions */ 
 int  ParseBarfile (FILE *fp, TypeBarData **lmin);
-int  ParseInfile(FILE *fp, InData **InD, double **En, int **lmin_nr_so, int **assoc_gradbas);
+int  ParseInfile(FILE *fp, InData **InD, int *lmins);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
 void ParseRatesFile(double **Raten, int dim);
 #endif
