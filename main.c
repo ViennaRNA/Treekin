@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-07-14 11:07:01 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.2 2003/07/14 09:48:00 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-07-16 19:14:07 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.3 2003/07/16 17:14:56 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +22,7 @@ int main (int argc, char **argv) {
 
   TypeBarData *Data;
   InData *InD;
-  double *U, *S, *p0, *p8;
+  double *U, *S, *p0, *p8, *R;
   int  dim;
   
   /* arrays  */ 
@@ -55,6 +55,16 @@ int main (int argc, char **argv) {
     free(Energies);
     free(lmin_nr_so);
     free(assoc_gradbas);
+  }
+  else if(opt.method == 'F'){
+    if(opt.absrb != 0) {
+      fprintf(stderr, "absorbing states not yet implemented for input matrix case\n");
+      exit(999);
+    }
+    dim = ParseBarfile (opt.INFILE, &Data);
+    ParseRatesFile(&R, dim);
+    MxInit (dim);
+
   }
   else {                         /* tree process */
     dim = ParseBarfile (opt.INFILE, &Data);

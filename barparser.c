@@ -1,5 +1,5 @@
 /* barparser.c */
-/* Last changed Time-stamp: <2003-07-16 12:24:29 mtw> */
+/* Last changed Time-stamp: <2003-07-16 19:14:08 mtw> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +8,7 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.3 2003/07/16 12:26:33 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.4 2003/07/16 17:14:56 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
@@ -145,6 +145,31 @@ int ParseInfile(FILE *fp, InData **transition, double **En, int **lmin_nr_so, in
   return dimensione;
 }
 
+/*==*/
+void ParseRatesFile(double *Raten, int dim){
+  int i = 0, j = 0, linecount = 0;
+  char *raten_line = NULL, *rate_file = "rates.out";
+  double *tmp_rates;
+  FILE *RATENFILE;
+
+  tmp_rates = (double *)calloc(1,dim*dim*sizeof(double));
+  if (tmp_rates == NULL){
+    fprintf(stderr, "could not allocate tmp_rates in ParseRatesFile\n");
+    exit(888);
+  }
+
+  RATENFILE = fopen(rate_file, "r+");
+  while((raten_line = getline(RATENFILE)) != NULL){  /* read rate matrix from barriers */
+    linecount++;
+    for(j = 0; j < dim; j
+
+
+  }
+  
+
+  fclose(RATENFILE);
+  return;
+}
 /*==*/
 int ParseBarfile( FILE *fp, TypeBarData **lmin){
 
