@@ -1,6 +1,6 @@
 /* calc.c */
 /* Last changed Time-stamp: <2003-09-24 23:07:14 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.14 2003/09/25 13:51:01 mtw Exp $"; */
+/* static char rcsid[] = "$Id: calc.c,v 1.15 2003/09/26 08:59:39 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -481,7 +481,6 @@ static double *MxMethodeA (TypeBarData *Data) {
 extern double *MxMethodeFULL (InData *InData){
 
   int a, i, j;
-  extern int in_nr;
   double *U, biggest;
   
   U = (double *) MxNew (dim*dim*sizeof(double));

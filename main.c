@@ -1,6 +1,6 @@
 /* main.c */
 /* Last changed Time-stamp: <2003-09-22 18:52:44 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.9 2003/09/25 13:51:01 mtw Exp $"; */
+/* static char rcsid[] = "$Id: main.c,v 1.10 2003/09/26 08:59:39 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,9 +15,6 @@
 #include "dmalloc.h"
 #endif
 
-int in_nr, n;
-
-/* ================ main begins here ================ */
 int main (int argc, char **argv) {
 
   TypeBarData *Data;

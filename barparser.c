@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <barparser.h>
+#include "barparser.h"
 #include "globals.h"
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -11,7 +11,7 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.9 2003/09/25 13:51:01 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.10 2003/09/26 08:59:39 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
@@ -22,7 +22,6 @@ int ParseInfile(FILE *fp, InData **transition, int *lmins){
   int dimensione, a, c, l,x, newsize = 5000, mem_inc = 10000, uhu;
   InData *tmp;        /* tmp array 4 rates between two states */ 
   SubInfo *tmp_subI;  /* tmp array 4 info on energies of all subopts */
-  extern int in_nr;
   FILE *gb_FP;        /* file pointer 4 associated gradient basins */
   
   /* read first line */
@@ -86,7 +85,8 @@ int ParseInfile(FILE *fp, InData **transition, int *lmins){
   gb_FP = fopen(grad_bas, "r+");  /* file pointer for assoc_gradbas.out */
   line_tr = getline(gb_FP);       /* read first line containing info stuff */
   if(line_tr != NULL) free(line_tr);
-  while((line_tr = getline(gb_FP)) != NULL){ /* read the gradient basin of each entry from subopt */  
+  /* read the gradient basin of each entry from subopt */
+  while((line_tr = getline(gb_FP)) != NULL){
     sscanf(line_tr, "%*d %5d", &tmp_subI[c].ag);
     if (tmp_subI[c].ag > l) l = tmp_subI[c].ag;
     c++;
