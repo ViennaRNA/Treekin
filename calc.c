@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-10-23 13:03:32 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.22 2003/10/23 11:04:22 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-10-23 13:07:44 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.23 2003/10/23 11:09:25 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -529,7 +529,7 @@ static void MxPrint(double *mx, char *name, char T) {
     fprintf(stderr,"%s:\n", name);
     for (k = 0; k < dim; k++) {
       for (l=0; l< dim; l++) {
-	fprintf(stderr,"%15.10lf ", mx[dim*k+l]);
+	fprintf(stderr,"%15.10g ", mx[dim*k+l]);
       }
       fprintf(stderr,"\n");
     }
@@ -682,7 +682,7 @@ static void MxPrintMeschachMat(MAT *matrix, char *name) {
     fprintf(stderr, "%s (meschach):\n", name);
     for (i = 0; i < dim; i++){
       for (j = 0; j < dim; j++)
-	fprintf(stderr,"%15.10lf ", matrix->me[i][j]);
+	fprintf(stderr,"%15.10g ", matrix->me[i][j]);
       fprintf(stderr, "\n");
     }
      fprintf(stderr,"---\n");
@@ -693,7 +693,7 @@ static void MxPrintMeschachMat(MAT *matrix, char *name) {
 static void MxPrintMeschachVec(VEC* vector, char *name){
   int i;
   fprintf(stderr, "%s (meschach):\n", name);
-  for(i = 0; i < dim; i++) fprintf(stderr,"%15.10lf ", vector->ve[i]);
+  for(i = 0; i < dim; i++) fprintf(stderr,"%15.10g ", vector->ve[i]);
   fprintf(stderr,"\n---\n");
 }
 
