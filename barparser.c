@@ -1,5 +1,5 @@
 /* barparser.c */
-/* Last changed Time-stamp: <2003-09-16 18:00:49 mtw> */
+/* Last changed Time-stamp: <2003-10-03 13:08:01 mtw> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +11,7 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.11 2003/09/26 14:41:19 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.12 2003/10/03 13:18:23 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
@@ -165,7 +165,7 @@ int ParseBarfile( FILE *fp, TypeBarData **lmin){
   free(line);
   for (count = 0, line = getline(fp); line != NULL; count++, line = getline(fp)) {
     if (count >= size) {
-      tmp = (TypeBarData *) realloc (tmp, size + LMINBASE);
+      tmp = (TypeBarData *) realloc (tmp, (size+LMINBASE)*sizeof(TypeBarData));
       size += LMINBASE;
     }
     p = strtok(line, sep);
