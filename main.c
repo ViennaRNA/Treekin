@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-09-03 13:17:47 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.6 2003/09/04 11:04:14 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-10 14:42:03 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.7 2003/09/10 13:54:50 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,8 +58,7 @@ int main (int argc, char **argv) {
     dim = ParseBarfile (opt.INFILE, &Data);
     if(opt.method == 'I')  ParseRatesFile(&R, dim);
     MxInit (dim);
-    if(opt.method == 'I')  U = MxMethodeINPUT(Data, R);
-    else  U = MxBar2Matrix (Data);
+    U = MxBar2Matrix (Data, R);
     p0 = MxStartVec ();
     p8 = MxEqDistr (Data);
     if(opt.matexp != 0){
