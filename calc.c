@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-10-23 13:07:44 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.23 2003/10/23 11:09:25 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-11-04 11:35:14 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.24 2003/11/18 17:27:59 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,14 +19,14 @@
 
 /* private function(s) */
 static void   *MxNew (size_t size);
-static double *MxMethodeA (TypeBarData *Data);
+static double *MxMethodeA (BarData *Data);
 static void    MxPrint(double *mx, char *name, char T);
 static void    MxPrintMeschachMat(MAT *matrix, char *name);
 static void    MxPrintMeschachVec(VEC* vector, char *name);
 static void    MxMeschach2ccmath(MAT *meschach_matrix, double **origM);
 static void    MxMeschach2ccmathVec(VEC *meschach_vector, double **origV);
 static MAT    *Mxccmath2Meschach(double* ccmath_matrix);
-static double  max_saddle(int i, int j, TypeBarData *Data);
+static double  max_saddle(int i, int j, BarData *Data);
 static void    print_settings(void);
 static char   *time_stamp(void);
 static void    MxDoDegeneracyStuff(void);
@@ -62,7 +62,7 @@ void MxInit (int d) {
 }
 
 /*==*/
-double *MxBar2Matrix ( TypeBarData *Data, double *R) {
+double *MxBar2Matrix ( BarData *Data, double *R) {
 
   double *U;
 
@@ -102,7 +102,7 @@ double *MxStartVec (void) {
 
 /*==*/
 /* calculate equilibrium distribution */
-double *MxEqDistr ( TypeBarData *Data ) {
+double *MxEqDistr ( BarData *Data ) {
   int i;
   double *p8, Z = 0.;
   
@@ -337,7 +337,7 @@ void MxIterate (double *p0, double *p8, double *S) {
 }
 
 /*==*/
-static double *MxMethodeA (TypeBarData *Data) {
+static double *MxMethodeA (BarData *Data) {
   /***************************************/
   /*           |       E_s           |   */
   /*           \   ____________      /   */
@@ -441,7 +441,7 @@ extern double *MxMethodeFULL (InData *InData){
 }
 
 /*==*/
-double *MxMethodeINPUT (TypeBarData *Data, double *Input){
+double *MxMethodeINPUT (BarData *Data, double *Input){
   
   int i, j, real_abs = 0;
   double *U, Zabs, abs_rate;
@@ -494,7 +494,7 @@ double *MxMethodeINPUT (TypeBarData *Data, double *Input){
 }
 
 /*==*/
-static double max_saddle(int i, int j,TypeBarData *Data){
+static double max_saddle(int i, int j, BarData *Data){
 
   int tmp;
 

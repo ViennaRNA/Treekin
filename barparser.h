@@ -1,13 +1,13 @@
 /* barparser.h */
-/* Last changed Time-stamp: <2003-10-09 11:16:58 mtw> */
+/* Last changed Time-stamp: <2003-11-04 11:36:23 mtw> */
 #ifndef _BARPARSER_H_
 #define _BARPARSER_H_
 #define SADDLE_LIST 400
 
-/*  static char rcsid[] = "$Id: barparser.h,v 1.6 2003/10/09 17:01:35 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.h,v 1.7 2003/11/18 17:27:59 mtw Exp $"; */
 
 /* structures */ 
-typedef struct _TypeBarData { /* structure for bar-file */ 
+typedef struct _BarData { /* structure for bar-file */ 
   float energy;
   float ediff;
   int father;
@@ -21,7 +21,7 @@ typedef struct _TypeBarData { /* structure for bar-file */
   float Z_eff;          /* Z of lmin (alone) */
   float Gr_bsize;       /* gradient basin size */
   float FGr;            /* F of gradient basin */ 
-} TypeBarData;
+} BarData;
 
 typedef struct _inData { /* structure for data.out file for full process */ 
   int i;
@@ -43,7 +43,7 @@ typedef struct _SubInfo{ /* struct containing info on all subopt structures */
 SubInfo *E; 
  
 /* functions */ 
-int  ParseBarfile (FILE *fp, TypeBarData **lmin);
+int  ParseBarfile (FILE *fp, BarData **lmin);
 int  ParseInfile(FILE *fp, InData **InD);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
 void ParseRatesFile(double **Raten, int dim);

@@ -1,17 +1,19 @@
 /* barparser.c */
-/* Last changed Time-stamp: <2003-10-09 11:19:04 mtw> */
+/* Last changed Time-stamp: <2003-11-18 17:24:11 mtw> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "barparser.h"
 #include "globals.h"
+#include "limits.h"
+#include "ctype.h"
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.13 2003/10/09 17:01:35 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.14 2003/11/18 17:27:59 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
@@ -146,14 +148,14 @@ void ParseRatesFile(double **Raten, int dim){
 }
 
 /*==*/
-int ParseBarfile( FILE *fp, TypeBarData **lmin){
+int ParseBarfile( FILE *fp, BarData **lmin){
 
   char *line = NULL, *tmpseq = NULL, *p, sep[] = " ";
   int count = 0, v = 0;
   int size = LMINBASE;
-  TypeBarData *tmp;
+  BarData *tmp;
 
-  tmp = (TypeBarData *) calloc (LMINBASE, sizeof(TypeBarData));
+  tmp = (BarData *) calloc (LMINBASE, sizeof(BarData));
   tmpseq = (char *) calloc (500, sizeof(char));
   *lmin = NULL;
   line = getline(fp); /* get sequence from first line */
@@ -165,7 +167,7 @@ int ParseBarfile( FILE *fp, TypeBarData **lmin){
   free(line);
   for (count = 0, line = getline(fp); line != NULL; count++, line = getline(fp)) {
     if (count >= size) {
-      tmp = (TypeBarData *) realloc (tmp, (size+LMINBASE)*sizeof(TypeBarData));
+      tmp = (BarData *) realloc (tmp, (size+LMINBASE)*sizeof(BarData));
       size += LMINBASE;
     }
     p = strtok(line, sep);
@@ -174,8 +176,19 @@ int ParseBarfile( FILE *fp, TypeBarData **lmin){
     while(p != NULL){
       p = strtok(NULL, sep);
       if (p == NULL) break; 
-      if (*p == '.' || *p == '(' ) continue; /* skip secondary structures */
-      else if (*p == '~') continue;
+      if (isgraph(*p) && *p != '-' && !isdigit(*p)){ /* secondary structures */
+	switch ((int)*p){
+	case 40:      /* '(' */
+	case 46:      /* '.' */
+	case 70:      /* 'F' */
+	case 126:     /* '~' */
+	  continue;
+	default:
+	  fprintf(stderr, "%c does not seem to be a RNA secondary structure nor a SAW\n", *p);
+	  continue;
+	}
+      }
+   
       v++;
       switch (v){
       case 2:
@@ -211,7 +224,7 @@ int ParseBarfile( FILE *fp, TypeBarData **lmin){
    
   if (line != NULL) free(line);
 
-  tmp = (TypeBarData *) realloc (tmp, count*sizeof(TypeBarData));
+  tmp = (BarData *) realloc (tmp, count*sizeof(BarData));
   *lmin = tmp;
   return count;
 }

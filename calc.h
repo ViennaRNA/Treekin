@@ -1,17 +1,17 @@
 /* calc.h */
-/* Last changed Time-stamp: <2003-10-09 12:24:17 mtw> */
-/*  static char rcsid[] = "$Id: calc.h,v 1.7 2003/10/09 17:01:35 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-11-04 11:35:53 mtw> */
+/*  static char rcsid[] = "$Id: calc.h,v 1.8 2003/11/18 17:27:59 mtw Exp $"; */
 
 #ifndef _CALC_H_
 #define _CALC_H_
 #include "barparser.h"
 
 void    MxInit (int d);
-double *MxBar2Matrix (TypeBarData *Data, double *);
-double *MxEqDistr (TypeBarData *Data);
+double *MxBar2Matrix (BarData *Data, double *);
+double *MxEqDistr (BarData *Data);
 double *MxEqDistrFULL (SubInfo *E);
 double *MxMethodeFULL(InData *InD);
-double *MxMethodeINPUT (TypeBarData *Data, double *);
+double *MxMethodeINPUT (BarData *Data, double *);
 double *MxSymmetr (double *U, double *PI);
 double *MxStartVec (void) ;
 void    MxEVnonsymMx(double *U, double **_S);

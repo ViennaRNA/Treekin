@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-10-09 18:27:35 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.13 2003/10/09 17:01:35 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-11-04 11:36:48 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.14 2003/11/18 17:27:59 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +18,7 @@
 /* ============= main begins here ============== */
 int main (int argc, char **argv) {
 
-  TypeBarData *Data;
+  BarData *Data;
   InData *InD;
   double *U, *S, *p0, *p8, *R = NULL;
   int  dim;
