@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-09-03 16:06:15 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.8 2003/09/04 11:04:14 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-10 15:02:38 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.9 2003/09/10 13:52:24 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,8 +21,6 @@
 /* private function(s) */
 static void   *MxNew (size_t size);
 static double *MxMethodeA (TypeBarData *Data);
-static double *MxMethodeB (TypeBarData *Data);
-static double *MxMethodeC (TypeBarData *Data);
 static void    MxPrint(double *mx, char *name, char T);
 static void    MxPrintMeschachMat(MAT *matrix, char *name);
 static void    MxPrintMeschachVec(VEC* vector, char *name);
@@ -30,10 +28,6 @@ static void    MxMeschach2ccmath(MAT *meschach_matrix, double **origM);
 static void    MxMeschach2ccmathVec(VEC *meschach_vector, double **origV);
 static MAT    *Mxccmath2Meschach(double* ccmath_matrix);
 static double  max_saddle(int i, int j, TypeBarData *Data);
-static int   **build_subtree_list(TypeBarData *Data);
-static int     yet_seen(int *start, int number);
-static void    calc_effective_bsize(TypeBarData *Data, int **P);
-static void    recalculate_free_energy(TypeBarData *Data, int **lmin, double kT);
 static void    print_settings(void);
 static char   *time_stamp(void);
 static void    MxDoDegeneracyStuff(void);
@@ -57,14 +51,14 @@ void MxInit (int d) {
   _kT = 0.00198717*(273.15 + opt.T);
   if (d > 0 ) dim = d;
   else { fprintf(stderr, "dim <= 0\n"); exit(1); }
-
+  
   EV     = (double *) MxNew (dim*sizeof(double));
   _sqrPI = (double *) MxNew (dim*dim*sizeof(double));
   sqrPI_ = (double *) MxNew (dim*dim*sizeof(double));
 }
 
 /*==*/
-double *MxBar2Matrix ( TypeBarData *Data) {
+double *MxBar2Matrix ( TypeBarData *Data, double *R) {
 
   double *U;
 
@@ -74,11 +68,8 @@ double *MxBar2Matrix ( TypeBarData *Data) {
   case 'A':
     U = MxMethodeA(Data);
     break;
-  case 'B':
-    U = MxMethodeB(Data);
-    break;
-  case 'C':
-    U = MxMethodeC(Data);
+  case 'I':
+    U = MxMethodeINPUT(Data, R);
     break;
   default:
     fprintf (stderr,
@@ -408,54 +399,6 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
 
 /*==*/
 static double *MxMethodeA (TypeBarData *Data) {
-
-  int i, j;
-  double *U;
-
-  U = (double *) MxNew (dim*dim*sizeof(double));
-  
-  for (i = 0; i < dim; i++) {
-    if (Data[i].father > 0) {  /* merged local minima */
-      j = Data[i].father - 1;
-      if(i != j) {
-	/* rate i -> j */
-	U[dim*j+i] = exp(-Data[i].ediff/_kT);                         
-        /* rate j -> i */
-        U[dim*i+j] = exp(-(Data[i].ediff+Data[i].energy-Data[j].energy)/_kT);
-        continue;
-      }
-    }
-    if(Data[i].father == 0) {  /* unmerged local minima */
-      j = 0;
-      if(i == j) continue;
-      /* rate i -> j */
-      U[dim*j+i] = exp(-Data[i].ediff/_kT);
-      /* rate j -> i */
-      U[dim*i+j] = exp(-(Data[i].ediff+Data[i].energy-Data[j].energy)/_kT);
-    } 
-  }
-  
-  /* diagonal elements */
-  for (j = 0; j < dim; j++) {
-    double tmp = 0.00;
-    /* calculate column sum */
-    for(i = 0; i < dim; i++){ 
-      tmp += U[dim*i+j];
-    }
-    /* make U a stochastic matrix */
-    U[dim*j+j] = -tmp+1;
-  }
-  
-  if (opt.want_verbose) {
-    sprintf (Aname, "%s", "U with Methode A");
-    MxPrint (U, Aname, 'm');
-  }
-  
-  return (U);
-}
-
-/*==*/
-static double *MxMethodeB (TypeBarData *Data) {
   /***************************************/
   /*           |       E_s           |   */
   /*           \   ____________      /   */
@@ -526,57 +469,6 @@ static double *MxMethodeB (TypeBarData *Data) {
   return (U);
 }
 
-/*==*/
-static double *MxMethodeC (TypeBarData *Data){
-
- int i,j;
- int **P; 
- double m_saddle; 
- double *U;
-
- U = (double *) MxNew (dim*dim*sizeof(double));
- 
- P =  build_subtree_list(Data);   /* info: **P shows the number of subtrees :-) */
-
- calc_effective_bsize(Data, P);
- recalculate_free_energy(Data, P, _kT);
-
- for(i = 0; i < (dim*dim); i++) U[i] = -1;
- 
- for( i = 0; i < dim; i++)
-   for( j = i+1; j < dim; j++){
-      m_saddle = max_saddle(i, j, Data);
-      /* rate j -> i */
-      U[dim*i+j] = (Data[i].eff_bsize*Data[j].eff_bsize)*exp(-(m_saddle-Data[j].F_eff)/_kT);
-      /* rate i -> j */
-      U[dim*j+i] = U[dim*i+j] * exp((Data[i].energy-Data[j].energy)/_kT); /* back-rate from detailed balance */ 
-     /*  U[dim*j+i] = exp(-(m_saddle-Data[i].energy)/_kT); */ /* exactly the same */ 
-   }
- 
- for(i = 0; i < dim; i++)
-   for (j = 0; j < dim; j++)
-     if( i == j) U[dim*i+j] = 0;  /* set diagonal elements to 0 */
- 
- /* diagonal elements */
- for (j = 0; j < dim; j++) {
-   double tmp = 0.00;
-   /* calculate column sum */
-   for(i = 0; i < dim; i++){ 
-     tmp += U[dim*i+j];
-   }
-   /* make U a stochastic matrix */
-   U[dim*j+j] = -tmp+1;
- }
- 
- if (opt.want_verbose) {
-   sprintf (Aname, "%s", "U with Methode C");
-   MxPrint (U, Aname, 'm');
- }
-
- free(P);
- return (U);
-}
-
 /*==*/ 
 extern double *MxMethodeFULL (InData *InData){
 
@@ -616,34 +508,59 @@ extern double *MxMethodeFULL (InData *InData){
 /*==*/
 double *MxMethodeINPUT (TypeBarData *Data, double *Input){
   
-  int i,j;
+  int i, j, real_abs = 0;
+  double *U, Zabs, mfe, abs_rate;
+
+  U = (double *) MxNew(dim*dim*sizeof(double));
   
-  if (opt.want_verbose) MxPrint(Input, "Input Matrix", 'm'); 
-  
-  /*===========================*/
-  /*==== absorbing  states : make column opt.absrb absorbing ==*/
-  /*===========================*/
-  if(opt.absrb > 0) 
-    for(i = 0; i < dim; i++) 
-      Input[dim*i+(opt.absrb-1)] = 0.;
-  /*==========================*/
-  /*== end absorbing states ==*/
-  /*==========================*/
+  MxPrint(Input, "Input Matrix", 'm');
+
+  if (opt.want_verbose) MxPrint(Input, "Input Matrix", 'm');
+
+  if (opt.absrb > 0) {  /*==== absorbing  states ====*/
+    dim++;
+    fprintf(stderr, "dim inceased to %i\n", dim);
+    U = (double *) realloc(U,dim*dim*sizeof(double));
+    real_abs = opt.absrb; /* the original absorbing lmin */
+    real_abs--;
+    opt.absrb = dim; /* the 'new' abs state = last row/column of rate matrix */
+    fprintf(stderr, "new absorbing lmin is: %i\n", opt.absrb);
+    mfe = Data[0].energy;
+    Zabs = exp((-Data[real_abs].FGr)/_kT);
+    abs_rate = exp((-Data[real_abs].energy)/_kT)/Zabs;
+
+    for(i = 0; i < (dim-1); i++){ /* all except the last row */ 
+      for(j = 0; j < (dim-1); j++)
+	U[dim*i+j] = Input[(dim-1)*i+j];
+      U[(dim-1)*j+(dim-1)] = 0.;
+    }
+    for(j = 0; j < dim; j++) /* last row */
+      U[dim*(dim-1)+j] = 0.;
+    U[dim*(dim-1)+real_abs] = abs_rate;
+    MxPrint(U, "aufgeblasene Matrix", 'm');
+  }      /*== end absorbing states ==*/
+  else{  /*== non-absorbing states ==*/
+    for(i = 0; i < dim; i++)
+      for(j = 0; j < dim; j++)
+	U[dim*i+j] = Input[dim*i+j];
+    MxPrint(U, "input Matrix before Verschoenerung", 'm');
+  }      /*== end non-absorbing states ==*/
 
   /* diagonal elements */
-  for (i = 0; i < dim; i++) Input[dim*i+i] = 0;
+  for (i = 0; i < dim; i++) U[dim*i+i] = 0;
   for (j = 0; j < dim; j++) {
     double tmp = 0.00;
     /* calculate column sum */
     for(i = 0; i < dim; i++)
-      tmp += Input[dim*i+j];
-    Input[dim*j+j] = -tmp+1.;   /* make Q a stochastic matrix */
+      tmp += U[dim*i+j];
+    U[dim*j+j] = -tmp+1.;   /* make Q a stochastic matrix */
   }
   
-  if (opt.want_verbose) MxPrint (Input,"U with Methode I" , 'm');
-  if (opt.dumpU) MxBinWrite(Input);
-  
-  return Input;
+  MxPrint (U,"U with Methode I" , 'm');
+  if (opt.dumpU) MxBinWrite(U);
+
+  free(Input);
+  return U;
 }
 
 /*==*/
@@ -696,107 +613,6 @@ static void MxPrint(double *mx, char *name, char T) {
   default:
     fprintf(stderr,"ERROR MxPrint(): no handler 4 type %c\n", T);
   }
-}
-
-/*==*/
-static int **build_subtree_list(TypeBarData *Data){
-  
-  int i,j, test = -1, a,b = 0;
-  int **deepest;
-  int *seen;
-  
-  deepest = (int **)calloc((dim+1),sizeof(int *));
-  seen = (int *)calloc(dim, sizeof(int));
-  
-  for(i = 0; i <= dim; i++){        /* dim+1 rows */
-    *(deepest+i) = (int *)calloc((dim), sizeof(int));
-    for(j = 0; j < dim; j++)        /* dim colums */ 
-      *(*(deepest+i)+j) = test;
-  }
-
-  **deepest = 0;
-
-  i = j = 0;
-  for(i = 1; i <= dim; i++){   /* the one to merge with */ 
-    j = 0;                     /* # of lmin in this subtree */
-    for(a = 1; a < dim; a++){
-      if(yet_seen(seen, Data[a].number)) continue;
-      if(Data[a].father == i){
-	*(*(deepest+i)+j) = Data[a].number;
-	seen[b++] = Data[a].number;
-	j++;
-      }
-    }
-    if( **(deepest+i) > 0 )(**deepest)++;
-  }
-  
-  free(seen);
-  return deepest;  
-}
-
-/*==*/
-/* checks if number is already in the array and returns 1 if yes, 0 if not */
-static int yet_seen(int *start, int number){
-  
-  int i;
-  
-  for(i = 0; i < dim; i++)
-    if(start[i] == number) return 1;
-
-  return 0;
-}
-
-/*==*/
-/* calculates the effective bsize of each lmin without its children */ 
-static void calc_effective_bsize(TypeBarData *Data, int **lmin){
-
-  int i,j, test = 0;
-
-  for(i = 0; i < dim; i++)
-    Data[i].eff_bsize = Data[i].bsize;
-    
-  for(i = 1; i <= dim; i++){ /* look over all lmins */
-    j = 0;
-    while(*(*(lmin+i)+j) != -1){
-      Data[i].eff_bsize -= Data[(*(*(lmin+i)+j))-1].bsize;
-      j++;
-    }
-  }
-
-  /* check if we still have the same # of structures in sum */
-  for(i = 0; i < dim; i++)
-    test += Data[i].eff_bsize;
-  if ( test != Data[0].bsize){
-    fprintf (stderr, "bsize has changed in calc_effective_bsize \n");
-    exit(1);
-  }
-}
-
-/*==*/
-static void recalculate_free_energy(TypeBarData *Data, int **lmin, double kT){
-
-  int i,j;
-  float mfe;
-
-   mfe = Data[0].energy;
-   /*    printf("mfe: %7.4f\n", mfe); */
-
-   for(i = 0; i < dim; i++){
-     Data[i].F_eff = Data[i].F;
-     Data[i].Z = exp((-Data[i].F)/kT);  /* calculate partition function Z of lmin */
-     Data[i].Z_eff = Data[i].Z;
-     /*printf("lmin %2d  F: %7.4f Z: %7.4f\n", Data[i].number, Data[i].F, Data[i].Z);*/
-   }
-  
-   for(i = 1; i <= dim; i++){ /* look over all lmins */
-     j = 0;
-     while(*(*(lmin+i)+j) != -1){
-       Data[i-1].Z_eff -= Data[(*(*(lmin+i)+j))-1].Z;
-       j++;
-     }
-     Data[i-1].F_eff = -kT*log(Data[i-1].Z_eff);
-     /*   printf("F_eff: %7.4f, Z_eff: %7.4f \n",Data[i-1].F_eff, Data[i-1].Z_eff); */
-   }
 }
 
 /*==*/
