@@ -1,6 +1,6 @@
 /* globals.c */
-/* Last changed Time-stamp: <2003-07-24 18:32:29 mtw> */
-/* static char rcsid[] = "$Id: globals.c,v 1.2 2003/08/05 08:40:04 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-08-25 15:25:28 mtw> */
+/* static char rcsid[] = "$Id: globals.c,v 1.3 2003/08/27 14:59:08 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +23,6 @@ static struct option const long_options[] =
   {"t8",          required_argument, 0, 0},
   {"tinc",        required_argument, 0, 0},
   {"nolog",       no_argument, 0, 0},
-  {"linear",      no_argument, 0, 0},
   {"Temp",        required_argument, 0, 0}, 
   {"method",      required_argument, 0, 0},
   {"p0",          required_argument, 0, 0},
@@ -99,11 +98,6 @@ static int decode_switches (int argc, char **argv) {
 	      fprintf(stderr, "Value of --tinc must be >= 0. , and not >%f<\n", tinctmp);
 	      usage (EXIT_FAILURE);
 	    }
-	  }
-
-	  if (strcmp(long_options[option_index].name,"nolog") == 0 ||
-	      strcmp(long_options[option_index].name,"linear") == 0) {
-	    opt.want_linear = 1;
 	  }
 
 	  if (strcmp(long_options[option_index].name,"Temp")==0) {
@@ -203,8 +197,6 @@ static int decode_switches (int argc, char **argv) {
       exit(EXIT_FAILURE);
     }
   }
-  if( opt.want_linear && ! tinc_set )  /* just when using linear timescale and --tinc was NOT */ 
-    opt.tinc = 1.;                     /* set explicitly, set opt.tinc to 1. */
   return optind;
 }
 
@@ -214,8 +206,7 @@ static void ini_globs(void) {
   opt.T               =    37.;
   opt.t0              =      1;
   opt.t8              = 10000.;
-  opt.want_linear     =      0;
-  opt.want_degenerate =      0; 
+   opt.want_degenerate =      0; 
   opt.tinc            =   1.02;
   opt.method          =    'B';
   opt.dumpU           =      0;
@@ -233,15 +224,12 @@ static void usage(int status) {
 	 "--absorb <int>          Make lmin <int> an absorbing lmin (default none)\n"
 	 "--t0 <float>            Start Time\n"
 	 "--t8 <float>            Stop Time\n"
-	
-	 "--nolog, --linear       Use a linear time-scale (default logarithmic)\n"
 	 "--Temp <float>          Temperature in Celsius\n"
 	 "--method <char>         Select method to build transition matrix\n"
 	 "--nlmins <int>          Read <int> local minima (default till EOF)\n"
 	 "--p0 (<int>=<float>)    Populate local minimum <int> with <float>\n"
 	 "                        (NOTE: sum of <float> must equal 1)\n"
-	 "--tinc <float>          Time increment (when using a linear time-scale),\n"
-	 "                        Time scaling-factor (when using log time-scale)\n"
+	 "--tinc <float>          Time scaling-factor (for log time-scale)\n"
 	 "-d                      Consider degeracy in transition rates\n"
 	 "-u                      Dump transition matrix U to a binary file matrix.bin\n"
 	 "-v, --verbose           Verbose output (for debugging)\n"
@@ -259,7 +247,6 @@ static void display_settings(void) {
 	  "--t0       = %.2f\n"
 	  "--t8       = %.2f\n"
 	  "--tinc     = %.2f\n"
-	  "--nolog    = %d\n"
 	  "--Temp     = %.2f\n"
 	  "--method   = %c\n"
 	  "--nlmins   = %d\n"
@@ -270,7 +257,6 @@ static void display_settings(void) {
 	  opt.t0,
 	  opt.t8,
 	  opt.tinc,
-	  opt.want_linear,
 	  opt.T,
 	  opt.method,
 	  opt.n,

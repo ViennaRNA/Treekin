@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-07-30 14:21:20 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.5 2003/08/05 08:40:04 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-08-27 16:55:12 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.6 2003/08/27 14:59:08 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,9 +25,6 @@ static double *MxMethodeC (TypeBarData *Data);
 static void    MxPrint(double *mx, char *name, char T);
 static void    MxPrintMeschachMat(MAT *matrix, char *name);
 static void    MxPrintMeschachVec(VEC* vector, char *name);
-static void    MxMakep0String(double *p8);
-static int     MxCheckIterate(double *pt);
-static int     MxCheckIterate_ptlmin(double *ptlmin);
 static void    MxMeschach2ccmath(MAT *meschach_matrix, double **origM);
 static void    MxMeschach2ccmathVec(VEC *meschach_vector, double **origV);
 static MAT    *Mxccmath2Meschach(double* ccmath_matrix);
@@ -50,8 +47,6 @@ static double  *EV_mesch  = NULL;   /* ev from meschach-routine, ie in other ord
 static double  *_sqrPI    = NULL;   /* left constant array */
 static double  *sqrPI_    = NULL;   /* right constant array */
 static double  *D         = NULL;   /* matrix with degree of degeneacy */
-static char    *first_char_of_compare_string = NULL;
-static char    *first_char_of_compare_pt = NULL;
 static char     Aname[30];
 static TypeDegSaddle *saddle;
 
@@ -138,8 +133,6 @@ double *MxEqDistr ( TypeBarData *Data ) {
     if(opt.want_verbose) MxPrint (p8, "p8 for absorbing state", 'v'); 
   }
   MxPrint(p8, "p8", 'v');
-  MxMakep0String(p8); /* write p8 to a string which we'll need later to check */
-                      /* if our iterations converged yet */
   return (p8);
 }
 
@@ -164,10 +157,7 @@ double *MxEqDistrFULL (double *energi) {
     MxPrint (p8, Aname, 'v');
   }
 
-  MxMakep0String(p8); /* write p8 to a string which we'll need later to check */
-                      /* if our iterations converged yet */
   return (p8);
-  
 }
 
 /*==*/
@@ -214,8 +204,8 @@ double *MxSymmetr ( double *U, double *P8 ) {
 
 /*==*/
 /* S which comes into this function contains the (right) eigenvectors  */
-/* calculated either bei ccmath (non-abs) or meschach (absorbing case) */
-void MxIterate ( double *p0, double *S) {
+/* calculated either by ccmath (non-abs) or meschach (absorbing case) */
+void MxIterate ( double *p0, double *p8, double *S) {
   /*  solve following equation 4 various times
     ***** NON-ABSORBING CASE: ******
     p(t)   = sqrPI_ * S * exp(time * EV) * St * _sqrPI * p(0)
@@ -228,19 +218,20 @@ void MxIterate ( double *p0, double *S) {
     tmpVec = S_inv * p(0)
     p(t)   = tmpMx * tmpVec 
   */
-  int i, j,status = 0, count = 0;
+  int i, j, count = 0, pdiff_counter = 0;
   double time, check = 0.;
   double *CL, *CR, *exptL, *tmpMx, *tmpVec, *St, *S_inv; /* transposed of S */
-  double *pt;       /* probability distribution 4 time t */
+  double *pt, *pdiff;  /* probability distribution/difference 4 time t */
   
-  St =     (double *) MxNew (dim*dim*sizeof(double));
-  CL =     (double *) MxNew (dim*dim*sizeof(double));
-  CR =     (double *) MxNew (dim*dim*sizeof(double));
+  St     = (double *) MxNew (dim*dim*sizeof(double));
+  CL     = (double *) MxNew (dim*dim*sizeof(double));
+  CR     = (double *) MxNew (dim*dim*sizeof(double));
   exptL  = (double *) MxNew (dim*dim*sizeof(double));
   tmpMx  = (double *) MxNew (dim*dim*sizeof(double));
   S_inv  = (double *) MxNew (dim*dim*sizeof(double));
   tmpVec = (double *) MxNew (dim*sizeof(double));
-  pt =     (double *) MxNew (dim*sizeof(double));
+  pt     = (double *) MxNew (dim*sizeof(double));
+  pdiff  = (double *) MxNew (dim*sizeof(double));
   
   if(! opt.absrb){  /* NON-absorbing case */
     mcopy(St, S, dim*dim);  trnm(St, dim); /* transpose S */
@@ -261,99 +252,70 @@ void MxIterate ( double *p0, double *S) {
     free(S_inv);
   }
   
-  /*** solve fundamental equation ***/ 
-  if (opt.want_linear) {    /* use a linear time-scale */
-    print_settings();
-    for (time = opt.t0; time <= opt.t8; time += opt.tinc) {
-      for (i = 0; i < dim; i++) {
-	for (j = 0 ; j < dim; j++) {
-	  if ( i == j) exptL[dim*i+j] = exp(time*EV[i]);
-	  else exptL[dim*i+j] = 0.;
-	}
+  /*** solve fundamental equation ***/  /* using logarithmic time-scale */
+  print_settings();
+  for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
+    for (i = 0; i < dim; i++) {
+      for (j = 0 ; j < dim; j++) {
+	if ( i == j) exptL[dim*i+j] = exp(time*EV[i]);
+	else exptL[dim*i+j] = 0.;
       }
-      if(!opt.absrb) mmul (tmpMx, CL, exptL, dim);
-      else mmul (tmpMx, S, exptL, dim);
-      vmul (pt, tmpMx, tmpVec, dim);
-      count++; /* count the # of iterations */ 
-      
-      /* print p(t) to stdout */
-      printf(" %10.4f ", time);
-      for (i = 0; i < dim; i++){
-	if(pt[i] < -0.00001){
-	  fprintf(stderr, "prob has become negative!\n");
-	  exit(866);
-	}
-	printf("%6.4f ", fabs(pt[i]));
-	check += fabs(pt[i]); 
-      }
-      /*  printf("%16.10f", check); */
-      printf("\n");
-      if ( ((check-1) < -0.01) || ((check-1) > 0.01) ){
-	fprintf(stderr, "probability != 1.  !!!!! exiting\n");
-	exit(888);
-      }
-      check = 0.;
-      
-      status = MxCheckIterate(pt); 
-      if(status) break;  /* exit when converged */ 
     }
-    printf("# of iterations: %d\n", count);
-    free(EV);
-  }
-  else {                    /* use a logarithmic time-scale */
-    print_settings();
-   /*   ti_ln = exp(log(opt.t8)/500); */  /* 500 steps, up to opt.t8 */
-    for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
-      for (i = 0; i < dim; i++) {
-	for (j = 0 ; j < dim; j++) {
-	  if ( i == j) exptL[dim*i+j] = exp(time*EV[i]);
-	  else exptL[dim*i+j] = 0.;
-	}
+    if(!opt.absrb) mmul (tmpMx, CL, exptL, dim);
+    else mmul (tmpMx, S, exptL, dim);
+    vmul (pt, tmpMx, tmpVec, dim);
+    count++;  /* # of iterations */
+    
+    printf(" %15.5f ", time);  /* print p(t) to stdout */
+    for (i = 0; i < dim; i++){
+      if(pt[i] < -0.00001){
+	fprintf(stderr, "prob of lmin %i has become negative!\n", i+1);
+	exit(866);
       }
-      if(!opt.absrb) mmul (tmpMx, CL, exptL, dim);
-      else mmul (tmpMx, S, exptL, dim);
-      vmul (pt, tmpMx, tmpVec, dim);
-      count++;  /* count the # of iterations */
-      
-      /* print p(t) to stdout */
-      printf(" %10.4f ", time);
-      for (i = 0; i < dim; i++){
-	if(pt[i] < -0.00001){
-	  fprintf(stderr, "prob has become negative!\n");
-	  exit(866);
-	}
-	printf("%6.4f ", fabs(pt[i]));
-	check += fabs(pt[i]); 
-      }
-      /*    printf("%16.10f", check); */
-      printf("\n");
-      if ( ((check-1) < -0.01) || ((check-1) > 0.01) ){
-	fprintf(stderr, "probability != 1.  !!!!! exiting\n");
-	exit(888);
-      }
-      check = 0.;
-      
-      status = MxCheckIterate(pt); 
-      if(status) break;  /* exit when converged */ 
+      printf("%7.5f ", fabs(pt[i]));
+      check += fabs(pt[i]); 
     }
-    printf("# of iterations: %d\n", count);
-    free(EV);
+    printf("\n");
+
+    if ( ((check-1) < -0.01) || ((check-1) > 0.01) ){
+      fprintf(stderr, "probability != 1.  !!!!! exiting\n");
+      exit(888);
+    }
+    check = 0.;
+    
+    /* now check if we have converged yet */
+    /*  printf("#---------------"); */
+    for(i=0; i<dim; i++){
+      pdiff[i] = p8[i] - pt[i];
+      /*   printf("%7.4f ", pdiff[i]); */
+      if (fabs(pdiff[i]) >= 0.0001)
+	pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
+    }
+    /*  printf(" # pdiff_counter: %i", pdiff_counter); */
+    /*   printf("\n"); */
+    if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
+      break;
+    pdiff_counter = 0.;
+    memset(pdiff, 0, dim*sizeof(double));
+    /* end check of convergence */
   }
- 
+  printf("# of iterations: %d\n", count);
   /*** end solve fundamental equation ***/ 
 
+  free(EV);
   free(exptL);
   free(CL);
   free(tmpVec);
   free(tmpMx);
   free(pt);
+  free(pdiff);
   free(p0);
 /*    free(EV_mesch); */
 }
 
 
 /*==*/
-void MxIterate_effective_lmins ( double *p0, double *p8,  double *S, int *lmin_nr_so, int *assoc_gradbas) {
+void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int lmin_nr) {
   /*
     solve following equation 4 various times
     p(t) = sqrPI_ * S * exp(time * EV) * St * _sqrPI * p(0)
@@ -361,27 +323,26 @@ void MxIterate_effective_lmins ( double *p0, double *p8,  double *S, int *lmin_n
     CR = St * _sqrPI
     tmpVec = CR * p(0)
   */
-  int i, j,status = 0;
-  double time;
-  double *CL, *CR, *exptL, *tmpMx, *tmpVec, *pt, *ptE, *St;
-  double *ptlmin;   /* prob dist 4 of the effective lmins of the tree at time t */
-  double *p8lmin;   /* euqilibrium distr 4 gradient basins, calculated from full process */ 
+  int i, j, lmins, pdiff_counter = 0;
+  double time, *CL, *CR, *exptL, *tmpMx, *tmpVec, *pt, *St;
+  double *ptFULL;    /* prob dist 4 of the effective lmins of the tree at time t */
+  double *p8FULL;    /* euqilibrium distr 4 gradient basins, calculated from full process */
+  double *pdiffFULL; /* population prob difference between p8FULL and ptFULL */ 
   double check = 0.;
   double checkp8 = 0.;
-  double ti_ln= 0.; /* time increment in case of logarithmic time-sacle */ 
-  char *cmp_string_first;
   
-  St =     (double *) MxNew (dim*dim*sizeof(double));
-  CL =     (double *) MxNew (dim*dim*sizeof(double));
-  CR =     (double *) MxNew (dim*dim*sizeof(double));
-  tmpVec = (double *) MxNew (dim*sizeof(double));
-  exptL =  (double *) MxNew (dim*dim*sizeof(double));
-  tmpMx =  (double *) MxNew (dim*dim*sizeof(double));
-  pt =     (double *) MxNew (dim*sizeof(double));
-  ptE =    (double *) MxNew (dim*sizeof(double));
-  ptlmin = (double *) MxNew ((lmin_nr_so[0]+2)*sizeof(double));
-  p8lmin = (double *) MxNew ((lmin_nr_so[0]+1)*sizeof(double));
-  cmp_string_first = (char *) MxNew(10*sizeof(char)); 
+  lmins = lmin_nr; /* # of gradient basins == # of lmins in tree */
+
+  St        = (double *) MxNew (dim*dim*sizeof(double));
+  CL        = (double *) MxNew (dim*dim*sizeof(double));
+  CR        = (double *) MxNew (dim*dim*sizeof(double));
+  tmpVec    = (double *) MxNew (dim*sizeof(double));
+  exptL     = (double *) MxNew (dim*dim*sizeof(double));
+  tmpMx     = (double *) MxNew (dim*dim*sizeof(double));
+  pt        = (double *) MxNew (dim*sizeof(double));
+  ptFULL    = (double *) MxNew ((lmins+1)*sizeof(double));
+  p8FULL    = (double *) MxNew ((lmins+1)*sizeof(double));
+  pdiffFULL = (double *) MxNew ((lmins+1)*sizeof(double));
   
   mcopy(St, S, dim*dim);  trnm(St, dim); /* transpose S */
   mmul (CL, sqrPI_, S, dim);
@@ -391,158 +352,74 @@ void MxIterate_effective_lmins ( double *p0, double *p8,  double *S, int *lmin_n
   vmul (tmpVec, CR, p0, dim);
   free(CR);
 
-  if (opt.want_linear) {
-     fprintf(stderr, "--nolog for the full process not yet implemented ! \n");
-    exit(888);
+  /* calculate equilibrium distribution once */
+  for (i = 0; i < dim; i++)
+    p8FULL[assoc_gradbas[i]] += p8[i]; /* eq distr of the gradient basins */
+  for (i = 0; i < lmins; i++) checkp8 += fabs(p8FULL[i]);
+  if ( ((checkp8-1) < -0.1) || ((checkp8-1) > 0.1) ){
+    fprintf(stderr, "ckeckp8 probability != 1.  !!!!! exiting\n"); exit(888);
   }
-  else {
-    ti_ln = exp(log(opt.t8)/500);  /* 500 steps, up to opt.t8 */
-    
-    /* solve fundamental equation */ 
-
-    for (time = opt.t0; time <= opt.t8; time *= ti_ln) {
-      for (i = 0; i < dim; i++) {
-	for (j = 0 ; j < dim; j++) {
-	  if ( i == j) exptL[dim*i+j] = exp(time*EV[i]);
-	  else exptL[dim*i+j] = 0.;
-	}
+  
+   /* solve fundamental equation */
+  for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
+    for (i = 0; i < dim; i++) {
+      for (j = 0 ; j < dim; j++) {
+	if ( i == j) exptL[dim*i+j] = exp(time*EV[i]);
+	else exptL[dim*i+j] = 0.;
       }
-      
-      mmul (tmpMx, CL, exptL, dim);
-      vmul (pt, tmpMx, tmpVec, dim);
-      
-      /* this one is for test reasons only */ 
-      vmul (ptE, exptL, tmpVec, dim);
-      /* end test */ 
-      
-      /* print p(t) to stdout */
-      printf(" %10.4f ", time);
-      for (i = 0; i < dim; i++){
-	if(pt[i] < -0.00001){
-	  fprintf(stderr, "prob has become negative!\n");
-	  exit(866);
-	}
-	/* printf("%6.4f ", fabs(pt[i]));    original output */ 
-	ptlmin[assoc_gradbas[i]] += pt[i];   /* runs from 1..i */
-	p8lmin[assoc_gradbas[i]-1] += p8[i]; /* eq distr of the gradient basins */
-	/* needed to check convergence, runs from 0..i-1 */
-	check += fabs(pt[i]); 
-      }
-      
-      for (i = 0; i < lmin_nr_so[0]; i++) checkp8 += fabs(p8lmin[i]);
-      
-      for(i = 1; i <= lmin_nr_so[0]; i++){
-	printf("%6.4f ", fabs(ptlmin[i]));
-	if(ptlmin[i] < -0.00001){
-	  fprintf(stderr, "prob has become negative!\n");
-	  exit(866);
-	}
-      }
-      /*     printf("%6.4f", checkp8); */
-      printf("\n");
-      
-      /* write p8lmin[0] into cmp_string_first, needed to check convergence */
-      first_char_of_compare_string = cmp_string_first; 
-      sprintf(cmp_string_first,"%6.4f ", p8lmin[0]);
-      
-      /*   printf(" %10.4f ", time); */
-      /*      for (i = 0; i < dim; i++){ */
-      /*        printf("%6.4f ", ptE[i]); */
-      /*      } */
-      /*   printf (">>%20.18f<<\n", check); */
-      /*    printf("\n"); */
-      if ( ((check-1) < -0.1) || ((check-1) > 0.1) ){ /* was 0.000001 before */
-	fprintf(stderr, "ckeck probability != 1.  !!!!! exiting\n");
-	exit(888);
-      }
-      if ( ((checkp8-1) < -0.1) || ((checkp8-1) > 0.1) ){
-	fprintf(stderr, "ckeckp8 probability != 1.  !!!!! exiting\n");
-	exit(888);
-      }
-      for (i = 0; i < lmin_nr_so[0]; i++) p8lmin[i] = 0.;
-      check = 0.;
-      checkp8 = 0.;
-      status = MxCheckIterate_ptlmin(ptlmin);
-      for(i = 1; i <= lmin_nr_so[0]; i++) ptlmin[i] = 0.; /* initialize ptlmin back to 0. */ 
-      if(status){
-	free(first_char_of_compare_string);
-	break; /* exit when converged */
-      }
-      fflush(stdout);
     }
+    
+    mmul (tmpMx, CL, exptL, dim);
+    vmul (pt, tmpMx, tmpVec, dim);
+        
+    for (i = 0; i < dim; i++){
+      if(pt[i] < -0.001){
+	fprintf(stderr, "prob of lmin %i has become negative: %6.4f\n", i+1,pt[i]);exit(866);
+      }
+      ptFULL[assoc_gradbas[i]] += pt[i]; /* map individual structure -> gradient basins */
+      check += fabs(pt[i]); 
+    }
+    
+    printf(" %15.5f ", time);
+    for(i = 1; i <= lmins; i++) printf("%7.5f ", fabs(ptFULL[i]));
+    printf("\n");
+    
+    if ( ((check-1) < -0.01) || ((check-1) > 0.01) ){
+      fprintf(stderr, "ckeck probability != 1.  !!!!! exiting\n");exit(888);
+    }
+    
+    /* now check if we have converged yet */
+    /*  printf("#---------------"); */
+    for(i = 1; i <= lmins; i++){
+      pdiffFULL[i] = p8FULL[i] - ptFULL[i];
+      /*  printf("%7.4f ", pdiffFULL[i]); */
+      if (fabs(pdiffFULL[i]) >= 0.0001)
+	pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
+    }
+    /*   printf("  pdiff_counter: %i", pdiff_counter); */
+    /*     printf("\n"); */
+    if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
+      break;
+    pdiff_counter = 0;
+    memset(pdiffFULL, 0, (lmins+1)*sizeof(double));
+    /* end check of convergence */
+    
+    memset(ptFULL, 0, (lmins+1)*sizeof(double));
+    check = 0.;
+    fflush(stdout);
   }
-  /* end solve equation */ 
-
+  /* end solve fundamental equation */ 
+  
   free(EV);
   free(exptL);
   free(CL);
   free(tmpVec);
   free(tmpMx);
   free(pt);
-  free(ptE);
-  free(ptlmin);
-  free(p8lmin);
-  free (cmp_string_first);
+  free(ptFULL);
+  free(p8FULL);
+  free(pdiffFULL);
   free(p0);
-}
-
-/*==*/
-/* check in we have converged yet, i.e check if the actual pt of the first */
-/* structure is equal to the p8 of this structure */ 
-static int MxCheckIterate(double *pt){
-  
-  char *compare_pt; 
-
-  compare_pt = (char *) MxNew(10*sizeof(char));
-  
-  first_char_of_compare_pt = compare_pt; 
-  sprintf(compare_pt,"%6.4f ", fabs(pt[0]));   
-  
-  if (memcmp(first_char_of_compare_string, first_char_of_compare_pt, 7*sizeof(char)) == 0){
-    free(first_char_of_compare_pt); 
-    return 1;
-  }
-  else{
-    free(first_char_of_compare_pt); 
-    return 0;
-  }
-}
-
-/*==*/
-/* same as MxCheckIterate, but for the full process case i.e we compare with ptlmin[0] */
-static  int MxCheckIterate_ptlmin(double *ptlmin){
-
-  char *compare_pt; 
-  
-  compare_pt = (char *) MxNew(10*sizeof(char));
-  
-  first_char_of_compare_pt = compare_pt; 
-  sprintf(compare_pt,"%6.4f ", fabs(ptlmin[1]));   
-  
-  if (memcmp(first_char_of_compare_string, first_char_of_compare_pt, 7*sizeof(char)) == 0){
-    free(first_char_of_compare_pt); 
-    return 1;
-  }
-  else{
-    free(first_char_of_compare_pt); 
-    return 0;
-  }
-}
-  
-/*==*/
-/* write p8 of structure into an array, needed later to check convergence */ 
-static void MxMakep0String(double *p8){
-
-  char *compare_string;
-  compare_string  = (char *) calloc(10,sizeof(char));
-  if (compare_string == NULL){
-    fprintf(stderr, "could not alloc comprare_string\n");
-    exit(888);
-  }
-
-  first_char_of_compare_string = compare_string; 
-  sprintf(compare_string,"%6.4f ", p8[0]);
-  return;
 }
 
 /*==*/
@@ -956,8 +833,8 @@ static void print_settings(void) {
 	 opt.t8,
 	 opt.T
 	 );
-  if (opt.want_linear == 1) printf("# linear: on    time increment: %.2f\n", opt.tinc);
-  else printf("# linear: off    time increment: %.2f \n", opt.tinc);
+  if (opt.tinc) printf("# time increment: %.2f\n", opt.tinc);
+  else printf("# time increment: %.2f \n", opt.tinc);
   if(opt.want_degenerate == 1)printf("# degeneracy:  on\n");
   else printf("# degeneracy:  off\n");
   if (opt.absrb < 1) printf("# absorbing lmin: none\n");
@@ -976,8 +853,8 @@ static char *time_stamp(void) {
 
 /*==*/
 void MxMemoryCleanUp (void) {
-  if(_sqrPI) free(_sqrPI);
-  if(sqrPI_) free(sqrPI_);
+  if(_sqrPI)       free(_sqrPI);
+  if(sqrPI_)       free(sqrPI_);
   if(opt.sequence) free(opt.sequence);
   fclose(opt.INFILE);
 }
@@ -1053,14 +930,14 @@ static void MxMeschach2ccmath(MAT *meschach_matrix, double **origS){
       *(*origS+(dim*i+j)) = meschach_matrix->me[i][j];
     }
   }
-  M_FREE(meschach_matrix);
+ /*  M_FREE(meschach_matrix); */
 }
 
 /*==*/
 static void MxMeschach2ccmathVec(VEC *meschach_vector, double **origEV){
   int i;
   for(i = 0; i < dim; i++) *(*origEV+i) = meschach_vector->ve[i];
-  V_FREE(meschach_vector);
+ /*  V_FREE(meschach_vector); */
 }
 
 /*==*/
@@ -1123,20 +1000,19 @@ void MxEVnonsymMx(double *origU, double **_S){
   X_im = m_get(A->m, A->n);
   schur_vecs(T, Q, X_re, X_im);
   /* k'th eigenvector is k'th column of (X_re + i*X_im) */
-
+  M_FREE(T);
+  M_FREE(Q);
+  M_FREE(A);
   MxPrintMeschachMat(X_re, "real Eigenvectors");
   if((check = Mxempty(X_im)) != 1)
     MxPrintMeschachMat(X_im, "imag Eigenvectors NOT EMPTY !!!");
   MxPrintMeschachVec(evals_re, "real Eigenvalues");
- /*   MxPrintMeschachVec(evals_im, "imag Eigenvalues"); */
   MxMeschach2ccmath(X_re, &tmp);
   *_S = tmp;
-  MxMeschach2ccmathVec(evals_re, &tmp_vec);
-  EV_mesch = tmp_vec;
-  M_FREE(Q);
-  M_FREE(T);
   M_FREE(X_re);
   M_FREE(X_im);
+  MxMeschach2ccmathVec(evals_re, &tmp_vec);
+  EV_mesch = tmp_vec;
   V_FREE(evals_re);
   V_FREE(evals_im);
 }

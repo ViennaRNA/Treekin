@@ -1,6 +1,6 @@
 /* calc.h */
-/* Last changed Time-stamp: <2003-07-19 11:51:46 mtw> */
-/*  static char rcsid[] = "$Id: calc.h,v 1.2 2003/08/05 08:40:04 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-08-27 16:54:49 mtw> */
+/*  static char rcsid[] = "$Id: calc.h,v 1.3 2003/08/27 14:59:08 mtw Exp $"; */
 
 #ifndef _CALC_H_
 #define _CALC_H_
@@ -15,9 +15,9 @@ double *MxMethodeINPUT (double *);
 double *MxSymmetr (double *U, double *PI);
 double *MxStartVec (void) ;
 void    MxEVnonsymMx(double *U, double **_S);
-void    MxIterate (double *p0, double *S);
+void    MxIterate (double *p0, double *p8, double *S);
 void    MxIteratehack(double *p0, double *S, double *T, double *EV_m);
-void    MxIterate_effective_lmins ( double *p0, double *p8, double *S, int *lmin_nr_so, int *assoc_gradbas);
+void    MxIterate_FULL( double *p0, double *p8, double *S, int *assoc_gradbas, int lmin_nr);
 void    MxMemoryCleanUp (void);
 
 #endif 

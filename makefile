@@ -1,11 +1,11 @@
-# $Id: makefile,v 1.4 2003/08/09 15:58:19 mtw Exp $
+# $Id: makefile,v 1.5 2003/08/27 14:59:08 mtw Exp $
 CC      = gcc
 SCRDIR  = .
 INCDIR  = -I$(SCRDIR) -I/scratch/mtw/meschach-1.2b
 CDEBUG  = -g3
-COPTIM  = -O -march=i686
-CFLAGS  = -Wall $(INCDIR) $(CDEBUG) -DDMALLOC
-LIBS    = -lm -ldmalloc /scratch/mtw/meschach-1.2b/meschach.a 
+COPTIM  = -O3 -march=i686
+CFLAGS  = -Wall $(INCDIR) $(CDEBUG) $(COPTIM) 
+LIBS    = -lm /scratch/mtw/meschach-1.2b/meschach.a 
 EXE     = treekin
 OBJS    = \
 	 main.o\

@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-07-24 15:50:55 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.4 2003/08/05 08:40:04 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-08-27 16:54:39 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.5 2003/08/27 14:59:08 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,12 +44,11 @@ int main (int argc, char **argv) {
     p8 = MxEqDistrFULL (Energies);
     S = MxSymmetr (U, p8);
     p0 = MxStartVec ();
-    MxIterate_effective_lmins (p0, p8, S, lmin_nr_so, assoc_gradbas);
+    MxIterate_FULL (p0, p8, S, assoc_gradbas, lmin_nr_so[0]);
     MxMemoryCleanUp();
     
     if (opt.pini != NULL) free(opt.pini);
-    free(p8);
-    free(S);
+    free(U);free(S);free(p8);
     free(InD);
     free(Energies);
     free(lmin_nr_so);
@@ -64,13 +63,10 @@ int main (int argc, char **argv) {
     p8 = MxEqDistr (Data);
     if(opt.absrb > 0) MxEVnonsymMx(U, &S);
     else S = MxSymmetr (U, p8);
-    MxIterate (p0, S);
+    MxIterate (p0, p8, S);
     MxMemoryCleanUp();
-
+    free(U);free(S);free(p8);
     free(opt.pini);
-    free(p8);
-    free(U);
-    free(S);
     free(Data);
   }
   else {                         /* tree process */
@@ -81,12 +77,11 @@ int main (int argc, char **argv) {
     p8 = MxEqDistr (Data);
     if(opt.absrb > 0) MxEVnonsymMx(U, &S);
     else S = MxSymmetr (U, p8);
-    MxIterate (p0, S);
+    MxIterate (p0, p8, S);
     MxMemoryCleanUp();
     
     if (opt.pini != NULL) free(opt.pini);
-    free(p8);
-    free(S);
+    free(U);free(S);free(p8);
     free(Data);
     /* saddles freen !!! */
   }
