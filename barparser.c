@@ -1,5 +1,5 @@
 /* barparser.c */
-/* Last changed Time-stamp: <2003-07-23 18:28:14 mtw> */
+/* Last changed Time-stamp: <2003-09-03 14:10:20 mtw> */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +11,7 @@
 
 #define LMINBASE 100
 
-/*  static char rcsid[] = "$Id: barparser.c,v 1.5 2003/08/05 08:40:04 mtw Exp $"; */
+/*  static char rcsid[] = "$Id: barparser.c,v 1.6 2003/09/04 11:04:14 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
@@ -248,10 +248,7 @@ int ParseBarfile( FILE *fp, TypeBarData **lmin){
     }
     if (line != NULL) free(line);
   }
-  /* if we have an absorbing state lower the state's energy by 15kcal*/
-  /*   if(opt.absrb > 0) */
-  /*      tmp[opt.absrb-1].FGr -= 15; */
-  
+   
   if (line != NULL) free(line);
 
   tmp = (TypeBarData *) realloc (tmp, count*sizeof(TypeBarData));

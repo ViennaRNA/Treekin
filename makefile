@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.6 2003/08/27 17:08:26 mtw Exp $
+# $Id: makefile,v 1.7 2003/09/04 11:04:14 mtw Exp $
 CC      = gcc
 SCRDIR  = .
 INCDIR  = -I$(SCRDIR) -I/scratch/mtw/meschach-1.2b
@@ -12,7 +12,8 @@ OBJS    = \
 	 calc.o\
 	 mxccm.o\
 	 globals.o\
-	 barparser.o
+	 barparser.o\
+	 exp_matrix.o	
 
 %.o : $(SCRDIR)%.c
 	$(CC) -c $(CFLAGS) $< -o $@

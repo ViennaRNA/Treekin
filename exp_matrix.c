@@ -1,7 +1,16 @@
+/* exp_matrix.c */
+/* Last changed Time-stamp: <2003-08-28 17:08:10 mtw> */
+/* static char rcsid[] = "$Id: exp_matrix.c,v 1.2 2003/09/04 11:04:14 mtw Exp $"; */
+
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include "exp_matrix.h" /* functions for matrix-exponent stuff */
+
+/* private function(s) */
 
 static void trnm(long double *a,int n)
 { long double s,*p,*q;
@@ -122,7 +131,7 @@ void padexp(double *from,double *out,int n,int ord) {
   long double *mat_in,*MD,*MN,*X2;
   /*precon stuff */
   long double maxnorm,ml;
-  int ppow;
+  int ppow=0;
   long  double scfac;
   
   
@@ -140,8 +149,8 @@ void padexp(double *from,double *out,int n,int ord) {
   /* yuck, heavy heuristics */
   /* calculate M/(2^n) to get exp (M) = (exp (M/2^n))^(2^n) afterwards */
   
-  if (ml >=6.)  {
-    ppow = (int) (ml - 3.);
+  if (ml >=4.)  {
+    ppow = (int) (ml - 2.);
     
     scfac=1.;
     for (i=1;i<=ppow;i++) scfac *=2.;

@@ -1,18 +1,19 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-08-27 18:42:32 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.7 2003/08/27 17:08:26 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-03 16:06:15 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.8 2003/09/04 11:04:14 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <math.h> 
-#include "mxccm.h"     /* functions for eigen-problems stolen from ccmath */
-#include "barparser.h" /* functions for input */
-#include "matrix.h"    /* basic matrix functions from meschach */
-#include "matrix2.h"   /* advances matrix functions from meschach */
-#include "calc.h"      /* does all matrix stuff for markov process */
-#include "globals.h"   /* contains getopt-stuff */
+#include <math.h>
+#include "exp_matrix.h" /* functions for matrix-exponent stuff */
+#include "mxccm.h"      /* functions for eigen-problems stolen from ccmath */
+#include "barparser.h"  /* functions for input */
+#include "matrix.h"     /* basic matrix functions from meschach */
+#include "matrix2.h"    /* advances matrix functions from meschach */
+#include "calc.h"       /* does all matrix stuff for markov process */
+#include "globals.h"    /* contains getopt-stuff */
 
 #define TOL 0.000000000000001
 #define ABS_VAL 0.00001
@@ -57,7 +58,7 @@ void MxInit (int d) {
   if (d > 0 ) dim = d;
   else { fprintf(stderr, "dim <= 0\n"); exit(1); }
 
-  EV = (double *) MxNew (dim*sizeof(double));
+  EV     = (double *) MxNew (dim*sizeof(double));
   _sqrPI = (double *) MxNew (dim*dim*sizeof(double));
   sqrPI_ = (double *) MxNew (dim*dim*sizeof(double));
 }
@@ -100,17 +101,12 @@ double *MxStartVec (void) {
     p0[(int)opt.pini[i]-1] = (double)opt.pini[i+1];
   /* -1 because our lmins start with 1, not with 0 (as Data does ) */
 
-  if (opt.want_verbose) {
-    sprintf(Aname, "%s", "p0");
-    MxPrint (p0, Aname, 'v');
-  }
+  if (opt.want_verbose) MxPrint (p0, "p0", 'v');
   return (p0);
 }
 
 /*==*/
 /* calculate equilibrium distribution */
-/* originally, we used Data[i].energy here, but now we use FGr to */
-/* get the same equilibrium distribution as in the full proess */
 double *MxEqDistr ( TypeBarData *Data ) {
 
   int i;
@@ -121,8 +117,6 @@ double *MxEqDistr ( TypeBarData *Data ) {
   for(i = 0; i < dim; i++) Z += exp(-((double)Data[i].FGr/_kT));
   for(i = 0; i < dim; i++) p8[i] = exp(-((double) Data[i].FGr/_kT))/Z;
 
-  if (opt.want_verbose) MxPrint (p8, "p8", 'v');
-
   if(opt.absrb > 0){
     double tmp = 0.;
     for(i = 0; i < dim; i++){
@@ -130,7 +124,6 @@ double *MxEqDistr ( TypeBarData *Data ) {
       tmp += p8[i];
     }
     p8[opt.absrb-1] = 1.0-tmp;
-    if(opt.want_verbose) MxPrint (p8, "p8 for absorbing state", 'v'); 
   }
   MxPrint(p8, "p8", 'v');
   return (p8);
@@ -140,23 +133,13 @@ double *MxEqDistr ( TypeBarData *Data ) {
 /* calculate equilibrium distribution from the energi-array */ 
 double *MxEqDistrFULL (double *energi) {
   int i;
-  double *p8;
-  double Z = 0., test = 0.;
+  double *p8, Z = 0.;
   
   p8 = (double *) MxNew (dim*sizeof(double));
 
   for(i = 0; i < dim; i++) Z += exp(-((double)energi[i]/_kT));
   for(i = 0; i < dim; i++) p8[i] = exp(-((double) energi[i]/_kT))/Z;
-
-  /* this one is for check reasons only */
-  for(i = 0; i < dim; i++) test += p8[i];
-  /* end check */
-
-  if (opt.want_verbose) {
-    sprintf (Aname, "%s", "p8");
-    MxPrint (p8, Aname, 'v');
-  }
-
+  MxPrint (p8, "p8", 'v');
   return (p8);
 }
 
@@ -194,8 +177,8 @@ double *MxSymmetr ( double *U, double *P8 ) {
   if (opt.want_verbose) MxPrint (S, "force symmetrized S", 'm');
   
   eigen(S, EV, dim);  /* S is overwritten with its eigenvectors */ 
-  if (opt.want_verbose)
-    MxPrint (S, "Eigenvectors of S", 'm');MxPrint(EV, "Eigenvalues of S", 'v'); 
+  if (opt.want_verbose){
+    MxPrint (S, "Eigenvectors of S", 'm');MxPrint(EV, "Eigenvalues of S", 'v'); }
   
   /* compensate 4 translation of matrix U */
   for(i = 0; i < dim; i++) EV[i] = EV[i] - 1;
@@ -232,7 +215,7 @@ void MxIterate ( double *p0, double *p8, double *S) {
   tmpVec = (double *) MxNew (dim*sizeof(double));
   pt     = (double *) MxNew (dim*sizeof(double));
   pdiff  = (double *) MxNew (dim*sizeof(double));
-  
+
   if(! opt.absrb){  /* NON-absorbing case */
     mcopy(St, S, dim*dim);  trnm(St, dim); /* transpose S */
     mmul (CL, sqrPI_, S, dim);
@@ -247,7 +230,7 @@ void MxIterate ( double *p0, double *p8, double *S) {
     minv(S_inv,dim);
     for(i = 0; i < dim; i++) EV_mesch[i] -= 1;  /* compensate 4 translation of matrix U */
     EV = EV_mesch;    /* let EV point at EV_mesch */
-    MxPrint(EV_mesch, "EV_mesch in MxIterate", 'v');
+    if(opt.want_verbose) MxPrint(EV_mesch, "EV_mesch in MxIterate", 'v');
     vmul (tmpVec, S_inv, p0, dim);
     free(S_inv);
   }
@@ -268,8 +251,8 @@ void MxIterate ( double *p0, double *p8, double *S) {
     
     printf(" %e ", time);  /* print p(t) to stdout */
     for (i = 0; i < dim; i++){
-      if(pt[i] < -0.00001){
-	fprintf(stderr, "prob of lmin %i has become negative!\n", i+1);
+      if(pt[i] < -0.001){
+	fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, pt[i]);
 	exit(866);
       }
       printf("%e ", fabs(pt[i]));
@@ -328,8 +311,7 @@ void MxIterate_FULL (double *p0, double *p8, double *S,  int *assoc_gradbas, int
   double *ptFULL;    /* prob dist 4 of the effective lmins of the tree at time t */
   double *p8FULL;    /* euqilibrium distr 4 gradient basins, calculated from full process */
   double *pdiffFULL; /* population prob difference between p8FULL and ptFULL */ 
-  double check = 0.;
-  double checkp8 = 0.;
+  double check = 0. , checkp8 = 0.;
   
   lmins = lmin_nr; /* # of gradient basins == # of lmins in tree */
 
@@ -491,8 +473,7 @@ static double *MxMethodeB (TypeBarData *Data) {
   /****************************************/
   
   int i,j;
-  double m_saddle;
-  double *U;
+  double m_saddle, *U;
 
   U = (double *) MxNew (dim*dim*sizeof(double));
 
@@ -523,15 +504,14 @@ static double *MxMethodeB (TypeBarData *Data) {
   /*==== absorbing  states ====*/
   /*===========================*/
   if(opt.absrb > 0)
-    for(i = 0; i < dim; i++)  /* make column opt.absrb absorbing by */
-      U[dim*i+(opt.absrb-1)] *= exp(-10/_kT); 
+    for(i = 0; i < dim; i++)
+      U[dim*i+(opt.absrb-1)] = 0.; 
   /*==========================*/
   /*== end absorbing states ==*/
   /*==========================*/
   
-  for(i = 0; i < dim; i++)
-    for (j = 0; j < dim; j++)
-      if( i == j) U[dim*i+j] = 0;  /* set diagonal elements to 0 */
+  /* set diagonal elements to 0 */
+  for (i = 0; i < dim; i++) U[dim*i+i] = 0;
   
   /* diagonal elements */
   for (j = 0; j < dim; j++) {
@@ -616,8 +596,7 @@ extern double *MxMethodeFULL (InData *InData){
     if(InData[a].rate >= biggest) biggest = InData[a].rate;
   }
 
-  for(a = 0; a < dim*dim; a++)
-    Q[a] /= biggest;
+  for(a = 0; a < dim*dim; a++) Q[a] /= biggest;
   
   /* diagonal elements */
   for (j = 0; j < dim; j++) {
@@ -630,41 +609,40 @@ extern double *MxMethodeFULL (InData *InData){
     Q[dim*j+j] = -tmp+1;
   }
 
-  if (opt.want_verbose) {
-    sprintf (Aname, "%s", "U with Methode F");
-    MxPrint (Q, Aname, 'm');
-  }
+  if (opt.want_verbose) MxPrint (Q, "U with Methode F", 'm');
   return Q;
 }
 
 /*==*/
-extern double *MxMethodeINPUT (double *Input){
-  int i,j;
-  double *test;
-
-  test = (double *)calloc(dim,sizeof(double));
+double *MxMethodeINPUT (TypeBarData *Data, double *Input){
   
-  if (opt.want_verbose)
-    MxPrint(Input, "Input Matrix", 'm'); 
-
-  for(i=0; i<dim*dim; i++)
-    Input[i] /= 100;
+  int i,j;
+  
+  if (opt.want_verbose) MxPrint(Input, "Input Matrix", 'm'); 
+  
+  /*===========================*/
+  /*==== absorbing  states : make column opt.absrb absorbing ==*/
+  /*===========================*/
+  if(opt.absrb > 0) 
+    for(i = 0; i < dim; i++) 
+      Input[dim*i+(opt.absrb-1)] = 0.;
+  /*==========================*/
+  /*== end absorbing states ==*/
+  /*==========================*/
 
   /* diagonal elements */
-  for (i=0; i<dim; i++) Input[dim*i+i] = 0;
+  for (i = 0; i < dim; i++) Input[dim*i+i] = 0;
   for (j = 0; j < dim; j++) {
     double tmp = 0.00;
     /* calculate column sum */
     for(i = 0; i < dim; i++)
       tmp += Input[dim*i+j];
-    /* make Q a stochastic matrix */
-    Input[dim*j+j] = -tmp+1.;
+    Input[dim*j+j] = -tmp+1.;   /* make Q a stochastic matrix */
   }
   
-  if (opt.want_verbose)
-    MxPrint (Input,"U with Methode I" , 'm');
-
-  free(test);
+  if (opt.want_verbose) MxPrint (Input,"U with Methode I" , 'm');
+  if (opt.dumpU) MxBinWrite(Input);
+  
   return Input;
 }
 
@@ -749,7 +727,7 @@ static int **build_subtree_list(TypeBarData *Data){
 	j++;
       }
     }
-    if( **(deepest+i) > 0   )(**deepest)++;
+    if( **(deepest+i) > 0 )(**deepest)++;
   }
   
   free(seen);
@@ -1005,10 +983,12 @@ void MxEVnonsymMx(double *origU, double **_S){
   M_FREE(T);
   M_FREE(Q);
   M_FREE(A);
-  MxPrintMeschachMat(X_re, "real Eigenvectors");
   if((check = Mxempty(X_im)) != 1)
     MxPrintMeschachMat(X_im, "imag Eigenvectors NOT EMPTY !!!");
-  MxPrintMeschachVec(evals_re, "real Eigenvalues");
+  if(opt.want_verbose){
+    MxPrintMeschachMat(X_re, "real Eigenvectors");
+    MxPrintMeschachVec(evals_re, "real Eigenvalues");
+  }
   MxMeschach2ccmath(X_re, &tmp);
   *_S = tmp;
   M_FREE(X_re);
@@ -1030,8 +1010,7 @@ static int Mxempty(MAT *matrix){
 
 }
 
-/* End of file */
-
+/*==*/
 static void MxBinWrite(double *matrix){
   int i, j;
   FILE *BINOUT;
@@ -1049,7 +1028,67 @@ static void MxBinWrite(double *matrix){
     for(j=0;j<dim;j++)
       fwrite(&matrix[dim*i+j],sizeof(double),1,BINOUT);
 
+  fprintf(stderr, "matrix written to binfile\n");
   fclose(BINOUT);
 }
 
+/*==*/
+void  MxExponent(double *p0, double *p8, double *U){
+  int i,j, pdiff_counter = 0;
+  double x, time, *Uexp, *Umerk, *pt, *pdiff, check = 0.;
 
+  Umerk  = (double *) MxNew (dim*dim*sizeof(double));
+  Uexp   = (double *) MxNew (dim*dim*sizeof(double));
+  pt     = (double *) MxNew (dim*sizeof(double));
+  pdiff  = (double *) MxNew (dim*sizeof(double));
+
+  memcpy(Umerk, U, dim*dim*sizeof(double));
+  
+  for (i=0; i<dim; i++) U[(dim+1)*i] -= 1;
+  print_settings();
+  for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
+    memcpy(U, Umerk, dim*dim*sizeof(double));
+    for (i=0; i<dim*dim; i++) U[i]*=time;
+    padexp(U,Uexp,dim,30);
+    x = 0.;
+    for(j=0;j<dim*dim;j++) x+=Uexp[j];
+    for(j=0;j<dim*dim;j++) Uexp[j]*=(double)dim/x;
+    vmul(pt, Uexp, p0, dim);
+    /* check convergence */
+    for(i=0; i<dim; i++){
+      pdiff[i] = p8[i] - pt[i];
+      if (fabs(pdiff[i]) >= 0.0001)
+	pdiff_counter++;
+      }
+    if (pdiff_counter < 1)
+      break;
+    pdiff_counter = 0.;
+    /* end check convergence */
+    check = 0.;
+    printf(" %e ", time);  /* print p(t) to stdout */
+    for (i = 0; i < dim; i++){
+      if(pt[i] < -0.00001){
+	fprintf(stderr, "prob of lmin %i has become negative!\n", i+1);
+	exit(866);
+      }
+      printf("%e ", fabs(pt[i]));
+      check += fabs(pt[i]); 
+    }
+    printf("\n");
+  
+    if ( ((check-1) < -0.01) || ((check-1) > 0.01) ){
+      fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
+      exit(888);
+    }
+    memset(pt,   0, dim*sizeof(double));
+    memset(pdiff, 0, dim*sizeof(double));
+    memset(Uexp, 0, dim*dim*sizeof(double));
+    memset(U, 0, dim*dim*sizeof(double));
+
+  }
+  free(Uexp);
+  free(pt);
+}
+
+
+/* End of file */

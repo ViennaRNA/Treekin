@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-08-27 16:54:39 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.5 2003/08/27 14:59:08 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-09-03 13:17:47 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.6 2003/09/04 11:04:14 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,34 +54,27 @@ int main (int argc, char **argv) {
     free(lmin_nr_so);
     free(assoc_gradbas);
   }
-  else if(opt.method == 'I'){      /* rate matrix input process */
+  else {                         /* tree/rates  process */
     dim = ParseBarfile (opt.INFILE, &Data);
-    ParseRatesFile(&R, dim);
+    if(opt.method == 'I')  ParseRatesFile(&R, dim);
     MxInit (dim);
-    U = MxMethodeINPUT(R);
+    if(opt.method == 'I')  U = MxMethodeINPUT(Data, R);
+    else  U = MxBar2Matrix (Data);
     p0 = MxStartVec ();
     p8 = MxEqDistr (Data);
-    if(opt.absrb > 0) MxEVnonsymMx(U, &S);
-    else S = MxSymmetr (U, p8);
-    MxIterate (p0, p8, S);
-    MxMemoryCleanUp();
-    free(U);free(S);free(p8);
-    free(opt.pini);
-    free(Data);
-  }
-  else {                         /* tree process */
-    dim = ParseBarfile (opt.INFILE, &Data);
-    MxInit (dim);
-    U = MxBar2Matrix (Data);
-    p0 = MxStartVec ();
-    p8 = MxEqDistr (Data);
-    if(opt.absrb > 0) MxEVnonsymMx(U, &S);
-    else S = MxSymmetr (U, p8);
-    MxIterate (p0, p8, S);
+    if(opt.matexp != 0){
+      MxExponent(p0,p8,U);
+    }
+    else{
+      if(opt.absrb > 0) MxEVnonsymMx(U, &S);
+      else S = MxSymmetr (U, p8);
+      MxIterate (p0, p8, S);
+      free(S);free(p8);
+    }
     MxMemoryCleanUp();
     
     if (opt.pini != NULL) free(opt.pini);
-    free(U);free(S);free(p8);
+    free(U);
     free(Data);
     /* saddles freen !!! */
   }

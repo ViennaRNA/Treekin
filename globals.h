@@ -1,6 +1,6 @@
 /* globals.h */
-/* Last changed Time-stamp: <2003-07-23 16:24:34 mtw> */
-/*  static char rcsid[] = "$Id: globals.h,v 1.2 2003/08/05 08:40:04 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-08-28 11:47:49 mtw> */
+/*  static char rcsid[] = "$Id: globals.h,v 1.3 2003/09/04 11:04:14 mtw Exp $"; */
 
 typedef struct {         /* command-line options */
   short absrb;           /* make one lmin absorbing */
@@ -8,6 +8,7 @@ typedef struct {         /* command-line options */
   short want_verbose;    /* verbose output */
   short want_degenerate; /* consider degeneracy */
   short dumpU;           /* dump U to a binary file */
+  short matexp;          /* use matrix-exponent routines */
   int n;                 /* read only n lmins */
   float T;               /* Temperature */
   float t0;              /* start time */

@@ -1,6 +1,6 @@
 /* globals.c */
-/* Last changed Time-stamp: <2003-08-25 15:25:28 mtw> */
-/* static char rcsid[] = "$Id: globals.c,v 1.3 2003/08/27 14:59:08 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-08-28 11:58:05 mtw> */
+/* static char rcsid[] = "$Id: globals.c,v 1.4 2003/09/04 11:04:14 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,10 +41,11 @@ static int decode_switches (int argc, char **argv) {
   ini_globs();
   
   while ((c = getopt_long (argc, argv,
-			   "v"    /* verbose output */
-			   "h"    /* help */
+			   "v"     /* verbose output */
+			   "h"     /* help */
 			   "d"     /* degeneracy */
-			   "u",    /* dump U to bin-file */
+			   "u"    /* dump U to bin-file */
+			   "e",    /* use matrix-exponent routines */
 			   long_options, &option_index)) != EOF)
     {
       switch (c)
@@ -183,7 +184,11 @@ static int decode_switches (int argc, char **argv) {
 	case 'u':
 	  opt.dumpU = 1;
 	  break;
-
+	  
+	case 'e':
+	  opt.matexp = 1;
+	  break;
+	  
 	case 'h':
 	  usage(0);
 	  
@@ -202,14 +207,15 @@ static int decode_switches (int argc, char **argv) {
 
 /*==============================*/
 static void ini_globs(void) {
-  opt.absrb           =      0;
-  opt.T               =    37.;
-  opt.t0              =      1;
-  opt.t8              = 10000.;
-   opt.want_degenerate =      0; 
-  opt.tinc            =   1.02;
-  opt.method          =    'B';
-  opt.dumpU           =      0;
+  opt.absrb           =          0;
+  opt.T               =         37.;
+  opt.t0              =          0.1;
+  opt.t8              = 1000000000.;
+   opt.want_degenerate =         0; 
+  opt.tinc            =          1.02;
+  opt.method          =          'B';
+  opt.dumpU           =          0;
+  opt.matexp          =          0;
 }
 
 /*==============================*/
@@ -231,6 +237,7 @@ static void usage(int status) {
 	 "                        (NOTE: sum of <float> must equal 1)\n"
 	 "--tinc <float>          Time scaling-factor (for log time-scale)\n"
 	 "-d                      Consider degeracy in transition rates\n"
+	 "-e                      Use matrix-expontent routines, NO diagonalization\n"
 	 "-u                      Dump transition matrix U to a binary file matrix.bin\n"
 	 "-v, --verbose           Verbose output (for debugging)\n"
 	 "\n"
@@ -251,6 +258,7 @@ static void display_settings(void) {
 	  "--method   = %c\n"
 	  "--nlmins   = %d\n"
 	  "-d         = %d\n"
+	  "-e         = %d\n"
 	  "-u         = %d\n"
 	  "--verbose  = %d\n",
 	  opt.absrb,
@@ -261,6 +269,7 @@ static void display_settings(void) {
 	  opt.method,
 	  opt.n,
 	  opt.want_degenerate,
+	  opt.matexp,
 	  opt.dumpU,
 	  opt.want_verbose);
 }
