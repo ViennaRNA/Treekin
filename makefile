@@ -1,9 +1,9 @@
-# $Id: makefile,v 1.1 2003/07/14 07:42:20 mtw Exp $
+# $Id: makefile,v 1.2 2003/07/16 12:27:01 mtw Exp $
 CC      = gcc
 SCRDIR  = .
 INCDIR  = -I$(SCRDIR) -I/scratch/mtw/meschach
 CDEBUG  = -g3
-COPTIM  = -O -march=i686
+COPTIM  = -O3 -march=i686
 CFLAGS  = -Wall $(INCDIR) $(CDEBUG)
 LIBS    = -lm /scratch/mtw/meschach/meschach.a
 EXE     = treekin
