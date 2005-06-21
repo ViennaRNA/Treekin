@@ -1,6 +1,6 @@
 /* calc.h */
-/* Last changed Time-stamp: <2003-11-04 11:35:53 mtw> */
-/*  static char rcsid[] = "$Id: calc.h,v 1.8 2003/11/18 17:27:59 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-12-02 16:22:50 mtw> */
+/*  static char rcsid[] = "$Id: calc.h,v 1.9 2005/06/21 10:08:31 mtw Exp $"; */
 
 #ifndef _CALC_H_
 #define _CALC_H_
@@ -18,6 +18,7 @@ void    MxEVnonsymMx(double *U, double **_S);
 void    MxIterate (double *p0, double *p8, double *S);
 void    MxMemoryCleanUp (void);
 void    MxExponent(double *p0, double *p8, double *U);
+void    MxFPT(double *U, double *p8);
 
 #endif 
 

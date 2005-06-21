@@ -1,6 +1,6 @@
 /* main.c */
-/* Last changed Time-stamp: <2003-11-04 11:36:48 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.14 2003/11/18 17:27:59 mtw Exp $"; */
+/* Last changed Time-stamp: <2003-12-02 16:01:42 mtw> */
+/* static char rcsid[] = "$Id: main.c,v 1.15 2005/06/21 10:08:31 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,8 +21,9 @@ int main (int argc, char **argv) {
   BarData *Data;
   InData *InD;
   double *U, *S, *p0, *p8, *R = NULL;
-  int  dim;
-  
+  int  dim,fpt;
+
+  fpt = 0; /* first passage time */
   parse_commandline(argc, argv);
  
   if(opt.method == 'F')      /* full process */
@@ -40,7 +41,7 @@ int main (int argc, char **argv) {
     p8 = MxEqDistrFULL (E);
   else
     p8 = MxEqDistr (Data);
-  
+  if(fpt) MxFPT(U, p8);
   if(opt.matexp) MxExponent(p0,p8,U);
   else{
     if(opt.absrb) MxEVnonsymMx(U, &S);

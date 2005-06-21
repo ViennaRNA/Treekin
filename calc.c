@@ -1,6 +1,6 @@
 /* calc.c */
-/* Last changed Time-stamp: <2003-11-04 11:35:14 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.24 2003/11/18 17:27:59 mtw Exp $"; */
+/* Last changed Time-stamp: <2005-03-22 16:13:25 mtw> */
+/* static char rcsid[] = "$Id: calc.c,v 1.25 2005/06/21 10:08:31 mtw Exp $"; */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +32,7 @@ static char   *time_stamp(void);
 static void    MxDoDegeneracyStuff(void);
 static int     Mxempty(MAT *matrix);
 static void    MxBinWrite (double *matrix);
+static void    MxASCIIWrite(double *matrix);
 /* static void    MxKotzOutMathematica(double *matrix); */
 
 /* private vars and arrays */
@@ -81,7 +82,8 @@ double *MxBar2Matrix ( BarData *Data, double *R) {
     exit(1);
   }
   if (opt.dumpU)
-    MxBinWrite(U);
+  /*   MxBinWrite(U); */
+    MxASCIIWrite(U);
   return (U);
 }
 
@@ -777,6 +779,27 @@ static void MxBinWrite(double *matrix){
 }
 
 /*==*/
+static void MxASCIIWrite(double *matrix){
+  int i, j;
+  FILE *ASCIIOUT;
+  char *asciifile = "matrixU.txt";
+
+  ASCIIOUT = fopen(asciifile, "w");
+  if (!ASCIIOUT){
+    fprintf(stderr, "could not open file pointer 4 ASCII outfile\n");
+    exit(101);
+  }
+  for(i=0;i<dim;i++){
+    for(j=0;j<dim;j++){
+      fprintf(ASCIIOUT,"%15.10g ", matrix[dim*i+j]);
+    }
+    fprintf(ASCIIOUT,"\n");
+  }
+  fprintf(stderr, "matrix written to ASCII file\n");
+  fclose(ASCIIOUT);
+}
+
+/*==*/
 void  MxExponent(double *p0, double *p8, double *U){
   int i,j, pdiff_counter = 0;
   double x, time, *Uexp, *Umerk, *pt, *pdiff, check = 0.;
@@ -834,6 +857,55 @@ void  MxExponent(double *p0, double *p8, double *U){
   free(pt);
 }
 
+/*==*/
+void MxFPT(double *U, double *p8){
+  int i,j, val;
+  double *M, *Q, *W, *Z;
+  
+  M = (double *) MxNew (dim*dim*sizeof(double));
+  Q = (double *) MxNew (dim*dim*sizeof(double));
+  W = (double *) MxNew (dim*dim*sizeof(double));
+  Z = (double *) MxNew (dim*dim*sizeof(double));
+   
+
+  MxPrint(p8, "p8", 'v');
+
+  memcpy(Q,U, dim*dim*sizeof(double));
+  for(i=0; i < dim; i++)
+    Q[dim*i+i] -= 1;
+  
+  for (j = 0; j < dim; j++)
+    for(i = 0; i < dim; i++)
+      W[dim*i+j] = p8[i];
+  MxPrint(Q, "Q", 'm');
+  MxPrint(W, "W", 'm'); 
+  
+
+  for(i = 0; i < dim; i++)
+    for (j = 0; j < dim; j++)
+      Z[dim*i+j] = W[dim*i+j] - Q[dim*i+j];
+
+  val = minv(Z, dim);
+
+  MxPrint(Z, "Z", 'm');
+
+  if (val != 0){
+    fprintf(stderr, "Z is singular, can't invert it\n");
+    exit(999);
+  }
+
+  free(Q);
+  free(W);
+  free(Z);
+
+  for(i = 0; i < dim; i++)
+    for (j = 0; j < dim; j++)
+      M[dim*i+j] = (Z[dim*j+j] - Z[dim*i+j])/p8[j];
+  MxPrint(M, "M", 'm');
+  
+  exit(999);
+  free(M);
+}
 /*==*/
 /* static void MxKotzOutMathematica(double *matrix){ */
 /*   int i,j; */
