@@ -2,8 +2,8 @@
 /*=   barparser.h                                                 =*/
 /*=   header file for parsing bar-files etc.                      =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 15:15:43 mtw>          =*/
-/*=   $Id: barparser.h,v 1.9 2006/03/15 14:18:20 mtw Exp $        =*/
+/*=   Last changed Time-stamp: <2006-03-15 17:58:54 mtw>          =*/
+/*=   $Id: barparser.h,v 1.10 2006/03/15 18:04:29 mtw Exp $        =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -12,8 +12,6 @@
 
 #ifndef _BARPARSER_H_
 #define _BARPARSER_H_
-
-#define SADDLE_LIST 400
 
 /* structures */ 
 typedef struct _BarData { /* structure for bar-file */ 
@@ -32,12 +30,6 @@ typedef struct _BarData { /* structure for bar-file */
   float FGr;            /* F of gradient basin */ 
 } BarData;
 
-typedef struct _inData { /* structure for data.out file for full process */ 
-  int i;
-  int j;
-  double rate;
-} InData;
-
 typedef struct _TypeDegSaddle{ /* structure for processing degeneracy */
   float energy;   /* energy of saddle */
   int cc;        /* # of structures in that particular connected component */
@@ -53,7 +45,7 @@ SubInfo *E;
  
 /* functions */ 
 int  ParseBarfile (FILE *fp, BarData **lmin);
-int  ParseInfile(FILE *fp, InData **InD);
+int  ParseInfile(FILE *infile_fp, double **microrates);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
 void ParseRatesFile(double **Raten, int dim);
 #endif

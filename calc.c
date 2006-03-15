@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 15:14:37 mtw>          =*/
-/*=   $Id: calc.c,v 1.27 2006/03/15 14:18:20 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-03-15 17:52:38 mtw>          =*/
+/*=   $Id: calc.c,v 1.28 2006/03/15 18:04:29 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -76,24 +76,25 @@ MxInit (int d)
 double*
 MxBar2Matrix ( BarData *Data, double *R)
 {
-  double *U;
-
+  double *U=NULL;
   if(opt.want_degenerate) MxDoDegeneracyStuff();
-  
   switch (opt.method) {
   case 'A':
     U = MxMethodeA(Data);
     break;
+  case 'F':
+    U = MxMethodeFULL(R);
+    break; 
   case 'I':
     U = MxMethodeINPUT(Data, R);
     break;
   default:
     fprintf (stderr,
 	     "ERROR in MxBar2Matrix(): No handler 4 method %c\n", opt.method);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   if (opt.dumpU)
-  /*   MxBinWrite(U); */
+    /*   MxBinWrite(U); */
     MxASCIIWrite(U);
   return (U);
 }
@@ -432,36 +433,27 @@ MxMethodeA (BarData *Data)
 
 /*==*/ 
 extern double*
-MxMethodeFULL (InData *InData)
+MxMethodeFULL (double *R)
 {
   int a, i, j;
-  double *U;
-  
-  U = (double *) MxNew (dim*dim*sizeof(double));
   free(D);
-   
-  for(a = 0; a <= in_nr; a++){
-    i = InData[a].i;
-    j = InData[a].j;
-    U[dim*i+j] = InData[a].rate;
-  }
-
+  
   if(opt.absrb){ /*==== absorbing  states ====*/
     for(i = 0; i < dim; i++)
-      U[dim*i+(opt.absrb-1)] = 0. ;
-  } /*== end absorbing states ==*/
+      R[dim*i+(opt.absrb-1)] = 0. ;
+  }              /*== end absorbing states ==*/
   
   /* set diagonal elements  to 0 */
-  for (i = 0; i < dim; i++) U[dim*i+i] = 0;
+  for (i = 0; i < dim; i++) R[dim*i+i] = 0;
   for (j = 0; j < dim; j++) {
     double tmp = 0.00;
     /* calculate column sum */
-    for(i = 0; i < dim; i++) tmp += U[dim*i+j];
-     U[dim*j+j] = -tmp+1; /* make U a stochastic matrix */
+    for(i = 0; i < dim; i++) tmp += R[dim*i+j];
+     R[dim*j+j] = -tmp+1; /* make U a stochastic matrix */
   }
 
-  if (opt.want_verbose) MxPrint (U, "U with Methode F", 'm');
-  return U;
+  if (opt.want_verbose) MxPrint (R, "R with Methode F", 'm');
+  return R;
 }
 
 /*==*/

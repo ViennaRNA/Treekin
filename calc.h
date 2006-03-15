@@ -2,8 +2,8 @@
 /*=   calc.h                                                      =*/
 /*=   header file for calculation routines for treekin            =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 15:15:52 mtw>          =*/
-/*=   $Id: calc.h,v 1.11 2006/03/15 14:18:20 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-03-15 17:54:19 mtw>          =*/
+/*=   $Id: calc.h,v 1.12 2006/03/15 18:04:29 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -19,7 +19,7 @@ void    MxInit (int d);
 double *MxBar2Matrix (BarData *Data, double *);
 double *MxEqDistr (BarData *Data);
 double *MxEqDistrFULL (SubInfo *E);
-double *MxMethodeFULL(InData *InD);
+double *MxMethodeFULL(double *);
 double *MxMethodeINPUT (BarData *Data, double *);
 double *MxSymmetr (double *U, double *PI);
 double *MxStartVec (void) ;

@@ -2,8 +2,8 @@
 /*=   barparser.c                                                 =*/
 /*=   routines for reading bar-files and other input for treekin  =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 13:30:08 mtw>          =*/
-/*=   $Id: barparser.c,v 1.16 2006/03/15 14:18:20 mtw Exp $       =*/
+/*=   Last changed Time-stamp: <2006-03-15 18:46:45 mtw>          =*/
+/*=   $Id: barparser.c,v 1.17 2006/03/15 18:04:29 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -24,96 +24,55 @@ static char *getline(FILE *fp);
 
 /*==*/
 int
-ParseInfile(FILE *infile_fp, InData **transition)
+ParseInfile(FILE *infile_fp, double **microrates)
 {
-  char *line = NULL, *line_tr = NULL, *grad_bas = "assoc_gradbas.out";
-  int dimensione, c, i, l, newsize = 5000, limit;
-  InData *tmp;        /* tmp array 4 rates between two states */ 
-  SubInfo *tmp_subI;  /* tmp array 4 info on energies of all subopts */
-  FILE *gb_FP;        /* file pointer 4 associated gradient basins */
+  char *line = NULL, *mrfile = "microrates.out";
+  int dim, indx=0, l=0;
+  double *tmp_mr=NULL;    /* temp matrix containing microrates */
+  SubInfo *tmp_subI=NULL; /* temp array for info on energies of all states */
+  FILE *mr_FP=NULL;       /* file pointers 4 "microrates.out" */
+
+  /* FIRST: read microrates.out and fill up transition matrix */
+  mr_FP = fopen(mrfile, "r+");
+  line = getline(mr_FP);  
+  sscanf(line, ">%d %*s", &dim);
+  g_free(line);
+  tmp_mr  = g_new0(double, dim*dim);
+  while((line=getline(mr_FP)) != NULL){
+    int i,j;
+    double rate=0.;
+    sscanf(line, "%d %d %lf %*d", &i, &j, &rate);
+    tmp_mr[dim*i+j]=rate;
+    tmp_mr[dim*j+i]=1;
+    g_free(line);
+  }
+  fclose(mr_FP);
+  *microrates = tmp_mr;
+
+  /* SECOND: read (subopt)-infile with energies & gradient basins */
+  tmp_subI = g_new0(SubInfo, dim);
+  line = getline(infile_fp);
+  sscanf(line, "%s %*f", &opt.sequence);
+  g_free(line);
+  while((line=getline(infile_fp)) != NULL){
+    double energy;
+    int gb;
+    sscanf(line, "%*s %f %d %*d", &tmp_subI[indx].energy, &tmp_subI[indx].ag);
+    if (tmp_subI[indx].ag > l) l = tmp_subI[indx].ag;
+    g_free(line);
+    indx++;
+  }
   
-  line = getline(infile_fp);  /* read first line from opt.INFILE */
-  sscanf(line, "%d %*s", &dimensione);
-  /* HIER AUCH NOCH opt.sequence herausscannen */
-  if(line != NULL) free(line);
-  
-  tmp =  (InData *) calloc (dimensione, sizeof(InData));
-  if(tmp == NULL){
-    fprintf(stderr, "tmp could not be allocated\n");
+  if(indx != dim){
+    fprintf(stderr, " read more lines from subopt file than our dim is!\n");
     exit(EXIT_FAILURE);
   }
-  tmp_subI = (SubInfo *) calloc (dimensione, sizeof(SubInfo));
-  if(tmp_subI == NULL){
-    fprintf(stderr, "struct tmp_subI could not be allocated in barparser.c\n");
-    exit(EXIT_FAILURE);
-  }
   
-  /* read energies of the different states into array tmp_subI from stdin (data.out) */ 
-  for(i = 0; i < dimensione; i++){
-    int o, p;
-    line = getline(stdin);
-    sscanf(line, "%d %d %lf", &o, &p, &tmp_subI[i].energy);
-    if(o != p) {
-      fprintf(stderr, "error while reading energies from data.out: %d != %d\n", o, p);
-      exit(EXIT_FAILURE);
-    }
-    if(line != NULL) free(line);
-  }
-
-  i = 0;
-  limit = dimensione;
-  /* read states and transition between them */ 
-  while(line != NULL){
-    line = getline(stdin);
-    if (line == NULL) break;
-    if(i+1 >= limit){ /* realloc tmp array */ 
-      newsize *= 3;
-      fprintf(stderr,"realloc data array: new size is %d\n", newsize);
-      tmp =  (InData *) realloc (tmp, newsize*sizeof(InData));
-      if(tmp == NULL){
-	fprintf(stderr, "realloc of data array in barparser failed\n");
-	exit(EXIT_FAILURE);
-      }
-      limit = newsize;
-    }
-    sscanf(line, "%d %d %lf", &tmp[i].j, &tmp[i].i, &tmp[i].rate);
-    i++;
-    if(line != NULL) free(line);
-  }
-
-  tmp =  (InData *) realloc (tmp, i*sizeof(InData));
-  in_nr = i-1;
-  if(line) free(line);
-  
-  /* ==================================== */
-  /* >>> begin read assoc_gradbas.out <<< */
-  c = 0; l = 0;
-  gb_FP = fopen(grad_bas, "r+");  /* file pointer for assoc_gradbas.out */
-  line_tr = getline(gb_FP);       /* read first line containing info stuff */
-  if(line_tr != NULL) free(line_tr);
-  /* read the gradient basin of each entry from subopt */
-  while((line_tr = getline(gb_FP)) != NULL){
-    sscanf(line_tr, "%*d %5d", &tmp_subI[c].ag);
-    if (tmp_subI[c].ag > l) l = tmp_subI[c].ag;
-    c++;
-    if(line_tr != NULL) free(line_tr);
-  }
-  if(c != dimensione){
-    fprintf(stderr, " read more lines from gradient basin file than our dim is!\n");
-    exit(EXIT_FAILURE);
-  }
-  if(gb_FP) fclose(gb_FP);
-  /* >>> end read assoc_gradbas.out <<< */
-  /* ================================== */ 
-
-  *transition = tmp;
   lmins = l;
   E = tmp_subI;
-  fprintf(stderr, "read %d items, dimension = %d, lmins = %d \n", i, dimensione, lmins);
+  fprintf(stderr, "dimension = %d, lmins = %d \n", dim, lmins);
   
-  if(line_tr != NULL) free(line_tr); 
-  
-  return dimensione;
+  return dim;
 }
 
 /*==*/

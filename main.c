@@ -2,8 +2,8 @@
 /*=   main.c                                                      =*/
 /*=   main file for treekin                                       =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 13:26:32 mtw>          =*/
-/*=   $Id: main.c,v 1.17 2006/03/15 14:18:20 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-03-15 18:31:19 mtw>          =*/
+/*=   $Id: main.c,v 1.18 2006/03/15 18:04:29 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -23,22 +23,21 @@
 int
 main (int argc, char **argv)
 {
-  BarData *Data;
-  InData *InD;
-  double *U, *S, *p0, *p8, *R = NULL;
+  BarData *Data=NULL;
+  double *U=NULL, *S=NULL, *p0=NULL, *p8=NULL, *R = NULL;
   int  dim,fpt;
 
   fpt = 0; /* first passage time */
   parse_commandline(argc, argv);
  
   if(opt.method == 'F')      /* full process */
-    dim = ParseInfile(opt.INFILE, &InD);
+    dim = ParseInfile(opt.INFILE, &R);
   else
     dim = ParseBarfile (opt.INFILE, &Data);
   if(opt.method == 'I')  ParseRatesFile(&R, dim);
   MxInit (dim);
   if(opt.method == 'F')
-    U = MxMethodeFULL(InD);
+    U = MxBar2Matrix (NULL, R);
   else
     U = MxBar2Matrix (Data, R);
   p0 = MxStartVec ();
@@ -58,8 +57,7 @@ main (int argc, char **argv)
   
   if (opt.pini != NULL) free(opt.pini);
   free(U);
-  if(opt.method == 'F') free(InD);
-  else free(Data);
+  if(Data != NULL) free(Data);
   return 0;
 }
 

@@ -2,8 +2,8 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 15:16:13 mtw>          =*/
-/*=   $Id: globals.h,v 1.7 2006/03/15 14:18:20 mtw Exp $          =*/
+/*=   Last changed Time-stamp: <2006-03-15 18:04:13 mtw>          =*/
+/*=   $Id: globals.h,v 1.8 2006/03/15 18:04:29 mtw Exp $          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -12,6 +12,8 @@
 
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
+
+#include <glib.h>
 
 typedef struct {         /* command-line options */
   short absrb;           /* make one lmin absorbing */
@@ -34,7 +36,6 @@ typedef struct {         /* command-line options */
 } treekin_options;
 
 treekin_options opt;
-int in_nr; /* counts # of elements read from FULL process input */
 int lmins; /* # of lmins in the barrier tree, needed in FULL process */
 
 void parse_commandline(int argc, char **argv);
