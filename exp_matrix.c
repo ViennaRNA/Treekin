@@ -2,8 +2,8 @@
 /*=   exp_matrix.c                                                =*/
 /*=   routines for calculating matrix exponents via pade approx.  =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 12:03:11 mtw>          =*/
-/*=   $Id: exp_matrix.c,v 1.3 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   Last changed Time-stamp: <2006-03-15 12:52:09 mtw>          =*/
+/*=   $Id: exp_matrix.c,v 1.4 2006/03/15 11:52:30 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) W. Andreas Svrcek-Seiler, Michael Thomas Wolfinger    =*/
 /*=                  {svrci,mtw}@tbi.univie.ac.at                 =*/
@@ -16,7 +16,7 @@
 #include <math.h>
 #include "exp_matrix.h"
 
-/* private function(s) */
+/* private function(s) with long double */
 
 static void
 trnm(long double *a,int n)
