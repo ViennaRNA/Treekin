@@ -2,8 +2,8 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 10:45:24 mtw>          =*/
-/*=   $Id: globals.c,v 1.7 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   Last changed Time-stamp: <2006-03-15 15:15:08 mtw>          =*/
+/*=   $Id: globals.c,v 1.8 2006/03/15 14:18:20 mtw Exp $          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/

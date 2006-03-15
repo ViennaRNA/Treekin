@@ -2,8 +2,8 @@
 /*=   barparser.c                                                 =*/
 /*=   routines for reading bar-files and other input for treekin  =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 10:34:59 mtw>          =*/
-/*=   $Id: barparser.c,v 1.15 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   Last changed Time-stamp: <2006-03-15 13:30:08 mtw>          =*/
+/*=   $Id: barparser.c,v 1.16 2006/03/15 14:18:20 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -24,7 +24,7 @@ static char *getline(FILE *fp);
 
 /*==*/
 int
-ParseInfile(FILE *fp, InData **transition)
+ParseInfile(FILE *infile_fp, InData **transition)
 {
   char *line = NULL, *line_tr = NULL, *grad_bas = "assoc_gradbas.out";
   int dimensione, c, i, l, newsize = 5000, limit;
@@ -32,7 +32,7 @@ ParseInfile(FILE *fp, InData **transition)
   SubInfo *tmp_subI;  /* tmp array 4 info on energies of all subopts */
   FILE *gb_FP;        /* file pointer 4 associated gradient basins */
   
-  line = getline(fp);  /* read first line */
+  line = getline(infile_fp);  /* read first line from opt.INFILE */
   sscanf(line, "%d %*s", &dimensione);
   /* HIER AUCH NOCH opt.sequence herausscannen */
   if(line != NULL) free(line);
@@ -40,12 +40,12 @@ ParseInfile(FILE *fp, InData **transition)
   tmp =  (InData *) calloc (dimensione, sizeof(InData));
   if(tmp == NULL){
     fprintf(stderr, "tmp could not be allocated\n");
-    exit(888);
+    exit(EXIT_FAILURE);
   }
   tmp_subI = (SubInfo *) calloc (dimensione, sizeof(SubInfo));
   if(tmp_subI == NULL){
     fprintf(stderr, "struct tmp_subI could not be allocated in barparser.c\n");
-    exit(888);
+    exit(EXIT_FAILURE);
   }
   
   /* read energies of the different states into array tmp_subI from stdin (data.out) */ 
@@ -55,7 +55,7 @@ ParseInfile(FILE *fp, InData **transition)
     sscanf(line, "%d %d %lf", &o, &p, &tmp_subI[i].energy);
     if(o != p) {
       fprintf(stderr, "error while reading energies from data.out: %d != %d\n", o, p);
-      exit(555);
+      exit(EXIT_FAILURE);
     }
     if(line != NULL) free(line);
   }
@@ -72,7 +72,7 @@ ParseInfile(FILE *fp, InData **transition)
       tmp =  (InData *) realloc (tmp, newsize*sizeof(InData));
       if(tmp == NULL){
 	fprintf(stderr, "realloc of data array in barparser failed\n");
-	exit(888);
+	exit(EXIT_FAILURE);
       }
       limit = newsize;
     }
@@ -100,7 +100,7 @@ ParseInfile(FILE *fp, InData **transition)
   }
   if(c != dimensione){
     fprintf(stderr, " read more lines from gradient basin file than our dim is!\n");
-    exit(777);
+    exit(EXIT_FAILURE);
   }
   if(gb_FP) fclose(gb_FP);
   /* >>> end read assoc_gradbas.out <<< */
@@ -127,12 +127,12 @@ ParseRatesFile(double **Raten, int dim)
   tmp_rates = (double *)calloc(dim*dim,sizeof(double));
   if (tmp_rates == NULL){
     fprintf(stderr, "could not allocate tmp_rates in ParseRatesFile\n");
-    exit(888);
+    exit(EXIT_FAILURE);
   }
   rate = (double *)calloc(dim,sizeof(double));
   if (rate == NULL){
     fprintf(stderr, "could not allocate rate in ParseRatesFile\n");
-    exit(888);
+    exit(EXIT_FAILURE);
   }
   
   opt.RATENFILE = fopen(rate_file, "r+");
@@ -170,7 +170,7 @@ ParseBarfile( FILE *fp, BarData **lmin)
   line = getline(fp); /* get sequence from first line */
   if(sscanf(line, "%s", tmpseq) == 0){
     fprintf(stderr, "could not get sequence from first line of barfile\n");
-    exit(888);
+    exit(EXIT_FAILURE);
   }
   opt.sequence = tmpseq;
   free(line);
@@ -257,7 +257,7 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
       temp = (TypeDegSaddle *) realloc (temp, newsize*sizeof(TypeDegSaddle));
       if(!temp) {
 	fprintf(stderr, "Could not realloc tmp structure array in ParseSaddleFile\n");
-	exit(111);
+	exit(EXIT_FAILURE);
       }
       size = newsize;
     }
@@ -267,7 +267,7 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
     while( *line != '\0') {
       if(temp[count].list[0] == 99) {
 	fprintf (stderr, " too many lmins in saddles.txt\n");
-	exit(111);
+	exit(EXIT_FAILURE);
       }
       p = 0;
       sscanf(line, "%d %n", &temp[count].list[temp[count].list[0]+1], &p);

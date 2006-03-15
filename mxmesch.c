@@ -2,8 +2,8 @@
 /*=   mxmesch.c                                                   =*/
 /*=   general matrix routines from meschach library               =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 10:56:48 mtw>          =*/
-/*=   $Id: mxmesch.c,v 1.2 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   Last changed Time-stamp: <2006-03-15 15:15:28 mtw>          =*/
+/*=   $Id: mxmesch.c,v 1.3 2006/03/15 14:18:20 mtw Exp $          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/

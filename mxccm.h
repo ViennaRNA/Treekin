@@ -2,8 +2,8 @@
 /*=   mxccm.h                                                     =*/
 /*=   header file fro matrix routines from ccmath library         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 11:42:12 mtw>          =*/
-/*=   $Id: mxccm.h,v 1.2 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   Last changed Time-stamp: <2006-03-15 15:16:26 mtw>          =*/
+/*=   $Id: mxccm.h,v 1.3 2006/03/15 14:18:20 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=      (c) Daniel A. Atkinson, Michael Thomas Wolfinger         =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/

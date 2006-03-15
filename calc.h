@@ -2,8 +2,8 @@
 /*=   calc.h                                                      =*/
 /*=   header file for calculation routines for treekin            =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 11:13:12 mtw>          =*/
-/*=   $Id: calc.h,v 1.10 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   Last changed Time-stamp: <2006-03-15 15:15:52 mtw>          =*/
+/*=   $Id: calc.h,v 1.11 2006/03/15 14:18:20 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/

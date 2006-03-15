@@ -2,8 +2,8 @@
 /*=   barparser.h                                                 =*/
 /*=   header file for parsing bar-files etc.                      =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 11:43:07 mtw>          =*/
-/*=   $Id: barparser.h,v 1.8 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   Last changed Time-stamp: <2006-03-15 15:15:43 mtw>          =*/
+/*=   $Id: barparser.h,v 1.9 2006/03/15 14:18:20 mtw Exp $        =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
