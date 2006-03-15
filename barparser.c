@@ -1,5 +1,15 @@
-/* barparser.c */
-/* Last changed Time-stamp: <2003-11-18 17:24:11 mtw> */
+/*=================================================================*/
+/*=   barparser.c                                                 =*/
+/*=   routines for reading bar-files and other input for treekin  =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 10:34:59 mtw>          =*/
+/*=   $Id: barparser.c,v 1.15 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=                 (c) Michael Thomas Wolfinger                  =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,19 +17,15 @@
 #include "globals.h"
 #include "limits.h"
 #include "ctype.h"
-#ifdef DMALLOC
-#include "dmalloc.h"
-#endif
 
 #define LMINBASE 100
-
-/*  static char rcsid[] = "$Id: barparser.c,v 1.14 2003/11/18 17:27:59 mtw Exp $"; */
 
 static char *getline(FILE *fp);
 
 /*==*/
-int ParseInfile(FILE *fp, InData **transition){
-
+int
+ParseInfile(FILE *fp, InData **transition)
+{
   char *line = NULL, *line_tr = NULL, *grad_bas = "assoc_gradbas.out";
   int dimensione, c, i, l, newsize = 5000, limit;
   InData *tmp;        /* tmp array 4 rates between two states */ 
@@ -111,7 +117,9 @@ int ParseInfile(FILE *fp, InData **transition){
 }
 
 /*==*/
-void ParseRatesFile(double **Raten, int dim){
+void
+ParseRatesFile(double **Raten, int dim)
+{
   int i = 0, j = 0, read =0;
   char *cp, *raten_line = NULL, *rate_file = "rates.out";
   double *rate, *tmp_rates;
@@ -148,8 +156,9 @@ void ParseRatesFile(double **Raten, int dim){
 }
 
 /*==*/
-int ParseBarfile( FILE *fp, BarData **lmin){
-
+int
+ParseBarfile( FILE *fp, BarData **lmin)
+{
   char *line = NULL, *tmpseq = NULL, *p, sep[] = " ";
   int count = 0, v = 0;
   int size = LMINBASE;
@@ -231,8 +240,9 @@ int ParseBarfile( FILE *fp, BarData **lmin){
 
 /*==*/
 /* parses file saddles.txt from barriers */
-int ParseSaddleFile(TypeDegSaddle **my_saddle) {
-
+int
+ParseSaddleFile(TypeDegSaddle **my_saddle)
+{
   int count = 0, size = 100, newsize , p = 0;
   char *line = NULL, *remember_line, *filename = "saddles.txt";
   FILE *my_file;
@@ -273,10 +283,10 @@ int ParseSaddleFile(TypeDegSaddle **my_saddle) {
 }
 
 /*==*/
-char *getline(FILE *fp) { 
-  
+char *
+getline(FILE *fp)
+{ 
   char s[512], *line, *cp; 
-  
   line = NULL;  
   do { 
     if(fgets(s, 512, fp) == NULL) break;

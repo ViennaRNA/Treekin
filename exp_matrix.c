@@ -1,19 +1,27 @@
-/* exp_matrix.c */
-/* Last changed Time-stamp: <2003-08-28 17:08:10 mtw> */
-/* static char rcsid[] = "$Id: exp_matrix.c,v 1.2 2003/09/04 11:04:14 mtw Exp $"; */
-
-
+/*=================================================================*/
+/*=   exp_matrix.c                                                =*/
+/*=   routines for calculating matrix exponents via pade approx.  =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 12:03:11 mtw>          =*/
+/*=   $Id: exp_matrix.c,v 1.3 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=     (c) W. Andreas Svrcek-Seiler, Michael Thomas Wolfinger    =*/
+/*=                  {svrci,mtw}@tbi.univie.ac.at                 =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "exp_matrix.h" /* functions for matrix-exponent stuff */
+#include "exp_matrix.h"
 
 /* private function(s) */
 
-static void trnm(long double *a,int n)
-{ long double s,*p,*q;
+static void
+trnm(long double *a,int n)
+{
+  long double s,*p,*q;
   int i,j,e;
   for(i=0,e=n-1; i<n-1 ;++i,--e,a+=n+1){
     for(p=a+1,q=a+n,j=0; j<e ;++j){
@@ -22,8 +30,10 @@ static void trnm(long double *a,int n)
    }
 }
 
-static void mmul(long double *c,long double *a,long double *b,int n)
-{ long double *p,*q,s; int i,j,k;
+static void
+mmul(long double *c,long double *a,long double *b,int n)
+{
+  long double *p,*q,s; int i,j,k;
   trnm(b,n);
   for(i=0; i<n ;++i,a+=n){
     for(j=0,q=b; j<n ;++j){
@@ -35,8 +45,10 @@ static void mmul(long double *c,long double *a,long double *b,int n)
 }
 
 
-static int minv(long double *a,int n)
-{ int lc,*le; long double s,t,tq=0.,zr=1.e-50;
+static int
+minv(long double *a,int n)
+{
+  int lc,*le; long double s,t,tq=0.,zr=1.e-50;
   long double *pa,*pd,*ps,*p,*q,*q0;
   int i,j,k,m;
   le=(int *)malloc(n*sizeof(int));
@@ -103,7 +115,9 @@ static int minv(long double *a,int n)
 }
 
 
-static void ipmmul(long double *a,long double *b, long double *c,int n) {
+static void
+ipmmul(long double *a,long double *b, long double *c,int n)
+{
   long double *T1,*T2;
   
   T1 = (long double *) malloc(n*n*sizeof(long double));
@@ -119,7 +133,9 @@ static void ipmmul(long double *a,long double *b, long double *c,int n) {
   return;
 }
 
-void padexp(double *from,double *out,int n,int ord) {
+void
+padexp(double *from,double *out,int n,int ord)
+{
   /* calculate exp(M) by a Pade approx */
   /* of order ord                      */
   /* exp(x) ~= p(x)/q(x)               */

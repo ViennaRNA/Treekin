@@ -1,4 +1,42 @@
-/* type definitions for general purpose maths package */
+/*=================================================================*/
+/*=   matrix.h                                                    =*/
+/*=   header file for matrix-calculation stuff from treekin       =*/
+/*=   mainly type definitions from meschach library               =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 11:28:31 mtw>          =*/
+/*=   $Id: matrix.h,v 1.2 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=                 (c) Michael Thomas Wolfinger                  =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
+
+/**************************************************************************
+**
+** Copyright (C) 1993 David E. Stewart & Zbigniew Leyk, all rights reserved.
+**
+**			     Meschach Library
+** 
+** This Meschach Library is provided "as is" without any express 
+** or implied warranty of any kind with respect to this software. 
+** In particular the authors shall not be liable for any direct, 
+** indirect, special, incidental or consequential damages arising 
+** in any way from use of the software.
+** 
+** Everyone is granted permission to copy, modify and redistribute this
+** Meschach Library, provided:
+**  1.  All copies contain this copyright notice.
+**  2.  All modified copies shall carry a notice stating who
+**      made the last modification and the date of such modification.
+**  3.  No charge is made for this software or works derived from it.  
+**      This clause shall not be construed as constraining other software
+**      distributed on the same medium as this software, nor is a
+**      distribution fee considered a charge.
+**
+***************************************************************************/
+
+#ifndef _MATRIX_H_
+#define _MATRIX_H_
 
 #include        <stdio.h>
 #include        <malloc.h>
@@ -192,3 +230,5 @@ extern	void	schur_evals(MAT *A,VEC *re_part,VEC *im_part);
           /* computes real and imaginary parts of the eigenvectors
                         of A after schur() */
 extern	MAT	*schur_vecs(MAT *T,MAT *Q,MAT *X_re,MAT *X_im);
+
+#endif

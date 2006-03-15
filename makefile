@@ -1,10 +1,11 @@
-# $Id: makefile,v 1.15 2003/10/23 10:47:28 mtw Exp $
+# $Id: makefile,v 1.16 2006/03/15 11:08:15 mtw Exp $
 CC      = gcc
 SCRDIR  = .
 INCDIR  = -I$(SCRDIR)
 CDEBUG  = -g3 -O
-COPTIM  = -O3 -march=i686
-CFLAGS  = -Wall -pedantic $(INCDIR) $(COPTIM)
+COPTIM  = -O3 -ffast-math
+CARCH   = -march=pentium4
+CFLAGS  = -Wall -pedantic $(INCDIR) $(COPTIM) $(CARCH)
 LIBS    = -lm 
 EXE     = treekin
 OBJS    = \

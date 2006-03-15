@@ -1,21 +1,33 @@
-/* mxccm.h */
-/* Last changed Time-stamp: <2003-07-24 18:33:03 mtw> */
-/* static char rcsid[] = "$Id: mxccm.c,v 1.2 2003/08/05 08:40:04 mtw Exp $"; */
+/*=================================================================*/
+/*=   mxccm.c                                                     =*/
+/*=   matrix routines from ccmath library                         =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 10:52:10 mtw>          =*/
+/*=   $Id: mxccm.c,v 1.3 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=      (c) Daniel A. Atkinson, Michael Thomas Wolfinger         =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
 
 #include <stdlib.h>
 #include <math.h>
 #include "mxccm.h"
 
-void eigen(double *a,double *ev,int n)
-{ double *dp;
+void
+eigen(double *a,double *ev,int n)
+{
+  double *dp;
   dp=(double *)calloc(n,sizeof(double));
   housev(a,ev,dp,n);
   qrevec(ev,a,dp,n); trnm(a,n);
   free(dp);
 }
 
-int qrevec(double *ev,double *evec,double *dp,int n)
-{ double cc,sc=0.,d,x,y,h,tzr=1.e-15;
+int
+qrevec(double *ev,double *evec,double *dp,int n)
+{
+  double cc,sc=0.,d,x,y,h,tzr=1.e-15;
   int i,j,k,m,mqr=8*n;
   double *p;
   for(j=0,m=n-1;;++j){
@@ -47,8 +59,10 @@ int qrevec(double *ev,double *evec,double *dp,int n)
   return 0;
 }
 
-void housev(double *a,double *d,double *dp,int n)
-{ double sc,x,y,h;
+void
+housev(double *a,double *d,double *dp,int n)
+{
+  double sc,x,y,h;
   int i,j,k,m,e;
   double *qw,*qs,*pc,*p;
   qs=(double *)calloc(n,sizeof(double));
@@ -91,8 +105,10 @@ void housev(double *a,double *d,double *dp,int n)
    }
 }
 
-void mmul(double *c,double *a,double *b,int n)
-{ double *p,*q,s; int i,j,k;
+void
+mmul(double *c,double *a,double *b,int n)
+{
+  double *p,*q,s; int i,j,k;
   trnm(b,n);
   for(i=0; i<n ;++i,a+=n){
     for(j=0,q=b; j<n ;++j){
@@ -103,8 +119,10 @@ void mmul(double *c,double *a,double *b,int n)
   trnm(b,n);
 }
 
-void trnm(double *a,int n)
-{ double s,*p,*q;
+void
+trnm(double *a,int n)
+{
+  double s,*p,*q;
   int i,j,e;
   for(i=0,e=n-1; i<n-1 ;++i,--e,a+=n+1){
     for(p=a+1,q=a+n,j=0; j<e ;++j){
@@ -117,21 +135,27 @@ void trnm(double *a,int n)
    }
 }
 
-void vmul(double *vp,double *mat,double *v,int n)
-{ double s,*q; int k,i;
+void
+vmul(double *vp,double *mat,double *v,int n)
+{
+  double s,*q; int k,i;
   for(k=0; k<n ;++k){
     for(i=0,q=v,s=0.; i<n ;++i) s+= *mat++ * *q++;
     *vp++ =s;
    }
 }
 
-void mcopy(double *a,double *b,int m)
-{ double *p,*q; int k;
+void
+mcopy(double *a,double *b,int m)
+{
+  double *p,*q; int k;
   for(p=a,q=b,k=0; k<m ;++k) *p++ = *q++;
 }
 
-int minv(double *a,int n)
-{ int lc,*le; double s,t,tq=0.,zr=1.e-15;
+int
+minv(double *a,int n)
+{
+  int lc,*le; double s,t,tq=0.,zr=1.e-15;
   double *pa,*pd,*ps,*p,*q,*q0;
   int i,j,k,m;
   le=(int *)malloc(n*sizeof(int));

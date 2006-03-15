@@ -1,6 +1,14 @@
-/* main.c */
-/* Last changed Time-stamp: <2003-12-02 16:01:42 mtw> */
-/* static char rcsid[] = "$Id: main.c,v 1.15 2005/06/21 10:08:31 mtw Exp $"; */
+/*=================================================================*/
+/*=   main.c                                                      =*/
+/*=   main file for treekin                                       =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 10:20:24 mtw>          =*/
+/*=   $Id: main.c,v 1.16 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=                 (c) Michael Thomas Wolfinger                  =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,13 +19,10 @@
 #include "mxccm.h"  
 #include "barparser.h"
 #include "globals.h"
-#ifdef DMALLOC
-#include "dmalloc.h"
-#endif
 
-/* ============= main begins here ============== */
-int main (int argc, char **argv) {
-
+int
+main (int argc, char **argv)
+{
   BarData *Data;
   InData *InD;
   double *U, *S, *p0, *p8, *R = NULL;

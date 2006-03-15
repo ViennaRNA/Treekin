@@ -1,6 +1,17 @@
-/* globals.h */
-/* Last changed Time-stamp: <2003-10-09 11:15:39 mtw> */
-/*  static char rcsid[] = "$Id: globals.h,v 1.5 2003/10/09 17:01:35 mtw Exp $"; */
+/*=================================================================*/
+/*=   globals.h                                                   =*/
+/*=   header file for global routines from treekin                =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 11:24:16 mtw>          =*/
+/*=   $Id: globals.h,v 1.6 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=                 (c) Michael Thomas Wolfinger                  =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
+
+#ifndef _GLOBALS_H_
+#define _GLOBALS_H_
 
 typedef struct {         /* command-line options */
   short absrb;           /* make one lmin absorbing */
@@ -20,12 +31,13 @@ typedef struct {         /* command-line options */
   FILE *RATENFILE;       /* input file containing rates from barriers */
   char *sequence;        /* sequence */
   char *program_name;    /* name of executable file */ 
-} markov_options;
+} treekin_options;
 
-markov_options opt;
+treekin_options opt;
 int in_nr; /* counts # of elements read from FULL process input */
 int lmins; /* # of lmins in the barrier tree, needed in FULL process */
 
 void parse_commandline(int argc, char **argv);
 
+#endif
 /* End of file */

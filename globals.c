@@ -1,6 +1,14 @@
-/* globals.c */
-/* Last changed Time-stamp: <2003-10-14 12:26:23 mtw> */
-/* static char rcsid[] = "$Id: globals.c,v 1.6 2003/10/23 10:40:35 mtw Exp $"; */
+/*=================================================================*/
+/*=   globals.c                                                   =*/
+/*=   global routines for treekin                                 =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 10:45:24 mtw>          =*/
+/*=   $Id: globals.c,v 1.7 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=                 (c) Michael Thomas Wolfinger                  =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +40,9 @@ static struct option const long_options[] =
 
 
 /*==============================*/
-static int decode_switches (int argc, char **argv) {
+static int
+decode_switches (int argc, char **argv)
+{
   int c, atmp, ntmp, p0flag = 0, i = 1, tinc_set = 0;
   float t0tmp, t8tmp, tinctmp, Ttmp, *pinitmp=NULL;
   char mtmp;
@@ -206,7 +216,9 @@ static int decode_switches (int argc, char **argv) {
 }
 
 /*==============================*/
-static void ini_globs(void) {
+static void
+ini_globs(void)
+{
   opt.absrb           =          0;
   opt.T               =         37.;
   opt.t0              =          0.1;
@@ -219,7 +231,9 @@ static void ini_globs(void) {
 }
 
 /*==============================*/
-static void usage(int status) {
+static void
+usage(int status)
+{
   printf("\n%s - simulate kinetic folding of RNA as a Markov process\n",
 	 opt.program_name);
   
@@ -251,7 +265,9 @@ static void usage(int status) {
 }
 
 /*==============================*/
-static void display_settings(void) {
+static void
+display_settings(void)
+{
   fprintf(stderr,
           "Settings:\n"
 	  "--absorb   = %d\n"
@@ -279,8 +295,9 @@ static void display_settings(void) {
 }
 
 /*==============================*/
-static int check_pini_prob(float *pini_tmp){
-
+static int
+check_pini_prob(float *pini_tmp)
+{
   int i;
   float probtmp = 0.;
 
@@ -291,12 +308,11 @@ static int check_pini_prob(float *pini_tmp){
 }
 
 /*==============================*/
-void parse_commandline(int argc, char **argv){
-
+void
+parse_commandline(int argc, char **argv)
+{
   int i;
-  
   opt.program_name = argv[0];
-  
   i = decode_switches (argc, argv);
   if (i==argc-1) {
     opt.INFILE = fopen(argv[i], "r");

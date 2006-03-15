@@ -1,6 +1,15 @@
-/* calc.h */
-/* Last changed Time-stamp: <2003-12-02 16:22:50 mtw> */
-/*  static char rcsid[] = "$Id: calc.h,v 1.9 2005/06/21 10:08:31 mtw Exp $"; */
+/*=================================================================*/
+/*=   calc.h                                                      =*/
+/*=   header file for calculation routines for treekin            =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 11:13:12 mtw>          =*/
+/*=   $Id: calc.h,v 1.10 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
+/*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
+
 
 #ifndef _CALC_H_
 #define _CALC_H_

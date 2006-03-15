@@ -1,3 +1,14 @@
+/*=================================================================*/
+/*=   err.h                                                       =*/
+/*=   header file for error routines from meschach library        =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 11:19:02 mtw>          =*/
+/*=   $Id: err.h,v 1.2 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=                 (c) Michael Thomas Wolfinger                  =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
 
 /**************************************************************************
 **
@@ -22,6 +33,9 @@
 **      distribution fee considered a charge.
 **
 ***************************************************************************/
+
+#ifndef _ERR_H_
+#define _ERR_H_
 
 #include        <setjmp.h>
 #include        <stdlib.h>
@@ -110,3 +124,4 @@ extern	int set_err_flag(int flag);         /* for different ways of handling
 	}
 
 
+#endif

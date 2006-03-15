@@ -1,18 +1,49 @@
-/*	
-	File containing routines for computing the Schur decomposition
-	of a real non-symmetric matrix
-	See also: hessen.c
-*/
+/*=================================================================*/
+/*=   schur.c                                                     =*/
+/*=   routines for computing the Schur decomposition of a real    =*/
+/*=   non-symmetric matrix from meschach library                  =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 11:00:52 mtw>          =*/
+/*=   $Id: schur.c,v 1.2 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=                 (c) Michael Thomas Wolfinger                  =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
+
+/**************************************************************************
+**
+** Copyright (C) 1993 David E. Stewart & Zbigniew Leyk, all rights reserved.
+**
+**			     Meschach Library
+** 
+** This Meschach Library is provided "as is" without any express 
+** or implied warranty of any kind with respect to this software. 
+** In particular the authors shall not be liable for any direct, 
+** indirect, special, incidental or consequential damages arising 
+** in any way from use of the software.
+** 
+** Everyone is granted permission to copy, modify and redistribute this
+** Meschach Library, provided:
+**  1.  All copies contain this copyright notice.
+**  2.  All modified copies shall carry a notice stating who
+**      made the last modification and the date of such modification.
+**  3.  No charge is made for this software or works derived from it.  
+**      This clause shall not be construed as constraining other software
+**      distributed on the same medium as this software, nor is a
+**      distribution fee considered a charge.
+**
+***************************************************************************/
 
 #include	<stdio.h>
 #include	"matrix.h"
 #include	<math.h>
 
 
-
-static void hhldr3(double x, double y, double z, double *nu1, double *beta, double *newval) {
-  double	alpha;
-  
+static void
+hhldr3(double x, double y, double z, double *nu1, double *beta, double *newval)
+{
+  double	alpha;  
   if ( x >= 0.0 )
     alpha = sqrt(x*x+y*y+z*z);
   else
@@ -22,7 +53,9 @@ static void hhldr3(double x, double y, double z, double *nu1, double *beta, doub
   *newval = alpha;
 }
 
-static void hhldr3cols(MAT *A, int k, int j0, double beta,double nu1, double nu2, double nu3) {
+static void
+hhldr3cols(MAT *A, int k, int j0, double beta,double nu1, double nu2, double nu3)
+{
   double	**A_me, ip, prod;
   int	j, n;
   
@@ -40,7 +73,9 @@ static void hhldr3cols(MAT *A, int k, int j0, double beta,double nu1, double nu2
   }
 }
 
-static void hhldr3rows(MAT *A, int k, int i0, double beta,double nu1, double nu2, double nu3) {
+static void
+hhldr3rows(MAT *A, int k, int i0, double beta,double nu1, double nu2, double nu3)
+{
   double	**A_me, ip, prod;
   int	i, m;
   
@@ -61,7 +96,9 @@ static void hhldr3rows(MAT *A, int k, int i0, double beta,double nu1, double nu2
 /* schur -- computes the Schur decomposition of the matrix A in situ
 	-- optionally, gives Q matrix such that Q^T.A.Q is upper triangular
 	-- returns upper triangular Schur matrix */
-MAT	*schur(MAT *A, MAT *Q) {
+MAT*
+schur(MAT *A, MAT *Q)
+{
   int		i, j, iter, k, k_min, k_max, k_tmp, n, split;
   double	beta2, c, discrim, dummy, nu1, s, tmp, x, y, z;
   double	**A_me;
@@ -296,7 +333,9 @@ MAT	*schur(MAT *A, MAT *Q) {
    -- assumes T contains a block upper triangular matrix
    as produced by schur()
    -- real parts stored in real_pt, imaginary parts in imag_pt */
-void	schur_evals(MAT *T, VEC *real_pt, VEC *imag_pt) {
+void
+schur_evals(MAT *T, VEC *real_pt, VEC *imag_pt)
+{
   int	i, n;
   double	discrim, **T_me;
   double	diff, sum, tmp;
@@ -344,7 +383,9 @@ void	schur_evals(MAT *T, VEC *real_pt, VEC *imag_pt) {
 	-- X_re is the real part of the matrix of eigenvectors,
 		and X_im is the imaginary part of the matrix.
 	-- X_re is returned */
-MAT	*schur_vecs(MAT *T, MAT *Q, MAT *X_re, MAT *X_im) {
+MAT*
+schur_vecs(MAT *T, MAT *Q, MAT *X_re, MAT *X_im)
+{
   int	i, j, limit;
   double	t11_re, t11_im, t12, t21, t22_re, t22_im;
   double	l_re, l_im, det_re, det_im, invdet_re, invdet_im,
@@ -512,7 +553,9 @@ MAT	*schur_vecs(MAT *T, MAT *Q, MAT *X_re, MAT *X_im) {
 
 /* hhvec -- calulates Householder vector to eliminate all entries after the
 	i0 entry of the vector vec. It is returned as out. May be in-situ */
-VEC	*hhvec(VEC *vec, u_int i0, Real *beta, VEC *out, Real *newval) {
+VEC*
+hhvec(VEC *vec, u_int i0, Real *beta, VEC *out, Real *newval)
+{
   Real	norm;
   
   out = _v_copy(vec,out,i0);
@@ -532,7 +575,9 @@ VEC	*hhvec(VEC *vec, u_int i0, Real *beta, VEC *out, Real *newval) {
 }
 
 /* hhtrvec -- apply Householder transformation to vector -- may be in-situ */
-VEC	*hhtrvec(VEC *hh, double beta, u_int i0, VEC *in, VEC *out){
+VEC*
+hhtrvec(VEC *hh, double beta, u_int i0, VEC *in, VEC *out)
+{
   /* hh = Householder vector */
   Real	scale;
   if ( hh==(VEC *)NULL || in==(VEC *)NULL )
@@ -550,7 +595,9 @@ VEC	*hhtrvec(VEC *hh, double beta, u_int i0, VEC *in, VEC *out){
 
 /* hhtrrows -- transform a matrix by a Householder vector by rows
 	starting at row i0 from column j0 -- in-situ */
-MAT	*hhtrrows(MAT *M, u_int i0, u_int j0, VEC *hh, double beta) {
+MAT*
+hhtrrows(MAT *M, u_int i0, u_int j0, VEC *hh, double beta)
+{
   Real	ip, scale;
   int	i /*, j */;
   
@@ -580,7 +627,9 @@ MAT	*hhtrrows(MAT *M, u_int i0, u_int j0, VEC *hh, double beta) {
 
 /* hhtrcols -- transform a matrix by a Householder vector by columns
 	starting at row i0 from column j0 -- in-situ */
-MAT	*hhtrcols(MAT *M, u_int i0, u_int j0, VEC *hh, double beta) {
+MAT*
+hhtrcols(MAT *M, u_int i0, u_int j0, VEC *hh, double beta)
+{
   int	i;
   static	VEC	*w = VNULL;
   
@@ -612,7 +661,8 @@ MAT	*hhtrcols(MAT *M, u_int i0, u_int j0, VEC *hh, double beta) {
 
 /* givens -- returns c,s parameters for Givens rotation to
 		eliminate y in the vector [ x y ]' */
-void	givens(x,y,c,s)
+void
+givens(x,y,c,s)
 double  x,y;
 Real	*c,*s;
 {
@@ -687,10 +737,11 @@ double	c,s;
 /* Hfactor -- compute Hessenberg factorisation in compact form.
 	-- factorisation performed in situ
 	-- for details of the compact form see QRfactor.c and matrix2.doc */
-MAT	*Hfactor(MAT *A, VEC *diag, VEC *beta) {
+MAT*
+Hfactor(MAT *A, VEC *diag, VEC *beta)
+{
   static	VEC	*tmp1 = VNULL;
-  int	k, limit;
-  
+  int	k, limit;  
   if ( ! A || ! diag || ! beta )
     error(E_NULL,"Hfactor");
   if ( diag->dim < A->m - 1 || beta->dim < A->m - 1 )

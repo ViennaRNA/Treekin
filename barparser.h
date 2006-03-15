@@ -1,10 +1,19 @@
-/* barparser.h */
-/* Last changed Time-stamp: <2003-11-04 11:36:23 mtw> */
+/*=================================================================*/
+/*=   barparser.h                                                 =*/
+/*=   header file for parsing bar-files etc.                      =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 11:43:07 mtw>          =*/
+/*=   $Id: barparser.h,v 1.8 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=                 (c) Michael Thomas Wolfinger                  =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
+
 #ifndef _BARPARSER_H_
 #define _BARPARSER_H_
-#define SADDLE_LIST 400
 
-/*  static char rcsid[] = "$Id: barparser.h,v 1.7 2003/11/18 17:27:59 mtw Exp $"; */
+#define SADDLE_LIST 400
 
 /* structures */ 
 typedef struct _BarData { /* structure for bar-file */ 

@@ -1,9 +1,46 @@
+/*=================================================================*/
+/*=   mxmesch.c                                                   =*/
+/*=   general matrix routines from meschach library               =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 10:56:48 mtw>          =*/
+/*=   $Id: mxmesch.c,v 1.2 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=                 (c) Michael Thomas Wolfinger                  =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
+
+/**************************************************************************
+**
+** Copyright (C) 1993 David E. Stewart & Zbigniew Leyk, all rights reserved.
+**
+**			     Meschach Library
+** 
+** This Meschach Library is provided "as is" without any express 
+** or implied warranty of any kind with respect to this software. 
+** In particular the authors shall not be liable for any direct, 
+** indirect, special, incidental or consequential damages arising 
+** in any way from use of the software.
+** 
+** Everyone is granted permission to copy, modify and redistribute this
+** Meschach Library, provided:
+**  1.  All copies contain this copyright notice.
+**  2.  All modified copies shall carry a notice stating who
+**      made the last modification and the date of such modification.
+**  3.  No charge is made for this software or works derived from it.  
+**      This clause shall not be construed as constraining other software
+**      distributed on the same medium as this software, nor is a
+**      distribution fee considered a charge.
+**
+***************************************************************************/
 
 #include	<limits.h>
 #include 	"matrix.h"
 
 /* m_get -- gets an mxn matrix (in MAT form) by dynamic memory allocation */
-MAT	*m_get(int m, int n) {
+MAT*
+m_get(int m, int n)
+{
   MAT	*matrix;
   int	i;
   
@@ -37,9 +74,10 @@ MAT	*m_get(int m, int n) {
 
 /* v_get -- gets a VEC of dimension 'dim'
    -- Note: initialized to zero */
-VEC	*v_get(int size) {
-  VEC	*vector;
-  
+VEC*
+v_get(int size)
+{
+  VEC	*vector;  
   if (size < 0)
     error(E_NEG,"v_get");
   
@@ -56,8 +94,9 @@ VEC	*v_get(int size) {
 }
 
 /* m_free -- returns MAT & asoociated memory back to memory heap */
-int	m_free(MAT *mat) {
-   
+int
+m_free(MAT *mat)
+{   
   if ( mat==(MAT *)NULL || (int)(mat->m) < 0 ||
        (int)(mat->n) < 0 )
     /* don't trust it */
@@ -76,7 +115,9 @@ int	m_free(MAT *mat) {
 }
 
 /* v_free -- returns VEC & asoociated memory back to memory heap */
-int	v_free(VEC *vec){
+int
+v_free(VEC *vec)
+{
   if ( vec==(VEC *)NULL || (int)(vec->dim) < 0 )
     /* don't trust it */
     return (-1);
@@ -96,7 +137,9 @@ int	v_free(VEC *vec){
 
 /* m_resize -- returns the matrix A of size new_m x new_n; A is zeroed
    -- if A == NULL on entry then the effect is equivalent to m_get() */
-MAT	*m_resize(MAT *A, int new_m, int new_n) {
+MAT*
+m_resize(MAT *A, int new_m, int new_n)
+{
   int	i;
   int	new_max_m, new_max_n, new_size, old_m, old_n;
   
@@ -166,8 +209,9 @@ MAT	*m_resize(MAT *A, int new_m, int new_n) {
 
 /* v_resize -- returns the vector x with dim new_dim
    -- x is set to the zero vector */
-VEC	*v_resize(VEC *x, int new_dim) {
-  
+VEC*
+v_resize(VEC *x, int new_dim)
+{  
   if (new_dim < 0)
     error(E_NEG,"v_resize");
   
@@ -198,7 +242,9 @@ VEC	*v_resize(VEC *x, int new_dim) {
 
 
 /* _in_prod -- inner product of two vectors from i0 downwards */
-double	_in_prod(VEC *a, VEC *b, unsigned int i0) {
+double
+_in_prod(VEC *a, VEC *b, unsigned int i0)
+{
   u_int	limit;
   
   if ( a==(VEC *)NULL || b==(VEC *)NULL )
@@ -219,7 +265,9 @@ double	_in_prod(VEC *a, VEC *b, unsigned int i0) {
 }
 
 /* sv_mlt -- scalar-vector multiply -- may be in-situ */
-VEC	*sv_mlt(double scalar, VEC *vector, VEC *out) {
+VEC*
+sv_mlt(double scalar, VEC *vector, VEC *out)
+{
   if ( vector==(VEC *)NULL )
     error(E_NULL,"sv_mlt");
   if ( out==(VEC *)NULL || out->dim != vector->dim )
@@ -242,7 +290,9 @@ VEC	*sv_mlt(double scalar, VEC *vector, VEC *out) {
 
 
 /* m_add -- matrix addition -- may be in-situ */
-MAT	*m_add(MAT *mat1, MAT *mat2, MAT *out) {
+MAT*
+m_add(MAT *mat1, MAT *mat2, MAT *out)
+{
   u_int	m,n,i;
   
   if ( mat1==(MAT *)NULL || mat2==(MAT *)NULL )
@@ -259,13 +309,14 @@ MAT	*m_add(MAT *mat1, MAT *mat2, MAT *out) {
 			out->me[i][j] = mat1->me[i][j]+mat2->me[i][j];
     **************************************************/
   }
-  
   return (out);
 }
 
 /* mv_mlt -- matrix-vector multiplication 
    -- Note: b is treated as a column vector */
-VEC	*mv_mlt(MAT *A, VEC *b, VEC *out){
+VEC*
+mv_mlt(MAT *A, VEC *b, VEC *out)
+{
   u_int	i, m, n;
   Real	**A_v, *b_v /*, *A_row */;
   
@@ -295,9 +346,10 @@ VEC	*mv_mlt(MAT *A, VEC *b, VEC *out){
 
 
 /* get_col -- gets a specified column of a matrix and retruns it as a vector */
-VEC	*get_col(MAT *mat, unsigned int col,VEC *vec) {
+VEC*
+get_col(MAT *mat, unsigned int col,VEC *vec)
+{
   unsigned int	i;
-  
   if ( mat==(MAT *)NULL )
     error(E_NULL,"get_col");
   if ( col >= mat->n )
@@ -312,9 +364,10 @@ VEC	*get_col(MAT *mat, unsigned int col,VEC *vec) {
 }
 
 /* _set_col -- sets column of matrix to values given in vec (in situ) */
-MAT	*_set_col(MAT *mat, unsigned int col, VEC *vec, unsigned int i0) {
+MAT*
+_set_col(MAT *mat, unsigned int col, VEC *vec, unsigned int i0)
+{
   unsigned int	i,lim;
-  
   if ( mat==(MAT *)NULL || vec==(VEC *)NULL )
     error(E_NULL,"_set_col");
   if ( col >= mat->n )
@@ -331,7 +384,9 @@ MAT	*_set_col(MAT *mat, unsigned int col, VEC *vec, unsigned int i0) {
 #define MZ	0L
 
 /* v_zero -- zero the vector x */
-VEC	*v_zero(VEC *x){
+VEC*
+v_zero(VEC *x)
+{
   if ( x == VNULL )
     error(E_NULL,"v_zero");
   
@@ -344,7 +399,9 @@ static int  started = FALSE;
 static int  inext = 0, inextp = 31;
 
 /* mrand -- pseudo-random number generator */
-double mrand(void) {
+double
+mrand(void)
+{
   long	lval;
   static Real  factor = 1.0/((Real)MODULUS);
   
@@ -363,7 +420,9 @@ double mrand(void) {
 }
 
 /* mrandlist -- fills the array a[] with len random numbers */
-void	mrandlist(Real *a, int len) {
+void
+mrandlist(Real *a, int len)
+{
   int		i;
   long	lval;
   static Real  factor = 1.0/((Real)MODULUS);
@@ -386,9 +445,10 @@ void	mrandlist(Real *a, int len) {
 }
 
 /* smrand -- set seed for mrand() */
-void smrand( int seed) {
-  int		i;
-  
+void
+smrand( int seed)
+{
+  int		i;  
   mrand_list[0] = (123413*seed) % MODULUS;
   for ( i = 1; i < 55; i++ )
     mrand_list[i] = (123413*mrand_list[i-1]) % MODULUS;
@@ -404,11 +464,11 @@ void smrand( int seed) {
 
 /* v_rand -- initialises x to be a random vector, components
    independently & uniformly ditributed between 0 and 1 */
-VEC	*v_rand( VEC *x){
-  
+VEC*
+v_rand( VEC *x)
+{  
   if ( ! x )
-    error(E_NULL,"v_rand");
-  
+    error(E_NULL,"v_rand"); 
   mrandlist(x->ve,x->dim);
   
   return x;
@@ -416,7 +476,9 @@ VEC	*v_rand( VEC *x){
 
 
 /* __ip__ -- inner product */
-double	__ip__(double *dp1, double *dp2, int len) {
+double
+__ip__(double *dp1, double *dp2, int len)
+{
   int	i;
   double     sum;
   sum = 0.0;
@@ -427,37 +489,44 @@ double	__ip__(double *dp1, double *dp2, int len) {
 }
 
 /* __mltadd__ -- scalar multiply and add c.f. v_mltadd() */
-void	__mltadd__(double *dp1, double *dp2, double s, int len) {
+void
+__mltadd__(double *dp1, double *dp2, double s, int len)
+{
   int	i;
   for ( i = 0; i < len; i++ )
     dp1[i] += s*dp2[i];
 }
 
 /* __smlt__ scalar multiply array c.f. sv_mlt() */
-void	__smlt__(double *dp, double s, double *out, int len) {
+void
+__smlt__(double *dp, double s, double *out, int len)
+{
   int	i;
   for ( i = 0; i < len; i++ )
     out[i] = s*dp[i];
 }
 
 /* __add__ -- add arrays c.f. v_add() */
-void	__add__(double *dp1, double *dp2, double *out, int len) {
+void
+__add__(double *dp1, double *dp2, double *out, int len)
+{
   int	i;
   for ( i = 0; i < len; i++ )
     out[i] = dp1[i] + dp2[i];
 }
 
 /* __zero__ -- zeros an array of floating point numbers */
-void	__zero__(double *dp, int len){
-    memset(((char *)dp),'\0',(len*sizeof(double)));
+void
+__zero__(double *dp, int len)
+{
+  memset(((char *)dp),'\0',(len*sizeof(double)));
 }
 
-
-
 /* _m_copy -- copies matrix into new area */
-MAT	*_m_copy(MAT *in, MAT *out, u_int i0, u_int j0) {
-  u_int	i /* ,j */;
-  
+MAT*
+_m_copy(MAT *in, MAT *out, u_int i0, u_int j0)
+{
+  u_int	i /* ,j */;  
   if ( in==MNULL )
     error(E_NULL,"_m_copy");
   if ( in==out )
@@ -471,7 +540,9 @@ MAT	*_m_copy(MAT *in, MAT *out, u_int i0, u_int j0) {
 }
 
 /* _v_copy -- copies vector into new area */
-VEC	*_v_copy(VEC *in, VEC *out, u_int i0) {
+VEC*
+_v_copy(VEC *in, VEC *out, u_int i0)
+{
   if ( in==VNULL )
     error(E_NULL,"_v_copy");
   if ( in==out )

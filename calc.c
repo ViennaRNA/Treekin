@@ -1,6 +1,14 @@
-/* calc.c */
-/* Last changed Time-stamp: <2005-03-22 16:13:25 mtw> */
-/* static char rcsid[] = "$Id: calc.c,v 1.25 2005/06/21 10:08:31 mtw Exp $"; */
+/*=================================================================*/
+/*=   calc.c                                                      =*/
+/*=   main calculation and iteration routines for treekin         =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 11:11:30 mtw>          =*/
+/*=   $Id: calc.c,v 1.26 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
+/*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +55,9 @@ static char     Aname[30];
 static TypeDegSaddle *saddle;
 
 /*==*/
-void MxInit (int d) {
+void
+MxInit (int d)
+{
   int i;
   _kT = 0.00198717*(273.15 + opt.T);
   if (d > 0 ) dim = d;
@@ -63,8 +73,9 @@ void MxInit (int d) {
 }
 
 /*==*/
-double *MxBar2Matrix ( BarData *Data, double *R) {
-
+double*
+MxBar2Matrix ( BarData *Data, double *R)
+{
   double *U;
 
   if(opt.want_degenerate) MxDoDegeneracyStuff();
@@ -88,8 +99,9 @@ double *MxBar2Matrix ( BarData *Data, double *R) {
 }
 
 /*==*/
-double *MxStartVec (void) {
-
+double*
+MxStartVec (void)
+{
   int i;
   double *p0;
 
@@ -104,7 +116,9 @@ double *MxStartVec (void) {
 
 /*==*/
 /* calculate equilibrium distribution */
-double *MxEqDistr ( BarData *Data ) {
+double*
+MxEqDistr ( BarData *Data )
+{
   int i;
   double *p8, Z = 0.;
   
@@ -129,7 +143,9 @@ double *MxEqDistr ( BarData *Data ) {
 }
 
 /*==*/
-double *MxEqDistrFULL (SubInfo *E) {
+double*
+MxEqDistrFULL (SubInfo *E)
+{
   int i;
   double *p8, Z = 0.;
   
@@ -151,8 +167,9 @@ double *MxEqDistrFULL (SubInfo *E) {
 }
 
 /*==*/
-double *MxSymmetr ( double *U, double *P8 ) {
-
+double*
+MxSymmetr ( double *U, double *P8 )
+{
   int i, j;
   double *S, *tmpMx;
   
@@ -200,7 +217,9 @@ double *MxSymmetr ( double *U, double *P8 ) {
 /*==*/
 /* S which comes into this function contains the (right) eigenvectors  
 calculated either by ccmath (non-abs) or meschach (absorbing case) */
-void MxIterate (double *p0, double *p8, double *S) {
+void
+MxIterate (double *p0, double *p8, double *S)
+{
   /*  solve following equation 4 various times
     ***** NON-ABSORBING CASE: ******
     p(t)    = sqrPI_ * S * exp(time * EV) * St * _sqrPI * p(0)
@@ -339,7 +358,9 @@ void MxIterate (double *p0, double *p8, double *S) {
 }
 
 /*==*/
-static double *MxMethodeA (BarData *Data) {
+static double*
+MxMethodeA (BarData *Data)
+{
   /***************************************/
   /*           |       E_s           |   */
   /*           \   ____________      /   */
@@ -410,8 +431,9 @@ static double *MxMethodeA (BarData *Data) {
 }
 
 /*==*/ 
-extern double *MxMethodeFULL (InData *InData){
-
+extern double*
+MxMethodeFULL (InData *InData)
+{
   int a, i, j;
   double *U;
   
@@ -443,8 +465,9 @@ extern double *MxMethodeFULL (InData *InData){
 }
 
 /*==*/
-double *MxMethodeINPUT (BarData *Data, double *Input){
-  
+double*
+MxMethodeINPUT (BarData *Data, double *Input)
+{  
   int i, j, real_abs = 0;
   double *U, Zabs, abs_rate;
 
@@ -496,8 +519,9 @@ double *MxMethodeINPUT (BarData *Data, double *Input){
 }
 
 /*==*/
-static double max_saddle(int i, int j, BarData *Data){
-
+static double
+max_saddle(int i, int j, BarData *Data)
+{
   int tmp;
 
   if(Data[i].number > Data[j].father){ /* exchange i & j */
@@ -513,8 +537,9 @@ static double max_saddle(int i, int j, BarData *Data){
 }
 
 /*==*/
-static void *MxNew ( size_t size ) {
-
+static void*
+MxNew ( size_t size )
+{
   void *mx;
   if ( (mx = (void *) calloc (1, size)) == NULL )
     fprintf (stderr, "ERROR: new_martix() allocation failed\n");
@@ -524,7 +549,9 @@ static void *MxNew ( size_t size ) {
 
 /*==*/
 /* print matrix stored in ccmath-fromat */
-static void MxPrint(double *mx, char *name, char T) {
+static void
+MxPrint(double *mx, char *name, char T)
+{
   int k, l;
   switch (T) {
   case 'm':    /* square matrix */
@@ -548,8 +575,9 @@ static void MxPrint(double *mx, char *name, char T) {
 }
 
 /*==*/
-static void print_settings(void) {
-
+static void
+print_settings(void)
+{
   printf(
 	 "# Date: %s" 
 	 "# Sequence: %s\n"
@@ -572,7 +600,9 @@ static void print_settings(void) {
 }
 
 /*==*/
-static char *time_stamp(void) {
+static char*
+time_stamp(void)
+{
   time_t  cal_time;
   
   cal_time = time(NULL);
@@ -580,7 +610,9 @@ static char *time_stamp(void) {
 }
 
 /*==*/
-void MxMemoryCleanUp (void) {
+void
+MxMemoryCleanUp (void)
+{
   if(_sqrPI)       free(_sqrPI);
   if(sqrPI_)       free(sqrPI_);
   if(opt.sequence) free(opt.sequence);
@@ -588,8 +620,9 @@ void MxMemoryCleanUp (void) {
 }
 
 /*==*/
-static void MxDoDegeneracyStuff(void){
-
+static void
+MxDoDegeneracyStuff(void)
+{
   int i, j, b, nr, current, numsad = 1, count = 0;
 
   numsad = ParseSaddleFile(&saddle);
@@ -642,9 +675,10 @@ static void MxDoDegeneracyStuff(void){
 }
 
 /*==*/
-static void MxMeschach2ccmath(MAT *meschach_matrix, double **origS){
+static void
+MxMeschach2ccmath(MAT *meschach_matrix, double **origS)
+{
   int  i, j;
-
   if((dim != meschach_matrix->m) != (dim != meschach_matrix->n)) {
     fprintf(stderr, "meschach-matrix is not square...\n");
     exit(1);}
@@ -658,14 +692,18 @@ static void MxMeschach2ccmath(MAT *meschach_matrix, double **origS){
 }
 
 /*==*/
-static void MxMeschach2ccmathVec(VEC *meschach_vector, double **origEV){
+static void
+MxMeschach2ccmathVec(VEC *meschach_vector, double **origEV)
+{
   int i;
   for(i = 0; i < dim; i++) *(*origEV+i) = meschach_vector->ve[i];
  /*  V_FREE(meschach_vector); */
 }
 
 /*==*/
-static MAT *Mxccmath2Meschach(double* ccmath_matrix){
+static MAT*
+Mxccmath2Meschach(double* ccmath_matrix)
+{
   int i,j;
   MAT *tmp;
   tmp = m_get(dim,dim);
@@ -679,7 +717,9 @@ static MAT *Mxccmath2Meschach(double* ccmath_matrix){
 
 /*==*/
 /* print matrix stored in meschach-format */
-static void MxPrintMeschachMat(MAT *matrix, char *name) {
+static void
+MxPrintMeschachMat(MAT *matrix, char *name)
+{
   int i,j;  
     fprintf(stderr, "%s (meschach):\n", name);
     for (i = 0; i < dim; i++){
@@ -692,7 +732,9 @@ static void MxPrintMeschachMat(MAT *matrix, char *name) {
 
 /*==*/
 /* print vector stored in meschach-format */
-static void MxPrintMeschachVec(VEC* vector, char *name){
+static void
+MxPrintMeschachVec(VEC* vector, char *name)
+{
   int i;
   fprintf(stderr, "%s (meschach):\n", name);
   for(i = 0; i < dim; i++) fprintf(stderr,"%15.10g ", vector->ve[i]);
@@ -700,8 +742,9 @@ static void MxPrintMeschachVec(VEC* vector, char *name){
 }
 
 /*==*/
-void MxEVnonsymMx(double *origU, double **_S){
-
+void
+MxEVnonsymMx(double *origU, double **_S)
+{
   int check = 1;
   double *tmp, *tmp_vec;
   MAT *A, *T, *Q, *X_re, *X_im;
@@ -746,9 +789,10 @@ void MxEVnonsymMx(double *origU, double **_S){
 }
 
 /*==*/
-static int Mxempty(MAT *matrix){
+static int
+Mxempty(MAT *matrix)
+{
   int i,j;
-
   for(i = 0; i < dim; i++)
     for(j = 0; j < dim; j++)
       if(matrix->me[i][j] != 0.) return 0;
@@ -757,7 +801,9 @@ static int Mxempty(MAT *matrix){
 }
 
 /*==*/
-static void MxBinWrite(double *matrix){
+static void
+MxBinWrite(double *matrix)
+{
   int i, j;
   FILE *BINOUT;
   char *binfile = "matrixU.bin";
@@ -779,7 +825,9 @@ static void MxBinWrite(double *matrix){
 }
 
 /*==*/
-static void MxASCIIWrite(double *matrix){
+static void
+MxASCIIWrite(double *matrix)
+{
   int i, j;
   FILE *ASCIIOUT;
   char *asciifile = "matrixU.txt";
@@ -800,7 +848,9 @@ static void MxASCIIWrite(double *matrix){
 }
 
 /*==*/
-void  MxExponent(double *p0, double *p8, double *U){
+void
+MxExponent(double *p0, double *p8, double *U)
+{
   int i,j, pdiff_counter = 0;
   double x, time, *Uexp, *Umerk, *pt, *pdiff, check = 0.;
 
@@ -858,7 +908,9 @@ void  MxExponent(double *p0, double *p8, double *U){
 }
 
 /*==*/
-void MxFPT(double *U, double *p8){
+void
+MxFPT(double *U, double *p8)
+{
   int i,j, val;
   double *M, *Q, *W, *Z;
   

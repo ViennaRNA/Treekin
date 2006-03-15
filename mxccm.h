@@ -1,6 +1,17 @@
-/* mxccm.h */
-/* Last changed Time-stamp: <2001-10-11 17:17:44 mtw> */
-/* static char rcsid[] = "$Id: mxccm.h,v 1.1 2003/07/14 07:42:20 mtw Exp $"; */
+/*=================================================================*/
+/*=   mxccm.h                                                     =*/
+/*=   header file fro matrix routines from ccmath library         =*/
+/*=   ---------------------------------------------------------   =*/
+/*=   Last changed Time-stamp: <2006-03-15 11:42:12 mtw>          =*/
+/*=   $Id: mxccm.h,v 1.2 2006/03/15 11:08:15 mtw Exp $    =*/
+/*=   ---------------------------------------------------------   =*/
+/*=      (c) Daniel A. Atkinson, Michael Thomas Wolfinger         =*/
+/*=                      mtw@tbi.univie.ac.at                     =*/
+/*=                             treekin                           =*/
+/*=================================================================*/
+
+#ifndef _MXCCM_H_
+#define _MXCCM_H_
 
 void eigen(double *a,double *ev,int n);
 int qrevec(double *ev,double *v,double *d,int m);
@@ -10,3 +21,5 @@ void vmul(double *vp,double *mat,double *v,int n);
 void trnm(double *a,int m);
 void mcopy(double *a,double *b,int m);
 int minv(double *a,int n);
+
+#endif
