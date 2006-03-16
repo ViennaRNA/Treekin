@@ -3,7 +3,7 @@
 /*=   routines for reading bar-files and other input for treekin  =*/
 /*=   ---------------------------------------------------------   =*/
 /*=   Last changed Time-stamp: <2006-03-15 18:46:45 mtw>          =*/
-/*=   $Id: barparser.c,v 1.17 2006/03/15 18:04:29 mtw Exp $       =*/
+/*=   $Id: barparser.c,v 1.18 2006/03/16 13:38:43 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -42,8 +42,8 @@ ParseInfile(FILE *infile_fp, double **microrates)
     int i,j;
     double rate=0.;
     sscanf(line, "%d %d %lf %*d", &i, &j, &rate);
-    tmp_mr[dim*i+j]=rate;
-    tmp_mr[dim*j+i]=1;
+    tmp_mr[dim*(i-1)+(j-1)]=rate;
+    tmp_mr[dim*(j-1)+(i-1)]=1;
     g_free(line);
   }
   fclose(mr_FP);
