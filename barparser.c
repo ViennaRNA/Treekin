@@ -2,8 +2,8 @@
 /*=   barparser.c                                                 =*/
 /*=   routines for reading bar-files and other input for treekin  =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 18:46:45 mtw>          =*/
-/*=   $Id: barparser.c,v 1.18 2006/03/16 13:38:43 mtw Exp $       =*/
+/*=   Last changed Time-stamp: <2006-03-17 16:25:59 mtw>          =*/
+/*=   $Id: barparser.c,v 1.19 2006/04/21 11:25:01 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -19,6 +19,7 @@
 #include "ctype.h"
 
 #define LMINBASE 100
+#define ARRAYSIZE 10000
 
 static char *getline(FILE *fp);
 
@@ -27,47 +28,60 @@ int
 ParseInfile(FILE *infile_fp, double **microrates)
 {
   char *line = NULL, *mrfile = "microrates.out";
-  int dim, indx=0, l=0;
+  int a,dim,indx=0, l=0, as1 = ARRAYSIZE, as2 = ARRAYSIZE;
   double *tmp_mr=NULL;    /* temp matrix containing microrates */
   SubInfo *tmp_subI=NULL; /* temp array for info on energies of all states */
   FILE *mr_FP=NULL;       /* file pointers 4 "microrates.out" */
-
-  /* FIRST: read microrates.out and fill up transition matrix */
-  mr_FP = fopen(mrfile, "r+");
-  line = getline(mr_FP);  
-  sscanf(line, ">%d %*s", &dim);
-  g_free(line);
-  tmp_mr  = g_new0(double, dim*dim);
-  while((line=getline(mr_FP)) != NULL){
+  typedef struct {
     int i,j;
-    double rate=0.;
-    sscanf(line, "%d %d %lf %*d", &i, &j, &rate);
-    tmp_mr[dim*(i-1)+(j-1)]=rate;
-    tmp_mr[dim*(j-1)+(i-1)]=1;
-    g_free(line);
-  }
-  fclose(mr_FP);
-  *microrates = tmp_mr;
+    double rate;
+  } mr_t;
+  mr_t *mr=NULL;
 
-  /* SECOND: read (subopt)-infile with energies & gradient basins */
-  tmp_subI = g_new0(SubInfo, dim);
+  /* FIRST: read (subopt)-infile with energies & gradient basins */
+  tmp_subI = g_new0(SubInfo, as1);
   line = getline(infile_fp);
-  sscanf(line, "%s %*f", &opt.sequence);
+  opt.sequence = g_new0(char,2048);
+  sscanf(line, "%s %*f", opt.sequence);
   g_free(line);
   while((line=getline(infile_fp)) != NULL){
-    double energy;
-    int gb;
+    if(indx+1 >= as1){
+      as1 *= 2;
+      tmp_subI = g_realloc(tmp_subI, as1);
+    }
     sscanf(line, "%*s %f %d %*d", &tmp_subI[indx].energy, &tmp_subI[indx].ag);
     if (tmp_subI[indx].ag > l) l = tmp_subI[indx].ag;
     g_free(line);
     indx++;
   }
+  dim = indx;
+  indx = 0;
   
-  if(indx != dim){
-    fprintf(stderr, " read more lines from subopt file than our dim is!\n");
-    exit(EXIT_FAILURE);
+  /* SECOND: read microrates.out */
+  mr_FP = fopen(mrfile, "r+");
+  mr = g_new0(mr_t, as2);
+  while((line=getline(mr_FP)) != NULL){
+    if(indx+1 >= as2){
+      as2 *= 2;
+      mr = g_realloc(mr, as2);
+    }
+    sscanf(line, "%d %d %lf %*d", &mr[indx].i, &mr[indx].j, &mr[indx].rate);
+    g_free(line);
+    indx++;
   }
-  
+  fclose(mr_FP);
+
+  /* THIRD: fill up transition matrix */
+  tmp_mr  = g_new0(double, dim*dim);
+  for(a=0;a<indx;a++){
+    int i,j;
+    i = mr[a].i;
+    j = mr[a].j;
+    tmp_mr[dim*(i-1)+(j-1)]=mr[a].rate;
+    tmp_mr[dim*(j-1)+(i-1)]=1;
+  }
+  *microrates = tmp_mr;
+ 
   lmins = l;
   E = tmp_subI;
   fprintf(stderr, "dimension = %d, lmins = %d \n", dim, lmins);
