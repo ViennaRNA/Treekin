@@ -1,0 +1,13 @@
+option "absorb" a "Make a state absorbing" typestr="state" int no
+option "method" m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI ==>use rates from barriers" values="A","F","I" default="A" no
+option "t0" - "Start time" typestr="time" float no
+option "t8" - "Stop time" typestr="time" float no
+option "Temp" T "Temperatur in Celsius" float no
+option "nstates" n "Read <int> states"  int no
+option "p0" - "Set initial population of state <int> to <float>\nCan be given multiple times\n(NOTE: sum of <float> must equal 1)" string no multiple
+option "tinc" - "Time scaling factor (for log time-scale)" float no
+option "degeneracy" d "Consider degeracy in transition rates" flag off
+option "exponent" e "Use matrix-expontent routines, NO diagonalization" flag off
+option "umatrix" u "Dump transition matrix U to a binary file matrix.bin" flag off
+option "info"   - "show settings" flag off
+option "verbose" v  "verbose output" flag off
