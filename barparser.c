@@ -2,8 +2,8 @@
 /*=   barparser.c                                                 =*/
 /*=   routines for reading bar-files and other input for treekin  =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-17 16:25:59 mtw>          =*/
-/*=   $Id: barparser.c,v 1.19 2006/04/21 11:25:01 mtw Exp $       =*/
+/*=   Last changed Time-stamp: <2006-05-25 18:24:46 mtw>          =*/
+/*=   $Id: barparser.c,v 1.20 2006/06/09 15:49:35 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "barparser.h"
 #include "globals.h"
 #include "limits.h"
@@ -39,19 +40,21 @@ ParseInfile(FILE *infile_fp, double **microrates)
   mr_t *mr=NULL;
 
   /* FIRST: read (subopt)-infile with energies & gradient basins */
-  tmp_subI = g_new0(SubInfo, as1);
+  tmp_subI = (SubInfo *)calloc(as1, sizeof(SubInfo));
+  assert(tmp_subI != NULL);
   line = getline(infile_fp);
-  opt.sequence = g_new0(char,2048);
+  opt.sequence = (char *)calloc(2048,sizeof(char));
+  assert(opt.sequence != NULL);
   sscanf(line, "%s %*f", opt.sequence);
-  g_free(line);
+  free(line);
   while((line=getline(infile_fp)) != NULL){
     if(indx+1 >= as1){
       as1 *= 2;
-      tmp_subI = g_realloc(tmp_subI, as1);
+      tmp_subI = (SubInfo *)realloc(tmp_subI,as1*sizeof(SubInfo));
     }
     sscanf(line, "%*s %f %d %*d", &tmp_subI[indx].energy, &tmp_subI[indx].ag);
     if (tmp_subI[indx].ag > l) l = tmp_subI[indx].ag;
-    g_free(line);
+    free(line);
     indx++;
   }
   dim = indx;
@@ -59,20 +62,22 @@ ParseInfile(FILE *infile_fp, double **microrates)
   
   /* SECOND: read microrates.out */
   mr_FP = fopen(mrfile, "r+");
-  mr = g_new0(mr_t, as2);
+  mr = (mr_t *)calloc(as2, sizeof(mr_t));
+  assert(mr != NULL);
   while((line=getline(mr_FP)) != NULL){
     if(indx+1 >= as2){
       as2 *= 2;
-      mr = g_realloc(mr, as2);
+      mr = (mr_t *)realloc(mr, as2*sizeof(mr_t));
     }
     sscanf(line, "%d %d %lf %*d", &mr[indx].i, &mr[indx].j, &mr[indx].rate);
-    g_free(line);
+    free(line);
     indx++;
   }
   fclose(mr_FP);
 
   /* THIRD: fill up transition matrix */
-  tmp_mr  = g_new0(double, dim*dim);
+  tmp_mr  = (double *)calloc(dim*dim, sizeof(double));
+  assert(tmp_mr != NULL);
   for(a=0;a<indx;a++){
     int i,j;
     i = mr[a].i;

@@ -2,8 +2,8 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 18:04:13 mtw>          =*/
-/*=   $Id: globals.h,v 1.8 2006/03/15 18:04:29 mtw Exp $          =*/
+/*=   Last changed Time-stamp: <2006-06-09 10:45:13 mtw>          =*/
+/*=   $Id: globals.h,v 1.9 2006/06/09 15:49:35 mtw Exp $          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -12,8 +12,6 @@
 
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
-
-#include <glib.h>
 
 typedef struct {         /* command-line options */
   short absrb;           /* make one lmin absorbing */
@@ -32,7 +30,6 @@ typedef struct {         /* command-line options */
   FILE *INFILE;          /* input file (usually bar-file) */
   FILE *RATENFILE;       /* input file containing rates from barriers */
   char *sequence;        /* sequence */
-  char *program_name;    /* name of executable file */ 
 } treekin_options;
 
 treekin_options opt;

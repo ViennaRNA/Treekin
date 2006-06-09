@@ -76,12 +76,12 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(errno.h)
 
 dnl Check for glib-2.0 using pkgconfig
-PKG_CHECK_MODULES([GLIB], [glib-2.0], [have_glib=true], [have_glib=false])
-if test "x${have_glib}" = "xfalse" ; then
-        AC_MSG_ERROR([No Glib package information found])
-fi
-AC_SUBST(GLIB_CFLAGS)
-AC_SUBST(GLIB_LIBS)
+dnl PKG_CHECK_MODULES([GLIB], [glib-2.0], [have_glib=true], [have_glib=false])
+dnl if test "x${have_glib}" = "xfalse" ; then
+dnl         AC_MSG_ERROR([No Glib package information found])
+dnl fi
+dnl AC_SUBST(GLIB_CFLAGS)
+dnl AC_SUBST(GLIB_LIBS)
 
 AC_CHECK_HEADERS(math.h)
 
