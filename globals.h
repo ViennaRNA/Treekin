@@ -2,8 +2,8 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-06-09 10:45:13 mtw>          =*/
-/*=   $Id: globals.h,v 1.9 2006/06/09 15:49:35 mtw Exp $          =*/
+/*=   Last changed Time-stamp: <2006-09-21 15:20:08 mtw>          =*/
+/*=   $Id: globals.h,v 1.10 2006/09/21 14:00:38 mtw Exp $          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -14,12 +14,13 @@
 #define _GLOBALS_H_
 
 typedef struct {         /* command-line options */
-  short absrb;           /* make one lmin absorbing */
-  short want_linear;     /* logarithmic time-scale */
-  short want_verbose;    /* verbose output */
-  short want_degenerate; /* consider degeneracy */
-  short dumpU;           /* dump U to a binary file */
-  short matexp;          /* use matrix-exponent routines */
+  int absrb;             /* make one lmin absorbing */
+  int want_linear;       /* logarithmic time-scale */
+  int want_verbose;      /* verbose output */
+  int want_degenerate;   /* consider degeneracy */
+  int dumpU;             /* dump U to a binary file */
+  int dumpMathematica;   /* dump U to a Mathematica-readable file */
+  int matexp;            /* use matrix-exponent routines */
   int n;                 /* read only n lmins */
   float T;               /* Temperature */
   float t0;              /* start time */
