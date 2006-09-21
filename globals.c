@@ -2,8 +2,8 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-06-09 17:48:30 mtw>          =*/
-/*=   $Id: globals.c,v 1.9 2006/06/09 15:49:35 mtw Exp $          =*/
+/*=   Last changed Time-stamp: <2006-09-21 15:52:56 mtw>          =*/
+/*=   $Id: globals.c,v 1.10 2006/09/21 13:59:57 mtw Exp $          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -107,8 +107,8 @@ set_parameters(void)
   }
   
   if (args_info.Temp_given){
-    if( (opt.T = args_info.Temp_arg) <= 0 ){
-      fprintf(stderr, "Value of --Temp must be > 0\n");
+    if( (opt.T = args_info.Temp_arg) < -273.15 ){
+      fprintf(stderr, "Value of --Temp must be > -273.15\n");
       exit (EXIT_FAILURE);
     }
   }
@@ -123,6 +123,7 @@ set_parameters(void)
   if (args_info.degeneracy_given) opt.want_degenerate = 1;
   if (args_info.verbose_given) opt.want_verbose = 1;
   if (args_info.umatrix_given) opt.dumpU = 1;
+  if (args_info.mathematicamatrix_given) opt.dumpMathematica = 1;
   if (args_info.exponent_given) opt.matexp = 1;
   if (args_info.info_given){
     display_settings();
@@ -138,10 +139,11 @@ ini_globs(void)
   opt.T               =         37.;
   opt.t0              =          0.1;
   opt.t8              = 1000000000.;
-  opt.want_degenerate =         0; 
+  opt.want_degenerate =          0; 
   opt.tinc            =          1.02;
   opt.method          =          'A';
   opt.dumpU           =          0;
+  opt.dumpMathematica =          0;
   opt.matexp          =          0;
 }
 
@@ -152,16 +154,17 @@ display_settings(void)
   int i,j;
   fprintf(stderr,
           "Settings:\n"
-	  "--absorb   = %d\n"
-	  "--t0       = %.4f\n"
-	  "--t8       = %.2f\n"
-	  "--tinc     = %.4f\n"
-	  "--Temp     = %.2f\n"
+	  "--absorb   = %3i\n"
+	  "--t0       = %8.4f\n"
+	  "--t8       = %7.2g\n"
+	  "--tinc     = %6.2f\n"
+	  "--Temp     = %6.2f\n"
 	  "--method   = %c\n"
 	  "--nstates  = %d\n"
 	  "-d         = %d\n"
 	  "-e         = %d\n"
 	  "-u         = %d\n"
+	  "-x         = %d\n"
 	  "-v         = %d\n",
 	  opt.absrb,
 	  opt.t0,
@@ -173,6 +176,7 @@ display_settings(void)
 	  opt.want_degenerate,
 	  opt.matexp,
 	  opt.dumpU,
+	  opt.dumpMathematica,
 	  opt.want_verbose);
   for (i=0,j=1;i<args_info.p0_given;i++,j+=2){
     fprintf(stderr,
