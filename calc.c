@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 17:52:38 mtw>          =*/
-/*=   $Id: calc.c,v 1.28 2006/03/15 18:04:29 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-09-19 16:38:37 mtw>          =*/
+/*=   $Id: calc.c,v 1.29 2006/09/21 13:57:04 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -41,7 +41,7 @@ static void    MxDoDegeneracyStuff(void);
 static int     Mxempty(MAT *matrix);
 static void    MxBinWrite (double *matrix);
 static void    MxASCIIWrite(double *matrix);
-/* static void    MxKotzOutMathematica(double *matrix); */
+static void    MxKotzOutMathematica(double *matrix);
 
 /* private vars and arrays */
 static int      dim = 0;
@@ -94,7 +94,7 @@ MxBar2Matrix ( BarData *Data, double *R)
     exit(EXIT_FAILURE);
   }
   if (opt.dumpU)
-    /*   MxBinWrite(U); */
+   /*    MxBinWrite(U); */
     MxASCIIWrite(U);
   return (U);
 }
@@ -125,7 +125,7 @@ MxEqDistr ( BarData *Data )
   
   p8 = (double *) MxNew (dim*sizeof(double));
 
-  if(opt.absrb) dim--; /* because it was inceased before and we */
+  if(opt.absrb) dim--; /* because it was increased before and we */
   /* only have dim lmins in bar-file, not dim+1 */
   for(i = 0; i < dim; i++) Z += exp(-((double)Data[i].FGr/_kT));
   for(i = 0; i < dim; i++) p8[i] = exp(-((double) Data[i].FGr/_kT))/Z;
@@ -200,6 +200,10 @@ MxSymmetr ( double *U, double *P8 )
   
   if (opt.want_verbose) MxPrint (S, "force symmetrized S", 'm');
   
+  if (opt.dumpU){
+    fprintf(stderr, "in MxSymmetr: writing S to mx.bin\n");
+    MxBinWrite(S);
+  }
   eigen(S, EV, dim);  /* S is overwritten with its eigenvectors */ 
   if (opt.want_verbose){
     MxPrint (S, "Eigenvectors of S", 'm');MxPrint(EV, "Eigenvalues of S", 'v'); }
@@ -288,13 +292,12 @@ MxIterate (double *p0, double *p8, double *S)
    /* solve fundamental equation */
   print_settings();
   for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
-    for (i = 0; i < dim; i++) 
+    for (i = 0; i < dim; i++)
       exptL[dim*i+i] = exp(time*EV[i]);
-
     vmul(tmpVec2, exptL, tmpVec, dim);
     if(!opt.absrb)  vmul(pt, CL, tmpVec2, dim);
     else            vmul(pt, S, tmpVec2, dim);
-
+    
     count++;  /* # of iterations */
     
     printf(" %e ", time);  /* print p(t) to stdout */
@@ -341,6 +344,7 @@ MxIterate (double *p0, double *p8, double *S)
     fflush(stdout);
   }
   printf("# of iterations: %d\n", count);
+
   /*** end solve fundamental equation ***/
 
   if(opt.method=='F'){
@@ -395,7 +399,7 @@ MxMethodeA (BarData *Data)
 
   if(opt.absrb){ /*==== absorbing  states ====*/
     dim++;
-    fprintf(stderr, "dim inceased to %i\n", dim);
+    fprintf(stderr, "dim increased to %i\n", dim);
     T = (double *) MxNew(dim*dim*sizeof(double));
     real_abs = opt.absrb; /* the original absorbing lmin */
     real_abs--;
@@ -467,7 +471,7 @@ MxMethodeINPUT (BarData *Data, double *Input)
 
   if (opt.absrb) {  /*==== absorbing  states ====*/
     dim++;
-    fprintf(stderr, "dim inceased to %i\n", dim);
+    fprintf(stderr, "dim increased to %i\n", dim);
     U = (double *) MxNew(dim*dim*sizeof(double));
     real_abs = opt.absrb; /* the original absorbing lmin */
     real_abs--;
@@ -550,7 +554,7 @@ MxPrint(double *mx, char *name, char T)
     fprintf(stderr,"%s:\n", name);
     for (k = 0; k < dim; k++) {
       for (l=0; l< dim; l++) {
-	fprintf(stderr,"%15.10g ", mx[dim*k+l]);
+	fprintf(stderr,"%10.4g ", mx[dim*k+l]);
       }
       fprintf(stderr,"\n");
     }
@@ -716,7 +720,7 @@ MxPrintMeschachMat(MAT *matrix, char *name)
     fprintf(stderr, "%s (meschach):\n", name);
     for (i = 0; i < dim; i++){
       for (j = 0; j < dim; j++)
-	fprintf(stderr,"%15.10g ", matrix->me[i][j]);
+	fprintf(stderr,"%10.4g ", matrix->me[i][j]);
       fprintf(stderr, "\n");
     }
      fprintf(stderr,"---\n");
@@ -741,8 +745,8 @@ MxEVnonsymMx(double *origU, double **_S)
   double *tmp, *tmp_vec;
   MAT *A, *T, *Q, *X_re, *X_im;
   VEC *evals_re, *evals_im;
-  
-  /* MxKotzOutMathematica(origU); */
+
+  if(opt.dumpMathematica = 1)  MxKotzOutMathematica(origU);
   
   tmp =     (double *) MxNew (dim*dim*sizeof(double));
   tmp_vec = (double *) MxNew (dim * sizeof(double));
@@ -798,7 +802,7 @@ MxBinWrite(double *matrix)
 {
   int i, j;
   FILE *BINOUT;
-  char *binfile = "matrixU.bin";
+  char *binfile = "mx.bin";
 
   BINOUT = fopen(binfile, "w");
   if (!BINOUT){
@@ -822,7 +826,7 @@ MxASCIIWrite(double *matrix)
 {
   int i, j;
   FILE *ASCIIOUT;
-  char *asciifile = "matrixU.txt";
+  char *asciifile = "mx.txt";
 
   ASCIIOUT = fopen(asciifile, "w");
   if (!ASCIIOUT){
@@ -950,36 +954,36 @@ MxFPT(double *U, double *p8)
   exit(999);
   free(M);
 }
-/*==*/
-/* static void MxKotzOutMathematica(double *matrix){ */
-/*   int i,j; */
-/*   FILE *MATHEMATICA_OUT; */
-/*   char *mathematica_file = "trans_mat.txt"; */
-  
-/*   MATHEMATICA_OUT = fopen(mathematica_file, "w"); */
-/*   if (!MATHEMATICA_OUT){ */
-/*     fprintf(stderr, "could not open file pointer 4 Matematica outfile\n"); */
-/*     exit(101); */
-/*   } */
-/*   fprintf(MATHEMATICA_OUT, "{"); */
-/*   for(i=0;i<dim;i++){ */
-/*     fprintf(MATHEMATICA_OUT, "{"); */
-/*     for(j=0;j<dim;j++){ */
-/*       if (j != (dim-1)) */
-/* 	fprintf(MATHEMATICA_OUT, "%25.22lf, ", matrix[dim*i+j]); */
-/*       else */
-/* 	fprintf(MATHEMATICA_OUT, "%25.22f}", matrix[dim*i+j]); */
-/*     } */
-/*     if (i != (dim-1)) */
-/*       fprintf(MATHEMATICA_OUT, ",\n"); */
-/*     else */
-/*       fprintf(MATHEMATICA_OUT, "}\n"); */
-	
-/*   } */
 
+/*==*/
+static void
+MxKotzOutMathematica(double *matrix)
+{
+  int i,j;
+  FILE *MATHEMATICA_OUT;
+  char *mathematica_file = "mxMat.txt";
   
-/*   fclose(MATHEMATICA_OUT); */
-/* } */
+  MATHEMATICA_OUT = fopen(mathematica_file, "w");
+  if (!MATHEMATICA_OUT){
+    fprintf(stderr, "could not open file pointer 4 Matematica outfile\n");
+    exit(101);
+  }
+  fprintf(MATHEMATICA_OUT, "{");
+  for(i=0;i<dim;i++){
+    fprintf(MATHEMATICA_OUT, "{");
+    for(j=0;j<dim;j++){
+      if (j != (dim-1))
+	fprintf(MATHEMATICA_OUT, "%25.22lf, ", matrix[dim*i+j]);
+      else
+	fprintf(MATHEMATICA_OUT, "%25.22f}", matrix[dim*i+j]);
+    }
+    if (i != (dim-1))
+      fprintf(MATHEMATICA_OUT, ",\n");
+    else
+      fprintf(MATHEMATICA_OUT, "}\n");
+  }  
+  fclose(MATHEMATICA_OUT);
+}
 
 
 /* End of file */
