@@ -2,8 +2,8 @@
 /*=   barparser.h                                                 =*/
 /*=   header file for parsing bar-files etc.                      =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 17:58:54 mtw>          =*/
-/*=   $Id: barparser.h,v 1.10 2006/03/15 18:04:29 mtw Exp $        =*/
+/*=   Last changed Time-stamp: <2006-09-29 13:02:16 mtw>          =*/
+/*=   $Id: barparser.h,v 1.11 2006/09/29 16:35:41 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -15,23 +15,23 @@
 
 /* structures */ 
 typedef struct _BarData { /* structure for bar-file */ 
-  float energy;
-  float ediff;
+  double energy;
+  double ediff;
   int father;
   int number;
-  float bsize;          /* # of structures in this lmin  == basin size */
-  float eff_bsize;      /* bsize without children */
-  float fathers_bsize;  /* bsize of father at merging-time */
-  float F;              /* free energy of lmin i and its children */ 
-  float F_eff;          /* free engery of lmin (alone) */
-  float Z;              /* partition function of lmin */
-  float Z_eff;          /* Z of lmin (alone) */
-  float Gr_bsize;       /* gradient basin size */
-  float FGr;            /* F of gradient basin */ 
+  double bsize;          /* # of structures in this lmin  == basin size */
+  double eff_bsize;      /* bsize without children */
+  double fathers_bsize;  /* bsize of father at merging-time */
+  double F;              /* free energy of lmin i and its children */ 
+  double F_eff;          /* free engery of lmin (alone) */
+  double Z;              /* partition function of lmin */
+  double Z_eff;          /* Z of lmin (alone) */
+  double Gr_bsize;       /* gradient basin size */
+  double FGr;            /* F of gradient basin */ 
 } BarData;
 
 typedef struct _TypeDegSaddle{ /* structure for processing degeneracy */
-  float energy;   /* energy of saddle */
+  double energy;   /* energy of saddle */
   int cc;        /* # of structures in that particular connected component */
   int list[100];     /* string containing lmins which are connected by the saddle */
 } TypeDegSaddle;
@@ -48,6 +48,7 @@ int  ParseBarfile (FILE *fp, BarData **lmin);
 int  ParseInfile(FILE *infile_fp, double **microrates);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
 void ParseRatesFile(double **Raten, int dim);
+int  MxBinRead(double**);
 #endif
 
 /* End of file */
