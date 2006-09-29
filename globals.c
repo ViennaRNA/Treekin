@@ -2,8 +2,8 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-09-21 15:52:56 mtw>          =*/
-/*=   $Id: globals.c,v 1.10 2006/09/21 13:59:57 mtw Exp $          =*/
+/*=   Last changed Time-stamp: <2006-09-29 12:45:06 mtw>          =*/
+/*=   $Id: globals.c,v 1.11 2006/09/29 16:34:01 mtw Exp $          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -21,7 +21,7 @@
 static void ini_globs(void);
 static void set_parameters(void);
 static void display_settings(void);
-static int  check_pini_prob(float*);
+/* static int  check_pini_prob(double*); */
 
 static struct gengetopt_args_info args_info;
 
@@ -52,18 +52,18 @@ set_parameters(void)
 
   if (args_info.p0_given){
     int i, j=1, lmintmp;
-    float poptmp = 0., probtmp = 0., *pinitmp=NULL;
-    pinitmp = (float *)calloc(2*args_info.p0_given+1, sizeof(float));
+    double poptmp = 0., probtmp = 0., *pinitmp=NULL;
+    pinitmp = (double *)calloc(2*args_info.p0_given+1, sizeof(double));
     *pinitmp = 1;
     for (i=0; i<args_info.p0_given; i++,j+=2){
-      if (sscanf(args_info.p0_arg[i], "%d=%f",&lmintmp, &poptmp) == 0)
+      if (sscanf(args_info.p0_arg[i], "%d=%lg",&lmintmp, &poptmp) == 0)
 	exit(EXIT_FAILURE);
       if(lmintmp <1){
 	fprintf(stderr, "States in --p0 must be >=1\n");
 	exit (EXIT_FAILURE);	
       }
       else if (poptmp >0. && poptmp < 1.01){
-	*(pinitmp + j)     = (float) lmintmp;
+	*(pinitmp + j)     = (double) lmintmp;
 	*(pinitmp + j + 1) = poptmp;
 	*pinitmp += 2;
       }  
@@ -124,6 +124,7 @@ set_parameters(void)
   if (args_info.verbose_given) opt.want_verbose = 1;
   if (args_info.umatrix_given) opt.dumpU = 1;
   if (args_info.mathematicamatrix_given) opt.dumpMathematica = 1;
+  if (args_info.bin_given) opt.binrates = 1;
   if (args_info.exponent_given) opt.matexp = 1;
   if (args_info.info_given){
     display_settings();
@@ -145,6 +146,7 @@ ini_globs(void)
   opt.dumpU           =          0;
   opt.dumpMathematica =          0;
   opt.matexp          =          0;
+  opt.binrates        =          0;
 }
 
 /*==============================*/
@@ -165,6 +167,7 @@ display_settings(void)
 	  "-e         = %d\n"
 	  "-u         = %d\n"
 	  "-x         = %d\n"
+	  "-b         = %d\n"
 	  "-v         = %d\n",
 	  opt.absrb,
 	  opt.t0,
@@ -177,6 +180,7 @@ display_settings(void)
 	  opt.matexp,
 	  opt.dumpU,
 	  opt.dumpMathematica,
+	  opt.binrates,
 	  opt.want_verbose);
   for (i=0,j=1;i<args_info.p0_given;i++,j+=2){
     fprintf(stderr,
