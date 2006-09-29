@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-09-19 16:38:37 mtw>          =*/
-/*=   $Id: calc.c,v 1.29 2006/09/21 13:57:04 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-09-29 18:01:44 mtw>          =*/
+/*=   $Id: calc.c,v 1.30 2006/09/29 16:36:58 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -28,7 +28,6 @@
 /* private function(s) */
 static void   *MxNew (size_t size);
 static double *MxMethodeA (BarData *Data);
-static void    MxPrint(double *mx, char *name, char T);
 static void    MxPrintMeschachMat(MAT *matrix, char *name);
 static void    MxPrintMeschachVec(VEC* vector, char *name);
 static void    MxMeschach2ccmath(MAT *meschach_matrix, double **origM);
@@ -53,6 +52,7 @@ static double  *sqrPI_    = NULL;   /* right constant array */
 static double  *D         = NULL;   /* matrix with degree of degeneacy */
 static char     Aname[30];
 static TypeDegSaddle *saddle;
+static double  *p8        = NULL;   /* HACK by mtw 280926 */
 
 /*==*/
 void
@@ -121,8 +121,7 @@ double*
 MxEqDistr ( BarData *Data )
 {
   int i;
-  double *p8, Z = 0.;
-  
+  double Z = 0.;   /* double *p8, Z = 0.; */
   p8 = (double *) MxNew (dim*sizeof(double));
 
   if(opt.absrb) dim--; /* because it was increased before and we */
@@ -172,7 +171,7 @@ double*
 MxSymmetr ( double *U, double *P8 )
 {
   int i, j;
-  double *S, *tmpMx;
+  double *S=NULL, *tmpMx=NULL;
   
   S     = (double *) MxNew (dim*dim*sizeof(double));
   tmpMx = (double *) MxNew (dim*dim*sizeof(double));
@@ -184,11 +183,11 @@ MxSymmetr ( double *U, double *P8 )
 	_sqrPI[dim*i+j] = 1/(sqrPI_[dim*i+j]);}}} /* neg left */
   fprintf(stderr,"dim is %d\n", dim);
   mmul(tmpMx, _sqrPI, U, dim); mmul(S, tmpMx, sqrPI_, dim);
-    if (opt.want_verbose) {
-          MxPrint (_sqrPI, "_sqrPI (= negative Wurzl von pi)", 'm');
-          MxPrint (sqrPI_, "sqrPI_ (= Wurzl von pi)", 'm');
-          MxPrint (tmpMx, "tmpMx (= negative Wurzl von pi * U)", 'm');
-          MxPrint (S, "S before (= tmpMx * Wurzl von pi)", 'm'); }
+  /*   if (opt.want_verbose) { */
+  /*   MxPrint (_sqrPI, "_sqrPI (= negative Wurzl von pi)", 'm'); */
+  /*   MxPrint (sqrPI_, "sqrPI_ (= Wurzl von pi)", 'm'); */
+  /*   MxPrint (tmpMx, "tmpMx (= negative Wurzl von pi * U)", 'm'); */
+  /*  MxPrint (S, "S before (= tmpMx * Wurzl von pi)", 'm'); } */
   free(tmpMx);
   /* correct for numerical errors */
   for (i = 0; i < dim; i++) {
@@ -197,7 +196,6 @@ MxSymmetr ( double *U, double *P8 )
       S[dim*j+i] = S[dim*i+j];
     }
   }
-  
   if (opt.want_verbose) MxPrint (S, "force symmetrized S", 'm');
   
   if (opt.dumpU){
@@ -209,7 +207,7 @@ MxSymmetr ( double *U, double *P8 )
     MxPrint (S, "Eigenvectors of S", 'm');MxPrint(EV, "Eigenvalues of S", 'v'); }
   for (i=0;i<dim;i++){
     if (EV[i] > 1.){
-      fprintf(stderr, "\nEV[%i] is > 1: %20.18g, now setting to 1.\n", i, EV[i]);
+      fprintf(stderr, "\nEV[%i] is > 1: %25.22g, now setting to 1.\n", i, EV[i]);
       EV[i] = 1.;
     }
   }
@@ -289,7 +287,7 @@ MxIterate (double *p0, double *p8, double *S)
   }
   check = 0.;
   
-   /* solve fundamental equation */
+  /* solve fundamental equation */
   print_settings();
   for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
     for (i = 0; i < dim; i++)
@@ -316,7 +314,7 @@ MxIterate (double *p0, double *p8, double *S)
     
     if ( ((check-1) < -0.05) || ((check-1) > 0.05) ){
       fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
-      exit(888);
+      exit(EXIT_FAILURE);
     }
     check = 0.;
     /* now check if we have converged yet */
@@ -439,7 +437,7 @@ MxMethodeA (BarData *Data)
 extern double*
 MxMethodeFULL (double *R)
 {
-  int a, i, j;
+  int i, j;
   free(D);
   
   if(opt.absrb){ /*==== absorbing  states ====*/
@@ -492,9 +490,7 @@ MxMethodeINPUT (BarData *Data, double *Input)
   }      /*== end absorbing states ==*/
   else{  /*== non-absorbing states ==*/
     U = (double *) MxNew(dim*dim*sizeof(double));
-    for(i = 0; i < dim; i++)
-      for(j = 0; j < dim; j++)
-	U[dim*i+j] = Input[dim*i+j];
+    memcpy(U, Input, dim*dim*sizeof(double));
   }      /*== end non-absorbing states ==*/
 
   /* diagonal elements */
@@ -506,9 +502,60 @@ MxMethodeINPUT (BarData *Data, double *Input)
      for(j = 0; j < dim; j++)  tmp += U[dim*j+i];
     U[dim*i+i] = -tmp+1.;   /* make U a stochastic matrix */
   }
-  
   if(opt.want_verbose) MxPrint (U,"U with Methode I" , 'm');
   if (opt.dumpU) MxBinWrite(U);
+  
+#define MFPT
+#ifdef MFPT  
+  { /* calculate MFPT */
+    /* absorbing case: Z = inv(I-P+W) */
+  /*   double *t=NULL, *c=NULL, *Q=NULL, *N=NULL; */
+/*     Q = (double *) MxNew(dim*dim*sizeof(double)); */
+/*     N = (double *) MxNew(dim*dim*sizeof(double)); */
+/*     c = (double *) MxNew (dim*sizeof(double)); */
+/*     t = (double *) MxNew (dim*sizeof(double)); */
+/*     for(i = 0; i < dim; i++){ */
+/*       for(j = 0; j < dim; j++){ */
+/* 	Q[dim*i+j] = Input[dim*i+j]; */
+/* 	if(i==j) Q[dim*i+j] = 1- Q[dim*i+j]; */
+/*       } */
+/*     } */
+/*     if(opt.want_verbose) MxPrint (Q,"Q" , 'm'); */
+/*     mcopy(N, Q, dim*dim); */
+/*     minv(N,dim); */
+/*     if(opt.want_verbose) MxPrint (N,"N" , 'm'); */
+/*     for(i = 0; i < dim; i++) c[i]=1; */
+/*     if(opt.want_verbose) MxPrint(c, "c", 'v'); */
+/*     vmul (t, N, c, dim); */
+/*     if(opt.want_verbose) MxPrint(t, "t", 'v'); */
+/*     free(Q);free(N);free(c);free(t); */
+    
+    /*==*/
+    /* ergodic case: Z = inv(I-P+W) */
+    double *Z=NULL, *M=NULL;
+    Z = (double *) MxNew(dim*dim*sizeof(double));
+    M = (double *) MxNew(dim*dim*sizeof(double));
+    for(i = 0; i < dim; i++){
+      for(j = 0; j < dim; j++){
+	Z[dim*i+j] = U[dim*i+j]+p8[i];
+	if(i==j) Z[dim*i+j] = 1- Z[dim*i+j];
+      }
+    }
+    if(opt.want_verbose) MxPrint (Z,"I-P+W" , 'm');
+    minv(Z,dim);
+    if(opt.want_verbose) MxPrint (Z,"Fundamental matrix Z=inv(I-P+W)" , 'm');
+    
+    for(i = 0; i < dim; i++){
+      for(j = 0; j < dim; j++){
+	M[dim*i+j] = (Z[dim*i+i]-Z[dim*i+j])/p8[j];
+      }
+    }
+    if(opt.want_verbose) MxPrint (M,"M" , 'm');
+    free(Z);free(M);
+  }
+#endif
+  
+ 
 
   free(Input);
   return U;
@@ -545,7 +592,7 @@ MxNew ( size_t size )
 
 /*==*/
 /* print matrix stored in ccmath-fromat */
-static void
+void
 MxPrint(double *mx, char *name, char T)
 {
   int k, l;
@@ -562,7 +609,7 @@ MxPrint(double *mx, char *name, char T)
     break;
   case 'v':
     fprintf(stderr,"%s:\n", name);    
-    for (k = 0; k < dim; k++) fprintf(stderr,"%10.5f ", mx[k]);
+    for (k = 0; k < dim; k++) fprintf(stderr,"%15.10f ", mx[k]);
     fprintf(stderr,"\n---\n");
     break;
   default:
@@ -746,7 +793,7 @@ MxEVnonsymMx(double *origU, double **_S)
   MAT *A, *T, *Q, *X_re, *X_im;
   VEC *evals_re, *evals_im;
 
-  if(opt.dumpMathematica = 1)  MxKotzOutMathematica(origU);
+  if(opt.dumpMathematica == 1)  MxKotzOutMathematica(origU);
   
   tmp =     (double *) MxNew (dim*dim*sizeof(double));
   tmp_vec = (double *) MxNew (dim * sizeof(double));
@@ -973,7 +1020,7 @@ MxKotzOutMathematica(double *matrix)
     fprintf(MATHEMATICA_OUT, "{");
     for(j=0;j<dim;j++){
       if (j != (dim-1))
-	fprintf(MATHEMATICA_OUT, "%25.22lf, ", matrix[dim*i+j]);
+	fprintf(MATHEMATICA_OUT, "%25.22f, ", matrix[dim*i+j]);
       else
 	fprintf(MATHEMATICA_OUT, "%25.22f}", matrix[dim*i+j]);
     }
