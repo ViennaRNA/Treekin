@@ -2,8 +2,8 @@
 /*=   barparser.c                                                 =*/
 /*=   routines for reading bar-files and other input for treekin  =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-05-25 18:24:46 mtw>          =*/
-/*=   $Id: barparser.c,v 1.20 2006/06/09 15:49:35 mtw Exp $       =*/
+/*=   Last changed Time-stamp: <2006-09-29 13:13:13 mtw>          =*/
+/*=   $Id: barparser.c,v 1.21 2006/09/29 16:36:03 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -52,7 +52,7 @@ ParseInfile(FILE *infile_fp, double **microrates)
       as1 *= 2;
       tmp_subI = (SubInfo *)realloc(tmp_subI,as1*sizeof(SubInfo));
     }
-    sscanf(line, "%*s %f %d %*d", &tmp_subI[indx].energy, &tmp_subI[indx].ag);
+    sscanf(line, "%*s %lg %d %*d", &tmp_subI[indx].energy, &tmp_subI[indx].ag);
     if (tmp_subI[indx].ag > l) l = tmp_subI[indx].ag;
     free(line);
     indx++;
@@ -179,28 +179,28 @@ ParseBarfile( FILE *fp, BarData **lmin)
       v++;
       switch (v){
       case 2:
-	sscanf(p, "%f", &tmp[count].energy);
+	sscanf(p, "%lg", &tmp[count].energy);
 	break;
       case 3:
 	sscanf(p, "%d", &tmp[count].father);
 	break;
       case 4:
-	sscanf(p, "%f", &tmp[count].ediff);
+	sscanf(p, "%lg", &tmp[count].ediff);
 	break;
       case 5:
-	sscanf(p, "%e", &tmp[count].bsize);
+	sscanf(p, "%lg", &tmp[count].bsize);
 	break;
       case 6:
-	sscanf(p, "%e", &tmp[count].fathers_bsize);
+	sscanf(p, "%lg", &tmp[count].fathers_bsize);
 	break;
       case 7:
-	sscanf(p, "%e", &tmp[count].F);
+	sscanf(p, "%lg", &tmp[count].F);
 	break;
       case 8:
-	sscanf(p, "%e", &tmp[count].Gr_bsize);
+	sscanf(p, "%lg", &tmp[count].Gr_bsize);
 	break;
       case 9:
-	sscanf(p, "%e",  &tmp[count].FGr);
+	sscanf(p, "%lg",  &tmp[count].FGr);
 	break;
       default:
 	break;
@@ -239,7 +239,7 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
       }
       size = newsize;
     }
-    sscanf(line, "%f %4d %*s %n", &temp[count].energy, &temp[count].cc, &p);
+    sscanf(line, "%lg %4d %*s %n", &temp[count].energy, &temp[count].cc, &p);
     line += p;
     temp[count].list[0] = 0; /* list[0] contains # of lmins connected by that saddle */
     while( *line != '\0') {
@@ -258,6 +258,26 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
   *my_saddle = temp;
   fclose(my_file);
   return count; /*return # of saddles read */
+}
+
+/*==*/
+int
+MxBinRead(double **Mx)
+{
+  int dimension=0;
+  FILE *BININ;
+  char *binfile = "rates.bin";
+  double *data=NULL;
+
+  BININ = fopen(binfile, "r+");
+ /*    perror("Opening bin file"), exit(EXIT_FAILURE); */
+  
+  fread(&dimension,sizeof(int),1,BININ);
+  data = (double *)calloc(dimension*dimension, sizeof(double));
+  fread(data, sizeof(double), dimension*dimension,BININ);
+  *Mx = data;
+  fclose(BININ);
+  return dimension;
 }
 
 /*==*/
