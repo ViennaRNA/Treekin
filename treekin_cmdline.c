@@ -32,16 +32,17 @@ const char *gengetopt_args_info_help[] = {
   "  -m, --method=STRING      Select method to build transition matrix:\n                             A ==>Arrhenius-like kinetics\n                             F ==> Full process kinetics (whole subopt)\n                             I==>use rates from barriers  (possible \n                             values=\"A\", \"F\", \"I\" default=`A')",
   "      --t0=time            Start time",
   "      --t8=time            Stop time",
-  "  -T, --Temp=FLOAT         Temperatur in Celsius",
+  "  -T, --Temp=DOUBLE        Temperatur in Celsius",
   "  -n, --nstates=INT        Read <int> states",
-  "      --p0=STRING          Set initial population of state <int> to <float>\n                             Can be given multiple times\n                             (NOTE: sum of <float> must equal 1)",
-  "      --tinc=FLOAT         Time scaling factor (for log time-scale)",
+  "      --p0=STRING          Set initial population of state <int> to <double>\n                             Can be given multiple times\n                             (NOTE: sum of <double> must equal 1)",
+  "      --tinc=DOUBLE        Time scaling factor (for log time-scale)",
   "  -d, --degeneracy         Consider degeracy in transition rates  (default=off)",
   "  -e, --exponent           Use matrix-expontent routines, NO diagonalization  \n                             (default=off)",
   "  -u, --umatrix            Dump transition matrix U to a binary file mx.bin  \n                             (default=off)",
   "  -x, --mathematicamatrix  Dump transition matrix U to Mathematica-readable \n                             file mxMat.txt  (default=off)",
   "      --info               show settings  (default=off)",
   "  -v, --verbose            verbose output  (default=off)",
+  "  -b, --bin                assume binary input  (default=off)",
     0
 };
 
@@ -87,6 +88,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->mathematicamatrix_given = 0 ;
   args_info->info_given = 0 ;
   args_info->verbose_given = 0 ;
+  args_info->bin_given = 0 ;
 }
 
 static
@@ -108,6 +110,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->mathematicamatrix_flag = 0;
   args_info->info_flag = 0;
   args_info->verbose_flag = 0;
+  args_info->bin_flag = 0;
   
 }
 
@@ -132,6 +135,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->mathematicamatrix_help = gengetopt_args_info_help[13] ;
   args_info->info_help = gengetopt_args_info_help[14] ;
   args_info->verbose_help = gengetopt_args_info_help[15] ;
+  args_info->bin_help = gengetopt_args_info_help[16] ;
   
 }
 
@@ -339,6 +343,9 @@ cmdline_parser_file_save(const char *filename, struct gengetopt_args_info *args_
   }
   if (args_info->verbose_given) {
     fprintf(outfile, "%s\n", "verbose");
+  }
+  if (args_info->bin_given) {
+    fprintf(outfile, "%s\n", "bin");
   }
   
   fclose (outfile);
@@ -636,11 +643,12 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
         { "mathematicamatrix",	0, NULL, 'x' },
         { "info",	0, NULL, 0 },
         { "verbose",	0, NULL, 'v' },
+        { "bin",	0, NULL, 'b' },
         { NULL,	0, NULL, 0 }
       };
 
       stop_char = 0;
-      c = getopt_long (argc, argv, "hVa:m:T:n:deuxv", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVa:m:T:n:deuxvb", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -709,7 +717,7 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
             continue;
           local_args_info.Temp_given = 1;
           args_info->Temp_given = 1;
-          args_info->Temp_arg = (float)strtod (optarg, &stop_char);
+          args_info->Temp_arg = strtod (optarg, &stop_char);
           if (!(stop_char && *stop_char == '\0')) {
             fprintf(stderr, "%s: invalid numeric value: %s\n", argv[0], optarg);
             goto failure;
@@ -804,6 +812,19 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
           args_info->verbose_flag = !(args_info->verbose_flag);
           break;
 
+        case 'b':	/* assume binary input.  */
+          if (local_args_info.bin_given)
+            {
+              fprintf (stderr, "%s: `--bin' (`-b') option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
+              goto failure;
+            }
+          if (args_info->bin_given && ! override)
+            continue;
+          local_args_info.bin_given = 1;
+          args_info->bin_given = 1;
+          args_info->bin_flag = !(args_info->bin_flag);
+          break;
+
 
         case 0:	/* Long option with no short option */
           /* Start time.  */
@@ -818,7 +839,7 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
               continue;
             local_args_info.t0_given = 1;
             args_info->t0_given = 1;
-            args_info->t0_arg = (float)strtod (optarg, &stop_char);
+            args_info->t0_arg = strtod (optarg, &stop_char);
             if (!(stop_char && *stop_char == '\0')) {
               fprintf(stderr, "%s: invalid numeric value: %s\n", argv[0], optarg);
               goto failure;
@@ -839,7 +860,7 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
               continue;
             local_args_info.t8_given = 1;
             args_info->t8_given = 1;
-            args_info->t8_arg = (float)strtod (optarg, &stop_char);
+            args_info->t8_arg = strtod (optarg, &stop_char);
             if (!(stop_char && *stop_char == '\0')) {
               fprintf(stderr, "%s: invalid numeric value: %s\n", argv[0], optarg);
               goto failure;
@@ -848,7 +869,7 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
               free (args_info->t8_orig); /* free previous string */
             args_info->t8_orig = gengetopt_strdup (optarg);
           }
-          /* Set initial population of state <int> to <float>\nCan be given multiple times\n(NOTE: sum of <float> must equal 1).  */
+          /* Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1).  */
           else if (strcmp (long_options[option_index].name, "p0") == 0)
           {
             local_args_info.p0_given++;
@@ -887,7 +908,7 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
               continue;
             local_args_info.tinc_given = 1;
             args_info->tinc_given = 1;
-            args_info->tinc_arg = (float)strtod (optarg, &stop_char);
+            args_info->tinc_arg = strtod (optarg, &stop_char);
             if (!(stop_char && *stop_char == '\0')) {
               fprintf(stderr, "%s: invalid numeric value: %s\n", argv[0], optarg);
               goto failure;

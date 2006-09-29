@@ -32,24 +32,24 @@ struct gengetopt_args_info
   char * method_arg;	/* Select method to build transition matrix:\nA ==>Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI==>use rates from barriers (default='A').  */
   char * method_orig;	/* Select method to build transition matrix:\nA ==>Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI==>use rates from barriers original value given at command line.  */
   const char *method_help; /* Select method to build transition matrix:\nA ==>Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI==>use rates from barriers help description.  */
-  float t0_arg;	/* Start time.  */
+  double t0_arg;	/* Start time.  */
   char * t0_orig;	/* Start time original value given at command line.  */
   const char *t0_help; /* Start time help description.  */
-  float t8_arg;	/* Stop time.  */
+  double t8_arg;	/* Stop time.  */
   char * t8_orig;	/* Stop time original value given at command line.  */
   const char *t8_help; /* Stop time help description.  */
-  float Temp_arg;	/* Temperatur in Celsius.  */
+  double Temp_arg;	/* Temperatur in Celsius.  */
   char * Temp_orig;	/* Temperatur in Celsius original value given at command line.  */
   const char *Temp_help; /* Temperatur in Celsius help description.  */
   int nstates_arg;	/* Read <int> states.  */
   char * nstates_orig;	/* Read <int> states original value given at command line.  */
   const char *nstates_help; /* Read <int> states help description.  */
-  char ** p0_arg;	/* Set initial population of state <int> to <float>\nCan be given multiple times\n(NOTE: sum of <float> must equal 1).  */
-  char ** p0_orig;	/* Set initial population of state <int> to <float>\nCan be given multiple times\n(NOTE: sum of <float> must equal 1) original value given at command line.  */
-  int p0_min; /* Set initial population of state <int> to <float>\nCan be given multiple times\n(NOTE: sum of <float> must equal 1)'s minimum occurreces */
-  int p0_max; /* Set initial population of state <int> to <float>\nCan be given multiple times\n(NOTE: sum of <float> must equal 1)'s maximum occurreces */
-  const char *p0_help; /* Set initial population of state <int> to <float>\nCan be given multiple times\n(NOTE: sum of <float> must equal 1) help description.  */
-  float tinc_arg;	/* Time scaling factor (for log time-scale).  */
+  char ** p0_arg;	/* Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1).  */
+  char ** p0_orig;	/* Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1) original value given at command line.  */
+  int p0_min; /* Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1)'s minimum occurreces */
+  int p0_max; /* Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1)'s maximum occurreces */
+  const char *p0_help; /* Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1) help description.  */
+  double tinc_arg;	/* Time scaling factor (for log time-scale).  */
   char * tinc_orig;	/* Time scaling factor (for log time-scale) original value given at command line.  */
   const char *tinc_help; /* Time scaling factor (for log time-scale) help description.  */
   int degeneracy_flag;	/* Consider degeracy in transition rates (default=off).  */
@@ -64,6 +64,8 @@ struct gengetopt_args_info
   const char *info_help; /* show settings help description.  */
   int verbose_flag;	/* verbose output (default=off).  */
   const char *verbose_help; /* verbose output help description.  */
+  int bin_flag;	/* assume binary input (default=off).  */
+  const char *bin_help; /* assume binary input help description.  */
   
   int help_given ;	/* Whether help was given.  */
   int version_given ;	/* Whether version was given.  */
@@ -81,6 +83,7 @@ struct gengetopt_args_info
   int mathematicamatrix_given ;	/* Whether mathematicamatrix was given.  */
   int info_given ;	/* Whether info was given.  */
   int verbose_given ;	/* Whether verbose was given.  */
+  int bin_given ;	/* Whether bin was given.  */
 
   char **inputs ; /* unamed options */
   unsigned inputs_num ; /* unamed options number */
