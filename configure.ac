@@ -67,6 +67,8 @@ dnl ---------------------------------------------------------------------------
 
 AC_LANG(C)
 AC_CHECK_LIB(m, isnan)
+AC_CHECK_LIB(gmp, __gmpz_init, , [AC_MSG_ERROR([GNU MP not found, see http://swox.com/gmp])])
+AC_CHECK_LIB(mpfr, mpfr_add, , [AC_MSG_ERROR([Need MPFR from GNU MP 4 See http://www.mpfr.org])])		  	
 
 dnl ---------------------------------------------------------------------------
 dnl Checks for header files.
