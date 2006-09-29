@@ -2,8 +2,8 @@
 /*=   main.c                                                      =*/
 /*=   main file for treekin                                       =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 18:31:19 mtw>          =*/
-/*=   $Id: main.c,v 1.18 2006/03/15 18:04:29 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-09-29 17:08:16 mtw>          =*/
+/*=   $Id: main.c,v 1.19 2006/09/29 16:34:34 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -15,6 +15,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <errno.h>
+#include <math.h>
 #include "calc.h"
 #include "mxccm.h"  
 #include "barparser.h"
@@ -34,17 +35,25 @@ main (int argc, char **argv)
     dim = ParseInfile(opt.INFILE, &R);
   else
     dim = ParseBarfile (opt.INFILE, &Data);
-  if(opt.method == 'I')  ParseRatesFile(&R, dim);
+  if(opt.method == 'I'){
+    if (opt.binrates)
+      dim =  MxBinRead(&R);
+    else
+      ParseRatesFile(&R, dim);
+  }
   MxInit (dim);
-  if(opt.method == 'F')
-    U = MxBar2Matrix (NULL, R);
-  else
-    U = MxBar2Matrix (Data, R);
+
   p0 = MxStartVec ();
   if(opt.method == 'F') 
     p8 = MxEqDistrFULL (E);
   else
     p8 = MxEqDistr (Data);
+  
+  if(opt.method == 'F')
+    U = MxBar2Matrix (NULL, R);
+  else
+    U = MxBar2Matrix (Data, R);
+  
   if(fpt) MxFPT(U, p8);
   if(opt.matexp) MxExponent(p0,p8,U);
   else{
