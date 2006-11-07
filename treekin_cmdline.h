@@ -66,6 +66,8 @@ struct gengetopt_args_info
   const char *verbose_help; /* verbose output help description.  */
   int bin_flag;	/* assume binary input (default=off).  */
   const char *bin_help; /* assume binary input help description.  */
+  int fpt_flag;	/* calculate first passage times (default=off).  */
+  const char *fpt_help; /* calculate first passage times help description.  */
   
   int help_given ;	/* Whether help was given.  */
   int version_given ;	/* Whether version was given.  */
@@ -84,6 +86,7 @@ struct gengetopt_args_info
   int info_given ;	/* Whether info was given.  */
   int verbose_given ;	/* Whether verbose was given.  */
   int bin_given ;	/* Whether bin was given.  */
+  int fpt_given ;	/* Whether fpt was given.  */
 
   char **inputs ; /* unamed options */
   unsigned inputs_num ; /* unamed options number */

@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-09-29 18:01:44 mtw>          =*/
-/*=   $Id: calc.c,v 1.30 2006/09/29 16:36:58 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-10-11 18:08:28 mtw>          =*/
+/*=   $Id: calc.c,v 1.31 2006/11/07 17:01:14 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -42,6 +42,7 @@ static void    MxBinWrite (double *matrix);
 static void    MxASCIIWrite(double *matrix);
 static void    MxKotzOutMathematica(double *matrix);
 
+
 /* private vars and arrays */
 static int      dim = 0;
 static double   _kT = 1.;
@@ -51,7 +52,7 @@ static double  *_sqrPI    = NULL;   /* left constant array */
 static double  *sqrPI_    = NULL;   /* right constant array */
 static double  *D         = NULL;   /* matrix with degree of degeneacy */
 static char     Aname[30];
-static TypeDegSaddle *saddle;
+static TypeDegSaddle *saddle = NULL;
 static double  *p8        = NULL;   /* HACK by mtw 280926 */
 
 /*==*/
@@ -96,6 +97,9 @@ MxBar2Matrix ( BarData *Data, double *R)
   if (opt.dumpU)
    /*    MxBinWrite(U); */
     MxASCIIWrite(U);
+
+ 
+  
   return (U);
 }
 
@@ -428,7 +432,6 @@ MxMethodeA (BarData *Data)
     for(i = 0; i < dim; i++) tmp += U[dim*i+j];
     U[dim*j+j] = -tmp+1; /* make U a stochastic matrix */
   }
-  
   if (opt.want_verbose) MxPrint (U,"U with Methode A", 'm');
   return (U);
 }
@@ -504,58 +507,6 @@ MxMethodeINPUT (BarData *Data, double *Input)
   }
   if(opt.want_verbose) MxPrint (U,"U with Methode I" , 'm');
   if (opt.dumpU) MxBinWrite(U);
-  
-#define MFPT
-#ifdef MFPT  
-  { /* calculate MFPT */
-    /* absorbing case: Z = inv(I-P+W) */
-  /*   double *t=NULL, *c=NULL, *Q=NULL, *N=NULL; */
-/*     Q = (double *) MxNew(dim*dim*sizeof(double)); */
-/*     N = (double *) MxNew(dim*dim*sizeof(double)); */
-/*     c = (double *) MxNew (dim*sizeof(double)); */
-/*     t = (double *) MxNew (dim*sizeof(double)); */
-/*     for(i = 0; i < dim; i++){ */
-/*       for(j = 0; j < dim; j++){ */
-/* 	Q[dim*i+j] = Input[dim*i+j]; */
-/* 	if(i==j) Q[dim*i+j] = 1- Q[dim*i+j]; */
-/*       } */
-/*     } */
-/*     if(opt.want_verbose) MxPrint (Q,"Q" , 'm'); */
-/*     mcopy(N, Q, dim*dim); */
-/*     minv(N,dim); */
-/*     if(opt.want_verbose) MxPrint (N,"N" , 'm'); */
-/*     for(i = 0; i < dim; i++) c[i]=1; */
-/*     if(opt.want_verbose) MxPrint(c, "c", 'v'); */
-/*     vmul (t, N, c, dim); */
-/*     if(opt.want_verbose) MxPrint(t, "t", 'v'); */
-/*     free(Q);free(N);free(c);free(t); */
-    
-    /*==*/
-    /* ergodic case: Z = inv(I-P+W) */
-    double *Z=NULL, *M=NULL;
-    Z = (double *) MxNew(dim*dim*sizeof(double));
-    M = (double *) MxNew(dim*dim*sizeof(double));
-    for(i = 0; i < dim; i++){
-      for(j = 0; j < dim; j++){
-	Z[dim*i+j] = U[dim*i+j]+p8[i];
-	if(i==j) Z[dim*i+j] = 1- Z[dim*i+j];
-      }
-    }
-    if(opt.want_verbose) MxPrint (Z,"I-P+W" , 'm');
-    minv(Z,dim);
-    if(opt.want_verbose) MxPrint (Z,"Fundamental matrix Z=inv(I-P+W)" , 'm');
-    
-    for(i = 0; i < dim; i++){
-      for(j = 0; j < dim; j++){
-	M[dim*i+j] = (Z[dim*i+i]-Z[dim*i+j])/p8[j];
-      }
-    }
-    if(opt.want_verbose) MxPrint (M,"M" , 'm');
-    free(Z);free(M);
-  }
-#endif
-  
- 
 
   free(Input);
   return U;
@@ -955,15 +906,14 @@ void
 MxFPT(double *U, double *p8)
 {
   int i,j, val;
-  double *M, *Q, *W, *Z;
+  double *M, *Q, *W, *Z, *c,*d;
   
   M = (double *) MxNew (dim*dim*sizeof(double));
   Q = (double *) MxNew (dim*dim*sizeof(double));
   W = (double *) MxNew (dim*dim*sizeof(double));
   Z = (double *) MxNew (dim*dim*sizeof(double));
-   
-
-  MxPrint(p8, "p8", 'v');
+  c = (double *) MxNew (dim*sizeof(double));
+  d  = (double *) MxNew (dim*sizeof(double));
 
   memcpy(Q,U, dim*dim*sizeof(double));
   for(i=0; i < dim; i++)
@@ -972,34 +922,29 @@ MxFPT(double *U, double *p8)
   for (j = 0; j < dim; j++)
     for(i = 0; i < dim; i++)
       W[dim*i+j] = p8[i];
-  MxPrint(Q, "Q", 'm');
-  MxPrint(W, "W", 'm'); 
-  
+  MxPrint(Q, "Q (MxFPT)", 'm'); MxPrint(W, "W (MxFPT)", 'm'); 
 
   for(i = 0; i < dim; i++)
     for (j = 0; j < dim; j++)
       Z[dim*i+j] = W[dim*i+j] - Q[dim*i+j];
+  MxPrint(Z, "W-Q == I-P+W (MxFPT)", 'm');
 
   val = minv(Z, dim);
-
-  MxPrint(Z, "Z", 'm');
-
   if (val != 0){
     fprintf(stderr, "Z is singular, can't invert it\n");
-    exit(999);
+    exit(EXIT_FAILURE);
   }
-
-  free(Q);
-  free(W);
-  free(Z);
-
+  MxPrint(Z, "Z (MxFPT)", 'm');
+  free(Q);  free(W);
+  for(i = 0; i < dim; i++) c[i]=1.;
+  MxPrint(c, "c", 'v');
+  vmul(d, Z, c,dim);
+  MxPrint(d, "d", 'v');
   for(i = 0; i < dim; i++)
     for (j = 0; j < dim; j++)
-      M[dim*i+j] = (Z[dim*j+j] - Z[dim*i+j])/p8[j];
-  MxPrint(M, "M", 'm');
-  
-  exit(999);
-  free(M);
+      M[dim*i+j] = (Z[dim*j+j] - Z[dim*i+j])/p8[j]; /* !~!!! */
+  MxPrint(M, "M (MxFPT)", 'm');
+  free(M); free(Z); free(c); free(d);
 }
 
 /*==*/
@@ -1032,5 +977,71 @@ MxKotzOutMathematica(double *matrix)
   fclose(MATHEMATICA_OUT);
 }
 
+/*==*/
+void
+MxFirstPassageTime(double *U)
+{
+#define MFPT
+#ifdef MFPT
+  int i,j;
+  { /* calculate MFPT */
+    /* absorbing case: Z = inv(I-P+W) */
+    /*   double *t=NULL, *c=NULL, *Q=NULL, *N=NULL; */
+    /*     Q = (double *) MxNew(dim*dim*sizeof(double)); */
+    /*     N = (double *) MxNew(dim*dim*sizeof(double)); */
+    /*     c = (double *) MxNew (dim*sizeof(double)); */
+    /*     t = (double *) MxNew (dim*sizeof(double)); */
+    /*     for(i = 0; i < dim; i++){ */
+    /*       for(j = 0; j < dim; j++){ */
+    /* 	Q[dim*i+j] = Input[dim*i+j]; */
+    /* 	if(i==j) Q[dim*i+j] = 1- Q[dim*i+j]; */
+    /*       } */
+    /*     } */
+    /*     if(opt.want_verbose) MxPrint (Q,"Q" , 'm'); */
+    /*     mcopy(N, Q, dim*dim); */
+    /*     minv(N,dim); */
+    /*     if(opt.want_verbose) MxPrint (N,"N" , 'm'); */
+    /*     for(i = 0; i < dim; i++) c[i]=1; */
+    /*     if(opt.want_verbose) MxPrint(c, "c", 'v'); */
+    /*     vmul (t, N, c, dim); */
+    /*     if(opt.want_verbose) MxPrint(t, "t", 'v'); */
+    /*     free(Q);free(N);free(c);free(t); */
+    /*==*/
+    
+    /* ergodic case: Z = inv(I-P+W) */
+    fprintf(stderr, "in MxFirstPassageTime\n");
+    if(opt.want_verbose) MxPrint (U,"U" , 'm');
+    double *Z=NULL, *M=NULL, *I=NULL;
+    Z = (double *) MxNew(dim*dim*sizeof(double));
+    M = (double *) MxNew(dim*dim*sizeof(double));
+    I = (double *) MxNew(dim*dim*sizeof(double));
+
+    for(i=0; i < dim; i++)
+      I[dim*i+i] = 1;
+    
+    for(i = 0; i < dim; i++)
+      for(j = 0; j < dim; j++){
+	  Z[dim*i+j] = I[dim*i+j]-U[dim*i+j]; /* I-U */
+      }
+    if(opt.want_verbose) MxPrint (Z,"I-U" , 'm');
+    for(i = 0; i < dim; i++)
+      for(j = 0; j < dim; j++)
+	Z[dim*i+j] += p8[i];  /* I-U+W */
+    
+    if(opt.want_verbose) MxPrint (Z,"I-U+W" , 'm');
+    minv(Z,dim);
+    if(opt.want_verbose) MxPrint (Z,"Fundamental matrix Z=inv(I-U+W)" , 'm');
+    
+    for(i = 0; i < dim; i++){
+      for(j = 0; j < dim; j++){
+	M[dim*i+j] = (Z[dim*i+i]-Z[dim*i+j])/p8[j];
+      }
+    }
+    if(opt.want_verbose) MxPrint (M,"M" , 'm');
+    free(Z);free(M);free(I);
+  }
+#endif
+  return;
+}
 
 /* End of file */

@@ -2,8 +2,8 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-09-29 12:45:06 mtw>          =*/
-/*=   $Id: globals.c,v 1.11 2006/09/29 16:34:01 mtw Exp $          =*/
+/*=   Last changed Time-stamp: <2006-10-11 15:24:30 mtw>          =*/
+/*=   $Id: globals.c,v 1.12 2006/11/07 17:01:14 mtw Exp $          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -126,6 +126,7 @@ set_parameters(void)
   if (args_info.mathematicamatrix_given) opt.dumpMathematica = 1;
   if (args_info.bin_given) opt.binrates = 1;
   if (args_info.exponent_given) opt.matexp = 1;
+  if (args_info.fpt_given) opt.fpt = 1;
   if (args_info.info_given){
     display_settings();
     exit(EXIT_SUCCESS);
@@ -147,6 +148,7 @@ ini_globs(void)
   opt.dumpMathematica =          0;
   opt.matexp          =          0;
   opt.binrates        =          0;
+  opt.fpt             =          0;
 }
 
 /*==============================*/
@@ -163,6 +165,7 @@ display_settings(void)
 	  "--Temp     = %6.2f\n"
 	  "--method   = %c\n"
 	  "--nstates  = %d\n"
+	  "--fpt      = %d\n"
 	  "-d         = %d\n"
 	  "-e         = %d\n"
 	  "-u         = %d\n"
@@ -176,6 +179,7 @@ display_settings(void)
 	  opt.T,
 	  opt.method,
 	  opt.n,
+	  opt.fpt,
 	  opt.want_degenerate,
 	  opt.matexp,
 	  opt.dumpU,

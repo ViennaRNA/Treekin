@@ -13,3 +13,4 @@ option "mathematicamatrix" x "Dump transition matrix U to Mathematica-readable f
 option "info"   - "show settings" flag off
 option "verbose" v  "verbose output" flag off
 option "bin" b "assume binary input" flag off
+option "fpt" - "calculate first passage times" flag off

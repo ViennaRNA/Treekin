@@ -2,8 +2,8 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-09-29 13:59:55 mtw>          =*/
-/*=   $Id: globals.h,v 1.11 2006/09/29 16:33:32 mtw Exp $          =*/
+/*=   Last changed Time-stamp: <2006-10-11 15:23:47 mtw>          =*/
+/*=   $Id: globals.h,v 1.12 2006/11/07 17:01:14 mtw Exp $          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -23,15 +23,16 @@ typedef struct {         /* command-line options */
   int matexp;            /* use matrix-exponent routines */
   int binrates;          /* assume binary rates file */
   int n;                 /* read only n lmins */
-  double T;               /* Temperature */
-  double t0;              /* start time */
-  double t8;              /* stop time */
-  double tinc;            /* time increment */
-  double *pini;           /* start population at lmin xxx */
+  double T;              /* Temperature */
+  double t0;             /* start time */
+  double t8;             /* stop time */
+  double tinc;           /* time increment */
+  double *pini;          /* start population at lmin xxx */
   char method;           /* method to build transition matrix */
   FILE *INFILE;          /* input file (usually bar-file) */
   FILE *RATENFILE;       /* input file containing rates from barriers */
   char *sequence;        /* sequence */
+  int fpt;               /* switch for fpt-related calculations */
 } treekin_options;
 
 treekin_options opt;

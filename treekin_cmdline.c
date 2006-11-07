@@ -43,6 +43,7 @@ const char *gengetopt_args_info_help[] = {
   "      --info               show settings  (default=off)",
   "  -v, --verbose            verbose output  (default=off)",
   "  -b, --bin                assume binary input  (default=off)",
+  "      --fpt                calculate first passage times  (default=off)",
     0
 };
 
@@ -89,6 +90,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->info_given = 0 ;
   args_info->verbose_given = 0 ;
   args_info->bin_given = 0 ;
+  args_info->fpt_given = 0 ;
 }
 
 static
@@ -111,6 +113,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->info_flag = 0;
   args_info->verbose_flag = 0;
   args_info->bin_flag = 0;
+  args_info->fpt_flag = 0;
   
 }
 
@@ -136,6 +139,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->info_help = gengetopt_args_info_help[14] ;
   args_info->verbose_help = gengetopt_args_info_help[15] ;
   args_info->bin_help = gengetopt_args_info_help[16] ;
+  args_info->fpt_help = gengetopt_args_info_help[17] ;
   
 }
 
@@ -346,6 +350,9 @@ cmdline_parser_file_save(const char *filename, struct gengetopt_args_info *args_
   }
   if (args_info->bin_given) {
     fprintf(outfile, "%s\n", "bin");
+  }
+  if (args_info->fpt_given) {
+    fprintf(outfile, "%s\n", "fpt");
   }
   
   fclose (outfile);
@@ -644,6 +651,7 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
         { "info",	0, NULL, 0 },
         { "verbose",	0, NULL, 'v' },
         { "bin",	0, NULL, 'b' },
+        { "fpt",	0, NULL, 0 },
         { NULL,	0, NULL, 0 }
       };
 
@@ -930,6 +938,20 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
             local_args_info.info_given = 1;
             args_info->info_given = 1;
             args_info->info_flag = !(args_info->info_flag);
+          }
+          /* calculate first passage times.  */
+          else if (strcmp (long_options[option_index].name, "fpt") == 0)
+          {
+            if (local_args_info.fpt_given)
+              {
+                fprintf (stderr, "%s: `--fpt' option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
+                goto failure;
+              }
+            if (args_info->fpt_given && ! override)
+              continue;
+            local_args_info.fpt_given = 1;
+            args_info->fpt_given = 1;
+            args_info->fpt_flag = !(args_info->fpt_flag);
           }
           
           break;

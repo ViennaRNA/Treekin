@@ -2,8 +2,8 @@
 /*=   main.c                                                      =*/
 /*=   main file for treekin                                       =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-09-29 17:08:16 mtw>          =*/
-/*=   $Id: main.c,v 1.19 2006/09/29 16:34:34 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-10-11 15:53:35 mtw>          =*/
+/*=   $Id: main.c,v 1.20 2006/11/07 17:01:15 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -26,10 +26,9 @@ main (int argc, char **argv)
 {
   BarData *Data=NULL;
   double *U=NULL, *S=NULL, *p0=NULL, *p8=NULL, *R = NULL;
-  int  dim,fpt;
+  int  dim;
 
-  fpt = 0; /* first passage time */
-  parse_commandline(argc, argv);
+   parse_commandline(argc, argv);
  
   if(opt.method == 'F')      /* full process */
     dim = ParseInfile(opt.INFILE, &R);
@@ -54,7 +53,11 @@ main (int argc, char **argv)
   else
     U = MxBar2Matrix (Data, R);
   
-  if(fpt) MxFPT(U, p8);
+  if(opt.fpt){
+    MxFPT(U, p8);
+    MxFirstPassageTime(U);
+  }
+
   if(opt.matexp) MxExponent(p0,p8,U);
   else{
     if(opt.absrb) MxEVnonsymMx(U, &S);
