@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-10-11 18:08:28 mtw>          =*/
-/*=   $Id: calc.c,v 1.31 2006/11/07 17:01:14 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-08 12:22:54 mtw>          =*/
+/*=   $Id: calc.c,v 1.32 2006/11/08 11:59:04 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -24,15 +24,17 @@
 
 #define TOL 0.000000000000001
 #define ABS_VAL 0.00001
+#define SQ(X) ((X)*(X))
+
 
 /* private function(s) */
 static void   *MxNew (size_t size);
 static double *MxMethodeA (BarData *Data);
-static void    MxPrintMeschachMat(MAT *matrix, char *name);
-static void    MxPrintMeschachVec(VEC* vector, char *name);
-static void    MxMeschach2ccmath(MAT *meschach_matrix, double **origM);
-static void    MxMeschach2ccmathVec(VEC *meschach_vector, double **origV);
-static MAT    *Mxccmath2Meschach(double* ccmath_matrix);
+/* static void    MxPrintMeschachMat(MAT *matrix, char *name); */
+/* static void    MxPrintMeschachVec(VEC* vector, char *name); */
+/* static void    MxMeschach2ccmath(MAT *meschach_matrix, double **origM); */
+/* static void    MxMeschach2ccmathVec(VEC *meschach_vector, double **origV); */
+/* static MAT    *Mxccmath2Meschach(double* ccmath_matrix); */
 static double  max_saddle(int i, int j, BarData *Data);
 static void    print_settings(void);
 static char   *time_stamp(void);
@@ -41,7 +43,9 @@ static int     Mxempty(MAT *matrix);
 static void    MxBinWrite (double *matrix);
 static void    MxASCIIWrite(double *matrix);
 static void    MxKotzOutMathematica(double *matrix);
-
+static void    MxSortEig(double *evals, double *evecs);
+static void    MxEVlapack(double *origU, double *S,double *EV, int dim);
+static void    MxFixevecs(double *);
 
 /* private vars and arrays */
 static int      dim = 0;
@@ -62,7 +66,7 @@ MxInit (int d)
   int i;
   _kT = 0.00198717*(273.15 + opt.T);
   if (d > 0 ) dim = d;
-  else { fprintf(stderr, "dim <= 0\n"); exit(1); }
+  else { fprintf(stderr, "dim <= 0\n"); exit(EXIT_FAILURE); }
   
   EV     = (double *) MxNew (dim*sizeof(double));
   _sqrPI = (double *) MxNew (dim*dim*sizeof(double));
@@ -97,9 +101,6 @@ MxBar2Matrix ( BarData *Data, double *R)
   if (opt.dumpU)
    /*    MxBinWrite(U); */
     MxASCIIWrite(U);
-
- 
-  
   return (U);
 }
 
@@ -286,7 +287,7 @@ MxIterate (double *p0, double *p8, double *S)
     for (i = 0; i < lmins; i++) check += fabs(p8FULL[i]);
     if ( ((check-1) < -0.1) || ((check-1) > 0.1) ){
       fprintf(stderr, "overall equilibrium probability is %e != 1. ! exiting\n", check);
-      exit(888);
+      exit(EXIT_FAILURE);
     }
   }
   check = 0.;
@@ -305,8 +306,9 @@ MxIterate (double *p0, double *p8, double *S)
     printf(" %e ", time);  /* print p(t) to stdout */
     for (i = 0; i < dim; i++){
       if(pt[i] < -0.01){
-	fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, pt[i]);
-	exit(866);
+	fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n",
+		i+1, time, pt[i]);
+	exit(EXIT_FAILURE);
       }
        if(opt.method=='F') ptFULL[E[i].ag] += pt[i]; /* map individual structure -> gradient basins */
        else   printf("%e ", fabs(pt[i]));
@@ -638,14 +640,16 @@ MxDoDegeneracyStuff(void)
 	  /* FIRST: we consider the size of the cc the saddle belongs to */
 	  if(saddle[count].cc > 1){
 	    D[dim * (saddle[count].list[current]-1) + (saddle[count].list[b]-1)] += (saddle[count].cc - 1);
-	    fprintf(stderr, "transition between %3d - %3d: adding %2d  cc\n",saddle[count].list[current], saddle[count].list[b], saddle[count].cc-1);
+	    fprintf(stderr, "transition between %3d - %3d: adding %2d  cc\n",
+		    saddle[count].list[current], saddle[count].list[b], saddle[count].cc-1);
 	    /* -1 because if the size of cc == 1 there's nothing special */
 	    /* about it, i.e. there is just one saddle */
 	  }
 	  /* SECOND: we consider that the saddle connects several lmins */
 	  if(nr > 2){
 	    D[dim * (saddle[count].list[current]-1) + (saddle[count].list[b]-1)]++;
-	    fprintf(stderr, "transition betweed %3d - %3d: adding  1 deg_saddle\n",saddle[count].list[current], saddle[count].list[b] );
+	    fprintf(stderr, "transition betweed %3d - %3d: adding  1 deg_saddle\n",
+		    saddle[count].list[current], saddle[count].list[b] );
 	    /* -1 because matrix starts with0, NOT with 1 */
 	  }
 	}
@@ -669,117 +673,125 @@ MxDoDegeneracyStuff(void)
 }
 
 /*==*/
-static void
-MxMeschach2ccmath(MAT *meschach_matrix, double **origS)
-{
-  int  i, j;
-  if((dim != meschach_matrix->m) != (dim != meschach_matrix->n)) {
-    fprintf(stderr, "meschach-matrix is not square...\n");
-    exit(1);}
-
-  for (i = 0; i < dim; i++){
-    for (j = 0; j < dim; j++){
-      *(*origS+(dim*i+j)) = meschach_matrix->me[i][j];
-    }
-  }
- /*  M_FREE(meschach_matrix); */
-}
-
-/*==*/
-static void
-MxMeschach2ccmathVec(VEC *meschach_vector, double **origEV)
-{
-  int i;
-  for(i = 0; i < dim; i++) *(*origEV+i) = meschach_vector->ve[i];
- /*  V_FREE(meschach_vector); */
-}
-
-/*==*/
-static MAT*
-Mxccmath2Meschach(double* ccmath_matrix)
-{
-  int i,j;
-  MAT *tmp;
-  tmp = m_get(dim,dim);
-  for (i = 0; i < dim; i++){
-    for (j = 0; j < dim; j++){
-      tmp->me[i][j] = ccmath_matrix[dim*i+j];
-    }
-  }
-  return tmp;
-}
-
-/*==*/
-/* print matrix stored in meschach-format */
-static void
-MxPrintMeschachMat(MAT *matrix, char *name)
-{
-  int i,j;  
-    fprintf(stderr, "%s (meschach):\n", name);
-    for (i = 0; i < dim; i++){
-      for (j = 0; j < dim; j++)
-	fprintf(stderr,"%10.4g ", matrix->me[i][j]);
-      fprintf(stderr, "\n");
-    }
-     fprintf(stderr,"---\n");
-}
-
-/*==*/
-/* print vector stored in meschach-format */
-static void
-MxPrintMeschachVec(VEC* vector, char *name)
-{
-  int i;
-  fprintf(stderr, "%s (meschach):\n", name);
-  for(i = 0; i < dim; i++) fprintf(stderr,"%15.10g ", vector->ve[i]);
-  fprintf(stderr,"\n---\n");
-}
-
-/*==*/
 void
 MxEVnonsymMx(double *origU, double **_S)
 {
-  int check = 1;
-  double *tmp, *tmp_vec;
+  int i,j, check = 1;
+  double *evecs, *evals;
   MAT *A, *T, *Q, *X_re, *X_im;
   VEC *evals_re, *evals_im;
 
   if(opt.dumpMathematica == 1)  MxKotzOutMathematica(origU);
   
-  tmp =     (double *) MxNew (dim*dim*sizeof(double));
-  tmp_vec = (double *) MxNew (dim * sizeof(double));
+  evecs = (double *) MxNew (dim*dim*sizeof(double));
+  evals = (double *) MxNew (dim * sizeof(double));
 
-  A = Mxccmath2Meschach(origU); /* transform U into meschach-format */
-  /*    MxPrint(origU, "we'll calculate Eigenvectors and values of this matrix", 'm'); */
-  Q = m_get(A->m, A->n);
-  T = m_copy(A, MNULL);
-  schur(T, Q);   /* compute Schur form: A = Q*T*Q^T */
-  /*extract eigenvalues */
-  evals_re = v_get(A->m);
-  evals_im = v_get(A->m);
-  schur_evals(T, evals_re, evals_im);
-  /* Q not needed for eigenvalues */
-  X_re = m_get(A->m, A->n);
-  X_im = m_get(A->m, A->n);
-  schur_vecs(T, Q, X_re, X_im);
-  /* k'th eigenvector is k'th column of (X_re + i*X_im) */
-  M_FREE(T);
-  M_FREE(Q);
-  M_FREE(A);
-  if((check = Mxempty(X_im)) != 1)
-    MxPrintMeschachMat(X_im, "imag Eigenvectors NOT EMPTY !!!");
-  if(opt.want_verbose){
-    MxPrintMeschachMat(X_re, "real Eigenvectors");
-    MxPrintMeschachVec(evals_re, "real Eigenvalues");
+  for (j=0;j<dim;j++) {  /* uU ausseschmeissen !!!! */
+    origU[dim*j+j]=1.0;
+    for (i=0;i<dim;i++){
+      if (i==j) continue;
+      origU[dim*j+j] -= origU[dim*i+j];
+    }
   }
-  MxMeschach2ccmath(X_re, &tmp);
-  *_S = tmp;
-  M_FREE(X_re);
-  M_FREE(X_im);
-  MxMeschach2ccmathVec(evals_re, &tmp_vec);
-  EV_mesch = tmp_vec;
-  V_FREE(evals_re);
-  V_FREE(evals_im);
+  MxEVlapack(origU, evecs, evals, dim);
+  /*  MxFixevecs(tmp,dim); */
+  MxSortEig(evals, evecs);
+  
+  MxFixevecs(evecs);
+  
+  *_S = evecs;
+  EV_mesch = evals;
+  if (opt.want_verbose){
+    MxPrint (evals, "evals_LAPACK", 'v');
+    MxPrint (evecs, "evecs_LAPACK", 'm');
+  }
+  
+}
+
+static void norm2(double *mx)
+{
+  /* normalize columns of matrix mx */
+  /* (to euclidean norm 1)*/
+  int i,j;
+  long double sumsq;
+  
+  for (j=0;j<dim;j++)
+    {
+      sumsq=0.0;
+      for (i=0;i<dim;i++)
+	{
+	  sumsq += SQ(mx[dim*i+j]);
+	}
+      sumsq=1./sqrtl(sumsq);
+      for (i=0;i<dim;i++)
+	{
+	  mx[dim*i+j] *= sumsq;
+	}
+    }
+  return;
+}
+	  
+	    
+  
+  
+  
+  
+  
+/*==*/
+static void
+MxFixevecs(double *evecs)
+/* evecs: eigenvectors columns, dimension N   */
+/* since the sum over each non-absorbing      */
+/* column must vanish, replace the            */
+/* problematic evecs with linear combinations */
+/* satisfying that criterion                  */
+/* rationale: with 1^T a row vector of 1s      */
+/* Q=S*exp(L)*inv(S)                          */
+/* 1^T*Q = 1^T  (probabilities sum up to 1)   */
+/* 1^T*S*exp(L) = 1^T*S                       */
+{
+  int i,j;
+  
+  
+  /* assume sorted evals        */
+  /* and an absorbing state     */
+  /* im the 1st evec=1st column */
+  for(i=0;i<dim;i++)
+    evecs[dim*i+0] = 0.;
+  evecs[dim*(opt.absrb-1)+0] = 1.;
+
+  for (j=1;j< dim;j++){
+    double mu=0.;
+    for(i=0;i<dim;i++)
+      mu += evecs[dim*i+j];
+    evecs[dim*(opt.absrb-1)+j] -= mu;
+  }
+   norm2(evecs);
+  
+}
+
+/*==*/
+/* sort evecs,evals */
+static void
+MxSortEig(double *evals, double *evecs)
+{
+  int i,j,k;
+  double p;
+  
+  for (i=0;i<dim;i++) {
+    p=evals[k=i];
+    for (j=i+1;j<dim;j++)
+      if (evals[j] >= p) p=evals[k=j];
+    if (k != i) {
+      evals[k]=evals[i];
+      evals[i]=p;
+      for (j=0;j<dim;j++) {
+	p=evecs[dim*j+i];
+	evecs[dim*j+i]=evecs[dim*j+k];
+	evecs[dim*j+k]=p;
+      }
+    }
+  }
 }
 
 /*==*/
@@ -805,7 +817,7 @@ MxBinWrite(double *matrix)
   BINOUT = fopen(binfile, "w");
   if (!BINOUT){
     fprintf(stderr, "could not open file pointer 4 binary outfile\n");
-    exit(101);
+    exit(EXIT_FAILURE);
   }
   /* first write dim to file */
   fwrite(&dim,sizeof(int),1,BINOUT);
@@ -829,7 +841,7 @@ MxASCIIWrite(double *matrix)
   ASCIIOUT = fopen(asciifile, "w");
   if (!ASCIIOUT){
     fprintf(stderr, "could not open file pointer 4 ASCII outfile\n");
-    exit(101);
+    exit(EXIT_FAILURE);
   }
   for(i=0;i<dim;i++){
     for(j=0;j<dim;j++){
@@ -880,7 +892,7 @@ MxExponent(double *p0, double *p8, double *U)
     for (i = 0; i < dim; i++){
       if(pt[i] < -0.00001){
 	fprintf(stderr, "prob of lmin %i has become negative!\n", i+1);
-	exit(866);
+	exit(EXIT_FAILURE);
       }
       printf("%e ", fabs(pt[i]));
       check += fabs(pt[i]); 
@@ -889,7 +901,7 @@ MxExponent(double *p0, double *p8, double *U)
   
     if ( ((check-1) < -0.01) || ((check-1) > 0.01) ){
       fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
-      exit(888);
+      exit(EXIT_FAILURE);
     }
     memset(pt,   0, dim*sizeof(double));
     memset(pdiff, 0, dim*sizeof(double));
@@ -958,7 +970,7 @@ MxKotzOutMathematica(double *matrix)
   MATHEMATICA_OUT = fopen(mathematica_file, "w");
   if (!MATHEMATICA_OUT){
     fprintf(stderr, "could not open file pointer 4 Matematica outfile\n");
-    exit(101);
+    exit(EXIT_FAILURE);
   }
   fprintf(MATHEMATICA_OUT, "{");
   for(i=0;i<dim;i++){
@@ -1043,5 +1055,82 @@ MxFirstPassageTime(double *U)
 #endif
   return;
 }
+
+
+
+static void
+MxEVlapack(double *origU, double *S,double *EV, int dim)
+/* input: matrix origU, space for (right)evec-matrix S, */
+/* array for eigenvalues EV and dimension dim           */
+/* since fortran sucks, we transpose the input matrix   */
+/* and still want the right eigenvectors                */
+/* matrix of right eigenvecs is transposed  to have */
+/* the j-th evec in column c */
+{
+  extern void dgeevx_(char *B, char *JVL, char *JVR, char *SENS, int *N, double *A,
+		      int *LDA,double *WR, double * WI, double *VL, int *LDVL,
+		      double *VR, int *LDVR,int *ILO, int *IHI, double *scale,
+		      double *ABNRM, double *RCONDE, double *RCONDV, double *WORK,
+		      int *LWORK, int *IWORK, int *INFO);
+  
+  double *evals_re, *evals_im;
+  int one,dimx2,ilo,ihi,lwork, *iwork,nfo;
+  double *X,*scale,abnrm,*rconde,*rcondv,*work;
+  double *Q;
+  /* for sorting */
+  int k;
+  float p;
+  int i,j;
+  double tmp;
+  
+  dim=dim+5000;
+  one=1;
+  dimx2 = 2*dim;
+  lwork = dim*(dim+6);
+  
+  evals_re = (double *) malloc (dim * sizeof(double));
+  evals_im = (double *) malloc (dim * sizeof(double));
+  X        = (double *) malloc (dim*dim * sizeof(double));
+  Q        = (double *) malloc (dim*dim * sizeof(double));
+  scale = (double *) malloc (dim * sizeof(double));
+  rconde = (double *) malloc (dim * sizeof(double));
+  rcondv = (double *) malloc (dim * sizeof(double));
+  work = (double *)  malloc (lwork * sizeof(double));
+  iwork = (int *)  malloc (2*(dim -2) * sizeof(int));
+  
+  if ( (evals_re && evals_im && X && Q && scale && rconde && rcondv && work && iwork)==0)
+    { fprintf(stderr,"no space for temporary lapack arrays!\n"); exit(EXIT_FAILURE);}
+  
+  dim=dim-5000;
+  for (i=0;i<dim*dim;i++) Q[i]=origU[i];
+  /* instead of more fiddling, we transpose the input */
+  for (i=0;i<dim;i++)
+    for (j=i+1;j<dim;j++){ tmp = Q[dim*i+j];Q[dim*i+j]=Q[dim*j+i];Q[dim*j+i]=tmp;}
+  
+  dgeevx_("B","N","V","V",&dim,Q,&dim,evals_re,evals_im,NULL,&one  ,X ,&dim, \
+	  &ilo, &ihi,  scale,&abnrm ,rconde, rcondv, work,  &lwork  , iwork, &nfo);
+    
+  for (i=0;i<dim*dim;i++) S[i]=X[i];
+  for (i=0;i<dim;i++) EV[i]=evals_re[i];
+  for (i=0;i<dim;i++) 
+    if ((evals_re[i] != 0.0) && fabs(evals_im[i]/evals_re[i])>1.e-15)
+      fprintf(stderr,"eigenvalue %d is %g + i*%g, which is somewhat complex\n",
+	      i,evals_re[i],evals_im[i]);
+
+  /*transpose output*/
+  for (i=0;i<dim;i++)
+    for (j=i+1;j<dim;j++){ tmp = S[dim*i+j];S[dim*i+j]=S[dim*j+i];S[dim*j+i]=tmp;}
+  
+  free(evals_re);
+  free(evals_im);
+  free(X);
+  free(Q);
+  free(scale);
+  free(rconde);
+  free(rcondv);
+  free(work);
+  free(iwork);
+}
+
 
 /* End of file */

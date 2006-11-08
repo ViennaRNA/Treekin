@@ -1,12 +1,9 @@
-# $Id: Makefile.am,v 1.2 2006/06/09 15:49:35 mtw Exp $
+# $Id: Makefile.am,v 1.3 2006/11/08 11:59:04 mtw Exp $
 
 bin_PROGRAMS = treekin
 
 treekin_SOURCES = main.c       \
 		  globals.c    globals.h   \
-                  err.c        err.h       \
-                  mxmesch.c    matrix.h    \
-                  schur.c      \
                   calc.c       calc.h      \
                   mxccm.c      mxccm.h     \
                   barparser.c  barparser.h \
