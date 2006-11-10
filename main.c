@@ -2,8 +2,8 @@
 /*=   main.c                                                      =*/
 /*=   main file for treekin                                       =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-10-11 15:53:35 mtw>          =*/
-/*=   $Id: main.c,v 1.20 2006/11/07 17:01:15 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-10 13:04:09 mtw>          =*/
+/*=   $Id: main.c,v 1.21 2006/11/10 13:51:39 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -25,10 +25,10 @@ int
 main (int argc, char **argv)
 {
   BarData *Data=NULL;
-  double *U=NULL, *S=NULL, *p0=NULL, *p8=NULL, *R = NULL;
+  double *U=NULL, *S=NULL, *p0=NULL, *p8=NULL, *R=NULL;
   int  dim;
 
-   parse_commandline(argc, argv);
+  parse_commandline(argc, argv);
  
   if(opt.method == 'F')      /* full process */
     dim = ParseInfile(opt.INFILE, &R);
@@ -55,7 +55,7 @@ main (int argc, char **argv)
   
   if(opt.fpt){
     MxFPT(U, p8);
-    MxFirstPassageTime(U);
+    MxFirstPassageTime(U, p8);
   }
 
   if(opt.matexp) MxExponent(p0,p8,U);

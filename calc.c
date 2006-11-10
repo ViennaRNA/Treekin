@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-08 12:22:54 mtw>          =*/
-/*=   $Id: calc.c,v 1.32 2006/11/08 11:59:04 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-10 14:15:05 mtw>          =*/
+/*=   $Id: calc.c,v 1.33 2006/11/10 13:51:38 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -18,34 +18,28 @@
 #include "exp_matrix.h" /* functions for matrix-exponent stuff */
 #include "mxccm.h"      /* functions for eigen-problems stolen from ccmath */
 #include "barparser.h"  /* functions for input */
-#include "matrix.h"     /* basic matrix functions from meschach */
 #include "calc.h"       /* does all matrix stuff for markov process */
 #include "globals.h"    /* contains getopt-stuff */
 
 #define TOL 0.000000000000001
-#define ABS_VAL 0.00001
+#define ABS_VAL 0.00000000001
 #define SQ(X) ((X)*(X))
-
 
 /* private function(s) */
 static void   *MxNew (size_t size);
 static double *MxMethodeA (BarData *Data);
-/* static void    MxPrintMeschachMat(MAT *matrix, char *name); */
-/* static void    MxPrintMeschachVec(VEC* vector, char *name); */
-/* static void    MxMeschach2ccmath(MAT *meschach_matrix, double **origM); */
-/* static void    MxMeschach2ccmathVec(VEC *meschach_vector, double **origV); */
-/* static MAT    *Mxccmath2Meschach(double* ccmath_matrix); */
+static double *MxMethodeFULL(double *);
+static double *MxMethodeINPUT (BarData *Data, double *);
 static double  max_saddle(int i, int j, BarData *Data);
 static void    print_settings(void);
 static char   *time_stamp(void);
 static void    MxDoDegeneracyStuff(void);
-static int     Mxempty(MAT *matrix);
 static void    MxBinWrite (double *matrix);
 static void    MxASCIIWrite(double *matrix);
 static void    MxKotzOutMathematica(double *matrix);
 static void    MxSortEig(double *evals, double *evecs);
 static void    MxEVlapack(double *origU, double *S,double *EV, int dim);
-static void    MxFixevecs(double *);
+static void    MxFixevecs(double *, double *);
 
 /* private vars and arrays */
 static int      dim = 0;
@@ -57,7 +51,6 @@ static double  *sqrPI_    = NULL;   /* right constant array */
 static double  *D         = NULL;   /* matrix with degree of degeneacy */
 static char     Aname[30];
 static TypeDegSaddle *saddle = NULL;
-static double  *p8        = NULL;   /* HACK by mtw 280926 */
 
 /*==*/
 void
@@ -69,8 +62,10 @@ MxInit (int d)
   else { fprintf(stderr, "dim <= 0\n"); exit(EXIT_FAILURE); }
   
   EV     = (double *) MxNew (dim*sizeof(double));
-  _sqrPI = (double *) MxNew (dim*dim*sizeof(double));
-  sqrPI_ = (double *) MxNew (dim*dim*sizeof(double));
+  if(!opt.absrb){
+    _sqrPI = (double *) MxNew (dim*dim*sizeof(double));
+    sqrPI_ = (double *) MxNew (dim*dim*sizeof(double));
+  }
   if(opt.method == 'A'){
     D      = (double *) MxNew (dim*dim*sizeof(double));
     for(i=0;i<dim*dim;i++) D[i] = 1.;
@@ -109,9 +104,9 @@ double*
 MxStartVec (void)
 {
   int i;
-  double *p0;
+  double *p0 = NULL;
 
-  p0 = (double *) MxNew(dim*sizeof(double));
+  p0 = (double *) MxNew((dim+1)*sizeof(double));
   for (i = 1; i < (int) *opt.pini; i+=2)
     p0[(int)opt.pini[i]-1] = (double)opt.pini[i+1];
   /* -1 because our lmins start with 1, not with 0 (as Data does ) */
@@ -126,14 +121,13 @@ double*
 MxEqDistr ( BarData *Data )
 {
   int i;
-  double Z = 0.;   /* double *p8, Z = 0.; */
-  p8 = (double *) MxNew (dim*sizeof(double));
+  double *p8, Z = 0.;
+  p8 = (double *) MxNew ((dim+1)*sizeof(double));
 
-  if(opt.absrb) dim--; /* because it was increased before and we */
-  /* only have dim lmins in bar-file, not dim+1 */
-  for(i = 0; i < dim; i++) Z += exp(-((double)Data[i].FGr/_kT));
-  for(i = 0; i < dim; i++) p8[i] = exp(-((double) Data[i].FGr/_kT))/Z;
-  if(opt.absrb) dim++;
+  for(i = 0; i < dim; i++)
+    Z += exp(-((double)Data[i].FGr/_kT));
+  for(i = 0; i < dim; i++)
+    p8[i] = exp(-((double) Data[i].FGr/_kT))/Z;
   
   if(opt.absrb){
     double tmp = 0.;
@@ -141,9 +135,9 @@ MxEqDistr ( BarData *Data )
       p8[i] = ABS_VAL;
       tmp += p8[i];
     }
-    p8[opt.absrb-1] = 1.0-tmp;
+    p8[dim] = 1.0-tmp; /* last entry is the 'new' absorbing state */
   }
-  if(opt.want_verbose) MxPrint(p8, "p8", 'v');
+  if(opt.want_verbose) MxPrint (p8, "p8", 'v');
   return (p8);
 }
 
@@ -153,7 +147,6 @@ MxEqDistrFULL (SubInfo *E)
 {
   int i;
   double *p8, Z = 0.;
-  
   p8 = (double *) MxNew (dim*sizeof(double));
 
   for(i = 0; i < dim; i++) Z += exp(-E[i].energy/_kT);
@@ -439,7 +432,7 @@ MxMethodeA (BarData *Data)
 }
 
 /*==*/ 
-extern double*
+static double*
 MxMethodeFULL (double *R)
 {
   int i, j;
@@ -464,11 +457,11 @@ MxMethodeFULL (double *R)
 }
 
 /*==*/
-double*
+static double*
 MxMethodeINPUT (BarData *Data, double *Input)
 {  
   int i, j, real_abs = 0;
-  double *U, Zabs, abs_rate;
+  double *U=NULL, Zabs, abs_rate;
 
   if (opt.want_verbose) MxPrint(Input, "Input Matrix", 'm');
 
@@ -491,7 +484,7 @@ MxMethodeINPUT (BarData *Data, double *Input)
     for(j = 0; j < dim; j++) /* last row */
       U[dim*(dim-1)+j] = 0.;
     U[dim*(dim-1)+real_abs] = abs_rate;
-    if(opt.want_verbose) MxPrint(U, "aufgeblasene Matrix", 'm');
+  /*   if(opt.want_verbose) MxPrint(U, "aufgeblasene Matrix", 'm'); */
   }      /*== end absorbing states ==*/
   else{  /*== non-absorbing states ==*/
     U = (double *) MxNew(dim*dim*sizeof(double));
@@ -536,7 +529,7 @@ max_saddle(int i, int j, BarData *Data)
 static void*
 MxNew ( size_t size )
 {
-  void *mx;
+  void *mx = NULL;
   if ( (mx = (void *) calloc (1, size)) == NULL )
     fprintf (stderr, "ERROR: new_martix() allocation failed\n");
 
@@ -677,10 +670,8 @@ void
 MxEVnonsymMx(double *origU, double **_S)
 {
   int i,j, check = 1;
-  double *evecs, *evals;
-  MAT *A, *T, *Q, *X_re, *X_im;
-  VEC *evals_re, *evals_im;
-
+  double *evecs = NULL, *evals = NULL, csum;
+  
   if(opt.dumpMathematica == 1)  MxKotzOutMathematica(origU);
   
   evecs = (double *) MxNew (dim*dim*sizeof(double));
@@ -696,16 +687,23 @@ MxEVnonsymMx(double *origU, double **_S)
   MxEVlapack(origU, evecs, evals, dim);
   /*  MxFixevecs(tmp,dim); */
   MxSortEig(evals, evecs);
-  
-  MxFixevecs(evecs);
-  
+  for (i=0;i<dim;i++) {
+    csum=0.0;
+    for (j=0;j<dim;j++)
+      csum += evecs[dim*j+i];
+    if (csum <0)
+      for (j=0;j<dim;j++)  evecs[dim*j+i] = -evecs[dim*j+i];
+  }
   *_S = evecs;
   EV_mesch = evals;
   if (opt.want_verbose){
     MxPrint (evals, "evals_LAPACK", 'v');
     MxPrint (evecs, "evecs_LAPACK", 'm');
   }
-  
+  for (i=0;i<dim;i++)
+    if (evals[i]>1.0) evals[i]=1.0;
+    
+  MxFixevecs(evecs,evals);
 }
 
 static void norm2(double *mx)
@@ -722,7 +720,8 @@ static void norm2(double *mx)
 	{
 	  sumsq += SQ(mx[dim*i+j]);
 	}
-      sumsq=1./sqrtl(sumsq);
+      if(sumsq > 0.0)
+	sumsq=1./sqrtl(sumsq);
       for (i=0;i<dim;i++)
 	{
 	  mx[dim*i+j] *= sumsq;
@@ -731,15 +730,9 @@ static void norm2(double *mx)
   return;
 }
 	  
-	    
-  
-  
-  
-  
-  
 /*==*/
 static void
-MxFixevecs(double *evecs)
+MxFixevecs(double *evecs, double *evals)
 /* evecs: eigenvectors columns, dimension N   */
 /* since the sum over each non-absorbing      */
 /* column must vanish, replace the            */
@@ -750,24 +743,63 @@ MxFixevecs(double *evecs)
 /* 1^T*Q = 1^T  (probabilities sum up to 1)   */
 /* 1^T*S*exp(L) = 1^T*S                       */
 {
-  int i,j;
-  
+  int i,j,maxind,abscount;
+  double maxent,csum;
   
   /* assume sorted evals        */
   /* and an absorbing state     */
   /* im the 1st evec=1st column */
-  for(i=0;i<dim;i++)
-    evecs[dim*i+0] = 0.;
-  evecs[dim*(opt.absrb-1)+0] = 1.;
 
-  for (j=1;j< dim;j++){
+  /* take care of possibly more than one abs. state*/
+  /* all abs. states have been *assigned* eigenvalue one */
+  /* for each of them, set the largest component of the */
+  /* eigenvectors to one, all others to zero */
+  abscount=0;
+  for (i=0;i<dim;i++) {
+    if (evals[i]==1.0) 	{
+      abscount++;
+      maxent=0.;
+      maxind=0;
+      for (j=0;j<dim;j++) {
+	if (evecs[dim*j+i] > maxent) {
+	  maxent=evecs[dim*j+i];
+	  maxind=j;
+	}
+      }
+      evecs[dim*maxind+i]=1.0;
+      for (j=0;j<dim;j++) {
+	if (j==maxind) continue;
+	evecs[dim*j+i]=0.0;
+      }
+    }
+  }
+
+  /* repair messed non abs. eigenvectors */
+  /* using all abs. states equally */
+  for (j=abscount;j< dim;j++){
     double mu=0.;
     for(i=0;i<dim;i++)
       mu += evecs[dim*i+j];
-    evecs[dim*(opt.absrb-1)+j] -= mu;
+    for (i=0;i<abscount;i++)
+      evecs[dim*i+j] -= mu/(double)abscount;
   }
-   norm2(evecs);
+  norm2(evecs);
   
+  if (opt.want_verbose){
+    MxPrint (evals, "evals_complete", 'v');
+    MxPrint (evecs, "evecs_complete", 'm');
+    fflush (stdout);
+    fflush(stderr);
+  }
+  
+  fprintf(stderr,"colsums: ");
+  for (i=0;i<dim;i++) {
+    csum=0.0;
+    for (j=0;j<dim;j++)	
+      csum += evecs[dim*j+i];
+    fprintf(stderr,"%g ", csum);
+  }
+  fprintf(stderr,"\n");
 }
 
 /*==*/
@@ -792,18 +824,6 @@ MxSortEig(double *evals, double *evecs)
       }
     }
   }
-}
-
-/*==*/
-static int
-Mxempty(MAT *matrix)
-{
-  int i,j;
-  for(i = 0; i < dim; i++)
-    for(j = 0; j < dim; j++)
-      if(matrix->me[i][j] != 0.) return 0;
-  return 1;
-
 }
 
 /*==*/
@@ -991,7 +1011,7 @@ MxKotzOutMathematica(double *matrix)
 
 /*==*/
 void
-MxFirstPassageTime(double *U)
+MxFirstPassageTime(double *U, double *p8)
 {
 #define MFPT
 #ifdef MFPT
@@ -1055,8 +1075,6 @@ MxFirstPassageTime(double *U)
 #endif
   return;
 }
-
-
 
 static void
 MxEVlapack(double *origU, double *S,double *EV, int dim)
