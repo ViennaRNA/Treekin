@@ -2,8 +2,8 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-10-11 15:23:47 mtw>          =*/
-/*=   $Id: globals.h,v 1.12 2006/11/07 17:01:14 mtw Exp $          =*/
+/*=   Last changed Time-stamp: <2006-11-14 16:06:04 mtw>          =*/
+/*=   $Id: globals.h,v 1.13 2006/11/14 17:45:15 mtw Exp $         =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -14,6 +14,7 @@
 #define _GLOBALS_H_
 
 typedef struct {         /* command-line options */
+  char *basename;        /* base name of processed file */
   int absrb;             /* make one lmin absorbing */
   int want_linear;       /* logarithmic time-scale */
   int want_verbose;      /* verbose output */
@@ -30,7 +31,6 @@ typedef struct {         /* command-line options */
   double *pini;          /* start population at lmin xxx */
   char method;           /* method to build transition matrix */
   FILE *INFILE;          /* input file (usually bar-file) */
-  FILE *RATENFILE;       /* input file containing rates from barriers */
   char *sequence;        /* sequence */
   int fpt;               /* switch for fpt-related calculations */
 } treekin_options;

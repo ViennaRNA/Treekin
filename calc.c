@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-10 14:15:05 mtw>          =*/
-/*=   $Id: calc.c,v 1.33 2006/11/10 13:51:38 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-14 17:35:47 mtw>          =*/
+/*=   $Id: calc.c,v 1.34 2006/11/14 17:45:14 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -130,12 +130,9 @@ MxEqDistr ( BarData *Data )
     p8[i] = exp(-((double) Data[i].FGr/_kT))/Z;
   
   if(opt.absrb){
-    double tmp = 0.;
-    for(i = 0; i < dim; i++){
-      p8[i] = ABS_VAL;
-      tmp += p8[i];
-    }
-    p8[dim] = 1.0-tmp; /* last entry is the 'new' absorbing state */
+    for(i = 0; i < dim; i++)
+      p8[i] = 0.;
+    p8[dim] = 1.0; /* last entry is the 'new' absorbing state */
   }
   if(opt.want_verbose) MxPrint (p8, "p8", 'v');
   return (p8);
@@ -153,12 +150,9 @@ MxEqDistrFULL (SubInfo *E)
   for(i = 0; i < dim; i++) p8[i] = exp(-E[i].energy/_kT)/Z;
 
   if(opt.absrb){
-    double tmp = 0.;
-    for(i = 0; i < dim; i++){
-      p8[i] = ABS_VAL;
-      tmp += p8[i];
-    }
-    p8[opt.absrb-1] = 1.0-tmp;
+    for(i = 0; i < dim; i++)
+      p8[i] = 0.;
+    p8[opt.absrb-1] = 1.;
   }
   if(opt.want_verbose) MxPrint (p8, "p8", 'v');
   return (p8);
@@ -605,6 +599,7 @@ MxMemoryCleanUp (void)
   if(_sqrPI)       free(_sqrPI);
   if(sqrPI_)       free(sqrPI_);
   if(opt.sequence) free(opt.sequence);
+  if(opt.basename) free(opt.basename);
   fclose(opt.INFILE);
 }
 

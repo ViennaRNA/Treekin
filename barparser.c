@@ -2,8 +2,8 @@
 /*=   barparser.c                                                 =*/
 /*=   routines for reading bar-files and other input for treekin  =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-09-29 13:13:13 mtw>          =*/
-/*=   $Id: barparser.c,v 1.21 2006/09/29 16:36:03 mtw Exp $       =*/
+/*=   Last changed Time-stamp: <2006-11-14 18:37:55 mtw>          =*/
+/*=   $Id: barparser.c,v 1.22 2006/11/14 17:45:14 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -28,8 +28,8 @@ static char *getline(FILE *fp);
 int
 ParseInfile(FILE *infile_fp, double **microrates)
 {
-  char *line = NULL, *mrfile = "microrates.out";
-  int a,dim,indx=0, l=0, as1 = ARRAYSIZE, as2 = ARRAYSIZE;
+  char *line=NULL,*mrsuffix = "microrates.out", *mrfile=NULL;
+  int a,dim,len,indx=0, l=0, as1 = ARRAYSIZE, as2 = ARRAYSIZE;
   double *tmp_mr=NULL;    /* temp matrix containing microrates */
   SubInfo *tmp_subI=NULL; /* temp array for info on energies of all states */
   FILE *mr_FP=NULL;       /* file pointers 4 "microrates.out" */
@@ -60,7 +60,20 @@ ParseInfile(FILE *infile_fp, double **microrates)
   dim = indx;
   indx = 0;
   
-  /* SECOND: read microrates.out */
+  /* SECOND: read microrates file */
+  if (opt.basename == NULL) len = strlen(mrsuffix) + 2;
+  else len = strlen(opt.basename) + strlen(mrsuffix) + 2;
+  mrfile = (char *)calloc(len, sizeof(char));
+  assert(mrfile != NULL);
+   if(opt.basename != NULL){ /* we do NOT read from stdin */
+    strcpy(mrfile, opt.basename);
+    strcat(mrfile, ".");
+    strcat(mrfile, mrsuffix);
+  }
+  else /* read from stdin */
+    strcpy(mrfile,mrsuffix);
+   
+  fprintf(stderr, "WARNING: reading microrates from file %s\n\n", mrfile);
   mr_FP = fopen(mrfile, "r+");
   mr = (mr_t *)calloc(as2, sizeof(mr_t));
   assert(mr != NULL);
@@ -70,8 +83,9 @@ ParseInfile(FILE *infile_fp, double **microrates)
       mr = (mr_t *)realloc(mr, as2*sizeof(mr_t));
     }
     sscanf(line, "%d %d %lf %*d", &mr[indx].i, &mr[indx].j, &mr[indx].rate);
-    free(line);
+    fprintf(stderr,"indx %i\n", indx);
     indx++;
+    free(line);
   }
   fclose(mr_FP);
 
@@ -83,10 +97,11 @@ ParseInfile(FILE *infile_fp, double **microrates)
     i = mr[a].i;
     j = mr[a].j;
     tmp_mr[dim*(i-1)+(j-1)]=mr[a].rate;
-    tmp_mr[dim*(j-1)+(i-1)]=1;
+    tmp_mr[dim*(j-1)+(i-1)]=1.;
   }
   *microrates = tmp_mr;
- 
+  free(mr);
+  free(mrfile);
   lmins = l;
   E = tmp_subI;
   fprintf(stderr, "dimension = %d, lmins = %d \n", dim, lmins);
@@ -98,23 +113,32 @@ ParseInfile(FILE *infile_fp, double **microrates)
 void
 ParseRatesFile(double **Raten, int dim)
 {
-  int i = 0, j = 0, read =0;
-  char *cp, *raten_line = NULL, *rate_file = "rates.out";
-  double *rate, *tmp_rates;
+  int i = 0, j = 0, read = 0, len=-1;
+  char *cp=NULL, *raten_line=NULL, *rate_file=NULL;
+  char *suffix = "rates.out";
+  double *rate=NULL, *tmp_rates=NULL;
+  FILE *rates_FP=NULL;
 
   tmp_rates = (double *)calloc(dim*dim,sizeof(double));
-  if (tmp_rates == NULL){
-    fprintf(stderr, "could not allocate tmp_rates in ParseRatesFile\n");
-    exit(EXIT_FAILURE);
-  }
   rate = (double *)calloc(dim,sizeof(double));
-  if (rate == NULL){
-    fprintf(stderr, "could not allocate rate in ParseRatesFile\n");
-    exit(EXIT_FAILURE);
+  assert(tmp_rates != NULL);
+  assert(rate != NULL);
+
+  if (opt.basename == NULL) len = strlen(suffix) + 2;
+  else len = strlen(opt.basename) + strlen(suffix) + 2;
+  rate_file = (char *)calloc(len, sizeof(char));
+  assert(rate_file != NULL);
+  if(opt.basename != NULL){ /* we do NOT read from stdin */
+    strcpy(rate_file, opt.basename);
+    strcat(rate_file, ".");
+    strcat(rate_file, suffix);
   }
-  
-  opt.RATENFILE = fopen(rate_file, "r+");
-  while((raten_line = getline(opt.RATENFILE)) != NULL){ 
+  else /* read from stdin */
+    strcpy(rate_file,suffix);
+  fprintf(stderr, "WARNING: reading input matrix from file %s\n\n",
+	  rate_file);
+  rates_FP = fopen(rate_file, "r+");
+  while((raten_line = getline(rates_FP)) != NULL){ 
     cp = raten_line;
     while(sscanf(cp,"%lf%n", rate+j,&read) == 1){
       tmp_rates[dim*j+i] = *(rate+j);
@@ -128,8 +152,9 @@ ParseRatesFile(double **Raten, int dim)
   }
 
   *Raten = tmp_rates;
-  fclose(opt.RATENFILE);
+  fclose(rates_FP);
   free(rate);
+  free(rate_file);
   return;
 }
 

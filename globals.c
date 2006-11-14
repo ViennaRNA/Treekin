@@ -2,8 +2,8 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-10-11 15:24:30 mtw>          =*/
-/*=   $Id: globals.c,v 1.12 2006/11/07 17:01:14 mtw Exp $          =*/
+/*=   Last changed Time-stamp: <2006-11-14 16:41:20 mtw>          =*/
+/*=   $Id: globals.c,v 1.13 2006/11/14 17:45:14 mtw Exp $         =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -21,7 +21,7 @@
 static void ini_globs(void);
 static void set_parameters(void);
 static void display_settings(void);
-/* static int  check_pini_prob(double*); */
+static void to_basename(char *arg);
 
 static struct gengetopt_args_info args_info;
 
@@ -35,11 +35,37 @@ parse_commandline(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
   set_parameters();
-  if (args_info.inputs_num)
-    opt.INFILE = fopen(args_info.inputs[0], "r");
+ 
+  if (args_info.inputs_num){
+    char *infile=NULL;
+    to_basename(args_info.inputs[0]);
+    infile = (char *)calloc(strlen(opt.basename)+5, sizeof(char));
+    strncpy(infile, opt.basename, strlen(opt.basename));
+    if (opt.method == 'F') strcat(infile, ".sub");
+    else strcat(infile, ".bar");
+    opt.INFILE = fopen(infile, "r");
+    free(infile);
+  }
   else
     opt.INFILE = stdin;
 } 
+
+/*==============================*/
+static void
+to_basename(char *arg)
+{
+  int len;
+  char *s=NULL, *t=NULL;
+  
+  s = strdup(arg);
+  len = strlen(s);
+  t = rindex(s, '/');
+  if (t != NULL) memmove(s, t+1, (len-(t-s))*sizeof(char));
+  t = NULL; t = index(s, '.');
+  if (t != NULL) *t = '\0';
+  opt.basename = strdup(s);
+  free(s);
+}
 
 /*==============================*/
 static void
@@ -129,6 +155,7 @@ set_parameters(void)
   if (args_info.fpt_given) opt.fpt = 1;
   if (args_info.info_given){
     display_settings();
+    if (opt.pini != NULL) free(opt.pini);
     exit(EXIT_SUCCESS);
   }
 }
@@ -149,6 +176,7 @@ ini_globs(void)
   opt.matexp          =          0;
   opt.binrates        =          0;
   opt.fpt             =          0;
+  opt.basename        =          NULL;
 }
 
 /*==============================*/
