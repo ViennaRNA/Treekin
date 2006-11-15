@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-14 17:35:47 mtw>          =*/
-/*=   $Id: calc.c,v 1.34 2006/11/14 17:45:14 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-15 14:55:14 mtw>          =*/
+/*=   $Id: calc.c,v 1.35 2006/11/15 14:57:13 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -24,6 +24,7 @@
 #define TOL 0.000000000000001
 #define ABS_VAL 0.00000000001
 #define SQ(X) ((X)*(X))
+#define FEPS 1.e-15
 
 /* private function(s) */
 static void   *MxNew (size_t size);
@@ -679,8 +680,8 @@ MxEVnonsymMx(double *origU, double **_S)
       origU[dim*j+j] -= origU[dim*i+j];
     }
   }
+
   MxEVlapack(origU, evecs, evals, dim);
-  /*  MxFixevecs(tmp,dim); */
   MxSortEig(evals, evecs);
   for (i=0;i<dim;i++) {
     csum=0.0;
@@ -691,12 +692,13 @@ MxEVnonsymMx(double *origU, double **_S)
   }
   *_S = evecs;
   EV_mesch = evals;
+
   if (opt.want_verbose){
     MxPrint (evals, "evals_LAPACK", 'v');
     MxPrint (evecs, "evecs_LAPACK", 'm');
   }
   for (i=0;i<dim;i++)
-    if (evals[i]>1.0) evals[i]=1.0;
+    if (evals[i]>(1.0-FEPS)) evals[i]=1.0;
     
   MxFixevecs(evecs,evals);
 }
@@ -783,8 +785,7 @@ MxFixevecs(double *evecs, double *evals)
   if (opt.want_verbose){
     MxPrint (evals, "evals_complete", 'v');
     MxPrint (evecs, "evecs_complete", 'm');
-    fflush (stdout);
-    fflush(stderr);
+    fflush(stdout); fflush(stderr);
   }
   
   fprintf(stderr,"colsums: ");
@@ -795,6 +796,22 @@ MxFixevecs(double *evecs, double *evals)
     fprintf(stderr,"%g ", csum);
   }
   fprintf(stderr,"\n");
+
+  if (opt.absrb && (abscount > 1)){
+    int i,j;
+    fprintf(stderr, "\nWARNING: found %d additional absorbing state(s): ",
+	    abscount-1);
+    for(i=1;i<dim;i++){
+      if(evals[i] == 1){
+	for(j=0;j<dim;j++){
+	  if(evecs[dim*j+i]==1)
+	    fprintf(stderr, " %5d", j+1);
+	}
+      }
+    }
+    fprintf(stderr, "\n");
+  }
+  fflush(stderr);
 }
 
 /*==*/
