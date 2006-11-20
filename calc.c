@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-15 14:55:14 mtw>          =*/
-/*=   $Id: calc.c,v 1.35 2006/11/15 14:57:13 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-17 13:37:17 xtof>          =*/
+/*=   $Id: calc.c,v 1.36 2006/11/20 09:56:44 xtof Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -282,6 +282,13 @@ MxIterate (double *p0, double *p8, double *S)
   
   /* solve fundamental equation */
   print_settings();
+  if (opt.t0 == 0.0) {
+    printf(" %e ", 0.0);
+    for (i = 0; i < dim; i++) printf("%e ", fabs(p0[i]));
+    printf("\n");
+    opt.t0 = TZERO;
+  }
+      
   for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
     for (i = 0; i < dim; i++)
       exptL[dim*i+i] = exp(time*EV[i]);
