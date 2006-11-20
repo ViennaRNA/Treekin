@@ -2,8 +2,8 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-14 16:41:20 mtw>          =*/
-/*=   $Id: globals.c,v 1.13 2006/11/14 17:45:14 mtw Exp $         =*/
+/*=   Last changed Time-stamp: <2006-11-17 15:24:45 xtof>          =*/
+/*=   $Id: globals.c,v 1.14 2006/11/20 09:56:07 xtof Exp $         =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -94,14 +94,23 @@ set_parameters(void)
 	*pinitmp += 2;
       }  
     }
-    opt.pini = pinitmp;
+
     for (i = 2; i < *pinitmp; i +=2)
       probtmp += pinitmp[i];
     if (probtmp <= 0.99 || probtmp >= 1.01){
       fprintf(stderr, "Values of --p0 must sum up to 1 (currently %5.2f)\n",
 	      probtmp);
-      exit (EXIT_FAILURE);
+      /* normalize input */ 
+      for (i = 2; i < *pinitmp; i +=2)
+	pinitmp[i] /= probtmp;
+
+      probtmp = 0.0;
+      for (i = 2; i < *pinitmp; i +=2)
+	probtmp += pinitmp[i]; 
+      fprintf(stderr, "WARNING:  --p0 values normalized sum up to %5.2f\n",
+	      probtmp);
     }
+    opt.pini = pinitmp;
   }
   
   if (args_info.absorb_given){
@@ -112,7 +121,7 @@ set_parameters(void)
   }
   
   if (args_info.t0_given){
-    if( (opt.t0 = args_info.t0_arg) <= 0. ){
+    if( (opt.t0 = args_info.t0_arg) < 0.0 ){
       fprintf(stderr, "Value of --t0 must be >= 0.\n");
       exit (EXIT_FAILURE);
     }
@@ -166,7 +175,7 @@ ini_globs(void)
 {
   opt.absrb           =          0;
   opt.T               =         37.;
-  opt.t0              =          0.1;
+  opt.t0              =         TZERO;
   opt.t8              = 1000000000.;
   opt.want_degenerate =          0; 
   opt.tinc            =          1.02;
