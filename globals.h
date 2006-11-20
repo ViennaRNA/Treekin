@@ -2,8 +2,8 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-14 16:06:04 mtw>          =*/
-/*=   $Id: globals.h,v 1.13 2006/11/14 17:45:15 mtw Exp $         =*/
+/*=   Last changed Time-stamp: <2006-11-17 13:33:37 xtof>          =*/
+/*=   $Id: globals.h,v 1.14 2006/11/20 09:55:34 xtof Exp $         =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -12,6 +12,8 @@
 
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
+
+#define TZERO 0.1
 
 typedef struct {         /* command-line options */
   char *basename;        /* base name of processed file */
