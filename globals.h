@@ -2,8 +2,8 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-17 13:33:37 xtof>          =*/
-/*=   $Id: globals.h,v 1.14 2006/11/20 09:55:34 xtof Exp $         =*/
+/*=   Last changed Time-stamp: <2006-11-24 19:17:45 mtw>          =*/
+/*=   $Id: globals.h,v 1.15 2006/11/24 18:24:11 mtw Exp $         =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -25,6 +25,8 @@ typedef struct {         /* command-line options */
   int dumpMathematica;   /* dump U to a Mathematica-readable file */
   int matexp;            /* use matrix-exponent routines */
   int binrates;          /* assume binary rates file */
+  int rrecover;          /* recover from previous diagonalization */
+  int wrecover;          /* write recovery file */
   int n;                 /* read only n lmins */
   double T;              /* Temperature */
   double t0;             /* start time */

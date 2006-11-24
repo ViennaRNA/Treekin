@@ -40,10 +40,12 @@ const char *gengetopt_args_info_help[] = {
   "  -e, --exponent           Use matrix-expontent routines, NO diagonalization  \n                             (default=off)",
   "  -u, --umatrix            Dump transition matrix U to a binary file mx.bin  \n                             (default=off)",
   "  -x, --mathematicamatrix  Dump transition matrix U to Mathematica-readable \n                             file mxMat.txt  (default=off)",
-  "      --info               show settings  (default=off)",
-  "  -v, --verbose            verbose output  (default=off)",
   "  -b, --bin                assume binary input  (default=off)",
   "      --fpt                calculate first passage times  (default=off)",
+  "  -r, --recover            Recover from pre-calculated Eigenvalues and \n                             Eigenvectors  (default=off)",
+  "  -w, --wrecover           Write recovery file containing Eigenvalues and \n                             Eigenvectors  (default=off)",
+  "      --info               show settings  (default=off)",
+  "  -v, --verbose            verbose output  (default=off)",
     0
 };
 
@@ -87,10 +89,12 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->exponent_given = 0 ;
   args_info->umatrix_given = 0 ;
   args_info->mathematicamatrix_given = 0 ;
-  args_info->info_given = 0 ;
-  args_info->verbose_given = 0 ;
   args_info->bin_given = 0 ;
   args_info->fpt_given = 0 ;
+  args_info->recover_given = 0 ;
+  args_info->wrecover_given = 0 ;
+  args_info->info_given = 0 ;
+  args_info->verbose_given = 0 ;
 }
 
 static
@@ -110,10 +114,12 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->exponent_flag = 0;
   args_info->umatrix_flag = 0;
   args_info->mathematicamatrix_flag = 0;
-  args_info->info_flag = 0;
-  args_info->verbose_flag = 0;
   args_info->bin_flag = 0;
   args_info->fpt_flag = 0;
+  args_info->recover_flag = 0;
+  args_info->wrecover_flag = 0;
+  args_info->info_flag = 0;
+  args_info->verbose_flag = 0;
   
 }
 
@@ -136,10 +142,12 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->exponent_help = gengetopt_args_info_help[11] ;
   args_info->umatrix_help = gengetopt_args_info_help[12] ;
   args_info->mathematicamatrix_help = gengetopt_args_info_help[13] ;
-  args_info->info_help = gengetopt_args_info_help[14] ;
-  args_info->verbose_help = gengetopt_args_info_help[15] ;
-  args_info->bin_help = gengetopt_args_info_help[16] ;
-  args_info->fpt_help = gengetopt_args_info_help[17] ;
+  args_info->bin_help = gengetopt_args_info_help[14] ;
+  args_info->fpt_help = gengetopt_args_info_help[15] ;
+  args_info->recover_help = gengetopt_args_info_help[16] ;
+  args_info->wrecover_help = gengetopt_args_info_help[17] ;
+  args_info->info_help = gengetopt_args_info_help[18] ;
+  args_info->verbose_help = gengetopt_args_info_help[19] ;
   
 }
 
@@ -342,17 +350,23 @@ cmdline_parser_file_save(const char *filename, struct gengetopt_args_info *args_
   if (args_info->mathematicamatrix_given) {
     fprintf(outfile, "%s\n", "mathematicamatrix");
   }
-  if (args_info->info_given) {
-    fprintf(outfile, "%s\n", "info");
-  }
-  if (args_info->verbose_given) {
-    fprintf(outfile, "%s\n", "verbose");
-  }
   if (args_info->bin_given) {
     fprintf(outfile, "%s\n", "bin");
   }
   if (args_info->fpt_given) {
     fprintf(outfile, "%s\n", "fpt");
+  }
+  if (args_info->recover_given) {
+    fprintf(outfile, "%s\n", "recover");
+  }
+  if (args_info->wrecover_given) {
+    fprintf(outfile, "%s\n", "wrecover");
+  }
+  if (args_info->info_given) {
+    fprintf(outfile, "%s\n", "info");
+  }
+  if (args_info->verbose_given) {
+    fprintf(outfile, "%s\n", "verbose");
   }
   
   fclose (outfile);
@@ -648,15 +662,17 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
         { "exponent",	0, NULL, 'e' },
         { "umatrix",	0, NULL, 'u' },
         { "mathematicamatrix",	0, NULL, 'x' },
-        { "info",	0, NULL, 0 },
-        { "verbose",	0, NULL, 'v' },
         { "bin",	0, NULL, 'b' },
         { "fpt",	0, NULL, 0 },
+        { "recover",	0, NULL, 'r' },
+        { "wrecover",	0, NULL, 'w' },
+        { "info",	0, NULL, 0 },
+        { "verbose",	0, NULL, 'v' },
         { NULL,	0, NULL, 0 }
       };
 
       stop_char = 0;
-      c = getopt_long (argc, argv, "hVa:m:T:n:deuxvb", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVa:m:T:n:deuxbrwv", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -807,19 +823,6 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
           args_info->mathematicamatrix_flag = !(args_info->mathematicamatrix_flag);
           break;
 
-        case 'v':	/* verbose output.  */
-          if (local_args_info.verbose_given)
-            {
-              fprintf (stderr, "%s: `--verbose' (`-v') option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
-              goto failure;
-            }
-          if (args_info->verbose_given && ! override)
-            continue;
-          local_args_info.verbose_given = 1;
-          args_info->verbose_given = 1;
-          args_info->verbose_flag = !(args_info->verbose_flag);
-          break;
-
         case 'b':	/* assume binary input.  */
           if (local_args_info.bin_given)
             {
@@ -831,6 +834,45 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
           local_args_info.bin_given = 1;
           args_info->bin_given = 1;
           args_info->bin_flag = !(args_info->bin_flag);
+          break;
+
+        case 'r':	/* Recover from pre-calculated Eigenvalues and Eigenvectors.  */
+          if (local_args_info.recover_given)
+            {
+              fprintf (stderr, "%s: `--recover' (`-r') option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
+              goto failure;
+            }
+          if (args_info->recover_given && ! override)
+            continue;
+          local_args_info.recover_given = 1;
+          args_info->recover_given = 1;
+          args_info->recover_flag = !(args_info->recover_flag);
+          break;
+
+        case 'w':	/* Write recovery file containing Eigenvalues and Eigenvectors.  */
+          if (local_args_info.wrecover_given)
+            {
+              fprintf (stderr, "%s: `--wrecover' (`-w') option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
+              goto failure;
+            }
+          if (args_info->wrecover_given && ! override)
+            continue;
+          local_args_info.wrecover_given = 1;
+          args_info->wrecover_given = 1;
+          args_info->wrecover_flag = !(args_info->wrecover_flag);
+          break;
+
+        case 'v':	/* verbose output.  */
+          if (local_args_info.verbose_given)
+            {
+              fprintf (stderr, "%s: `--verbose' (`-v') option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
+              goto failure;
+            }
+          if (args_info->verbose_given && ! override)
+            continue;
+          local_args_info.verbose_given = 1;
+          args_info->verbose_given = 1;
+          args_info->verbose_flag = !(args_info->verbose_flag);
           break;
 
 
@@ -925,20 +967,6 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
               free (args_info->tinc_orig); /* free previous string */
             args_info->tinc_orig = gengetopt_strdup (optarg);
           }
-          /* show settings.  */
-          else if (strcmp (long_options[option_index].name, "info") == 0)
-          {
-            if (local_args_info.info_given)
-              {
-                fprintf (stderr, "%s: `--info' option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
-                goto failure;
-              }
-            if (args_info->info_given && ! override)
-              continue;
-            local_args_info.info_given = 1;
-            args_info->info_given = 1;
-            args_info->info_flag = !(args_info->info_flag);
-          }
           /* calculate first passage times.  */
           else if (strcmp (long_options[option_index].name, "fpt") == 0)
           {
@@ -952,6 +980,20 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
             local_args_info.fpt_given = 1;
             args_info->fpt_given = 1;
             args_info->fpt_flag = !(args_info->fpt_flag);
+          }
+          /* show settings.  */
+          else if (strcmp (long_options[option_index].name, "info") == 0)
+          {
+            if (local_args_info.info_given)
+              {
+                fprintf (stderr, "%s: `--info' option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
+                goto failure;
+              }
+            if (args_info->info_given && ! override)
+              continue;
+            local_args_info.info_given = 1;
+            args_info->info_given = 1;
+            args_info->info_flag = !(args_info->info_flag);
           }
           
           break;

@@ -2,8 +2,8 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-17 15:24:45 xtof>          =*/
-/*=   $Id: globals.c,v 1.14 2006/11/20 09:56:07 xtof Exp $         =*/
+/*=   Last changed Time-stamp: <2006-11-24 19:19:07 mtw>          =*/
+/*=   $Id: globals.c,v 1.15 2006/11/24 18:24:11 mtw Exp $        =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -162,6 +162,8 @@ set_parameters(void)
   if (args_info.bin_given) opt.binrates = 1;
   if (args_info.exponent_given) opt.matexp = 1;
   if (args_info.fpt_given) opt.fpt = 1;
+  if (args_info.recover_given) opt.rrecover = 1;
+  if (args_info.wrecover_given) opt.wrecover = 1;
   if (args_info.info_given){
     display_settings();
     if (opt.pini != NULL) free(opt.pini);
@@ -185,6 +187,8 @@ ini_globs(void)
   opt.matexp          =          0;
   opt.binrates        =          0;
   opt.fpt             =          0;
+  opt.rrecover        =          0;
+  opt.wrecover        =          0;
   opt.basename        =          NULL;
 }
 
@@ -208,6 +212,8 @@ display_settings(void)
 	  "-u         = %d\n"
 	  "-x         = %d\n"
 	  "-b         = %d\n"
+	  "-r         = %d\n"
+	  "-w         = %d\n"
 	  "-v         = %d\n",
 	  opt.absrb,
 	  opt.t0,
@@ -222,6 +228,8 @@ display_settings(void)
 	  opt.dumpU,
 	  opt.dumpMathematica,
 	  opt.binrates,
+	  opt.rrecover,
+	  opt.wrecover,
 	  opt.want_verbose);
   for (i=0,j=1;i<args_info.p0_given;i++,j+=2){
     fprintf(stderr,

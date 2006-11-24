@@ -60,14 +60,18 @@ struct gengetopt_args_info
   const char *umatrix_help; /* Dump transition matrix U to a binary file mx.bin help description.  */
   int mathematicamatrix_flag;	/* Dump transition matrix U to Mathematica-readable file mxMat.txt (default=off).  */
   const char *mathematicamatrix_help; /* Dump transition matrix U to Mathematica-readable file mxMat.txt help description.  */
-  int info_flag;	/* show settings (default=off).  */
-  const char *info_help; /* show settings help description.  */
-  int verbose_flag;	/* verbose output (default=off).  */
-  const char *verbose_help; /* verbose output help description.  */
   int bin_flag;	/* assume binary input (default=off).  */
   const char *bin_help; /* assume binary input help description.  */
   int fpt_flag;	/* calculate first passage times (default=off).  */
   const char *fpt_help; /* calculate first passage times help description.  */
+  int recover_flag;	/* Recover from pre-calculated Eigenvalues and Eigenvectors (default=off).  */
+  const char *recover_help; /* Recover from pre-calculated Eigenvalues and Eigenvectors help description.  */
+  int wrecover_flag;	/* Write recovery file containing Eigenvalues and Eigenvectors (default=off).  */
+  const char *wrecover_help; /* Write recovery file containing Eigenvalues and Eigenvectors help description.  */
+  int info_flag;	/* show settings (default=off).  */
+  const char *info_help; /* show settings help description.  */
+  int verbose_flag;	/* verbose output (default=off).  */
+  const char *verbose_help; /* verbose output help description.  */
   
   int help_given ;	/* Whether help was given.  */
   int version_given ;	/* Whether version was given.  */
@@ -83,10 +87,12 @@ struct gengetopt_args_info
   int exponent_given ;	/* Whether exponent was given.  */
   int umatrix_given ;	/* Whether umatrix was given.  */
   int mathematicamatrix_given ;	/* Whether mathematicamatrix was given.  */
-  int info_given ;	/* Whether info was given.  */
-  int verbose_given ;	/* Whether verbose was given.  */
   int bin_given ;	/* Whether bin was given.  */
   int fpt_given ;	/* Whether fpt was given.  */
+  int recover_given ;	/* Whether recover was given.  */
+  int wrecover_given ;	/* Whether wrecover was given.  */
+  int info_given ;	/* Whether info was given.  */
+  int verbose_given ;	/* Whether verbose was given.  */
 
   char **inputs ; /* unamed options */
   unsigned inputs_num ; /* unamed options number */

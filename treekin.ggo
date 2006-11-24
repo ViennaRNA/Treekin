@@ -10,7 +10,9 @@ option "degeneracy" d "Consider degeracy in transition rates" flag off
 option "exponent" e "Use matrix-expontent routines, NO diagonalization" flag off
 option "umatrix" u "Dump transition matrix U to a binary file mx.bin" flag off
 option "mathematicamatrix" x "Dump transition matrix U to Mathematica-readable file mxMat.txt" flag off
-option "info"   - "show settings" flag off
-option "verbose" v  "verbose output" flag off
 option "bin" b "assume binary input" flag off
 option "fpt" - "calculate first passage times" flag off
+option "recover" r "Recover from pre-calculated Eigenvalues and Eigenvectors" flag off
+option "wrecover" w "Write recovery file containing Eigenvalues and Eigenvectors" flag off
+option "info"   - "show settings" flag off
+option "verbose" v  "verbose output" flag off

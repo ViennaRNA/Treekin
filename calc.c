@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-24 17:20:25 mtw>          =*/
-/*=   $Id: calc.c,v 1.38 2006/11/24 16:49:57 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-24 18:34:07 mtw>          =*/
+/*=   $Id: calc.c,v 1.39 2006/11/24 18:24:11 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -221,7 +221,6 @@ MxEqDistrFromLinSys ( double *U, double **p8 )
   free(ipiv);
    for(i=0;i<dim;i++)
     U[dim*i+i]+=1.;
-   // exit(EXIT_SUCCESS);
 }
 
 /*==*/
