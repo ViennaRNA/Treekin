@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-24 15:43:38 mtw>          =*/
-/*=   $Id: calc.c,v 1.37 2006/11/24 15:00:39 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-24 17:20:25 mtw>          =*/
+/*=   $Id: calc.c,v 1.38 2006/11/24 16:49:57 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -169,19 +169,23 @@ MxEqDistrFromLinSys ( double *U, double **p8 )
   int i,j,n, nrhs, nfo, *ipiv=NULL;
   double *A=NULL, *B=NULL;
   long double sumsq;
+
+  for(i=0;i<dim;i++)
+    U[dim*i+i]-=1.;
   
   n=dim-1;
   A    = (double *)malloc(n*n*sizeof(double));
   B    = (double *)malloc(n*sizeof(double));
   ipiv = (int *)malloc(n*sizeof(int));
   nrhs=1;
-  
+ 
   for(i=1;i<=n;i++)   /* all except first row */
-    for(j=0;j<n;j++)
-      A[n*(i-1)+j]=U[dim*i+j];
+    for(j=1;j<=n;j++)
+      A[n*(i-1)+(j-1)]=U[dim*i+j];
   for(n=0,i=1;i<dim;i++,n++) 
-    B[n]=U[dim*i+(dim-1)];
+    B[n]=-U[dim*i];
   dim=n;
+  trnm(A,n);
   if(opt.want_verbose){
     MxPrint(A, "A in MxEqDistrFromLinSys", 'm' );
     MxPrint(B, "B in MxEqDistrFromLinSys", 'v' );
@@ -192,16 +196,15 @@ MxEqDistrFromLinSys ( double *U, double **p8 )
     fprintf(stderr, "dgesv exited with value %d\n", nfo);
     exit(EXIT_FAILURE);
   }
-  if(opt.want_verbose){
-    MxPrint(B, "B in MxEqDistrFromLinSys", 'v' );
-  }
+  if(opt.want_verbose) MxPrint(B, "B in MxEqDistrFromLinSys", 'v' );
+  
   dim=n+1;
   *p8[0]=1.;
   for(i=1;i<dim;i++)
     *(*p8+i)=B[i-1];
-  if(opt.want_verbose){
+  if(opt.want_verbose)
     MxPrint(*p8, "p8 in MxEqDistrFromLinSys before norm", 'v' );
-  }
+
   /* now normalize the new p8 */
    sumsq=0.0;
   for (i=0;i<dim;i++)
@@ -216,7 +219,9 @@ MxEqDistrFromLinSys ( double *U, double **p8 )
   free(A);
   free(B);
   free(ipiv);
-  exit(EXIT_SUCCESS);
+   for(i=0;i<dim;i++)
+    U[dim*i+i]+=1.;
+   // exit(EXIT_SUCCESS);
 }
 
 /*==*/
