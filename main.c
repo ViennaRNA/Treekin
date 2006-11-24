@@ -2,8 +2,8 @@
 /*=   main.c                                                      =*/
 /*=   main file for treekin                                       =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-24 15:34:42 mtw>          =*/
-/*=   $Id: main.c,v 1.22 2006/11/24 15:01:38 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-24 17:49:23 mtw>          =*/
+/*=   $Id: main.c,v 1.23 2006/11/24 16:50:15 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -46,8 +46,10 @@ main (int argc, char **argv)
   MxStartVec(&p0);
   if(opt.method == 'F') 
     MxEqDistrFULL (E, p8);
-  else
-    MxEqDistr (Data, p8);
+  else{
+    // MxEqDistr (Data, p8);  /* FIX THIS */
+    MxEqDistrFromLinSys(U, &p8);
+  }
     
   if(opt.fpt){
     MxFPT(U, p8);
