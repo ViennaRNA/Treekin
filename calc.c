@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-17 13:37:17 xtof>          =*/
-/*=   $Id: calc.c,v 1.36 2006/11/20 09:56:44 xtof Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-24 15:43:38 mtw>          =*/
+/*=   $Id: calc.c,v 1.37 2006/11/24 15:00:39 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -15,14 +15,13 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <assert.h>
 #include "exp_matrix.h" /* functions for matrix-exponent stuff */
 #include "mxccm.h"      /* functions for eigen-problems stolen from ccmath */
 #include "barparser.h"  /* functions for input */
 #include "calc.h"       /* does all matrix stuff for markov process */
 #include "globals.h"    /* contains getopt-stuff */
 
-#define TOL 0.000000000000001
-#define ABS_VAL 0.00000000001
 #define SQ(X) ((X)*(X))
 #define FEPS 1.e-15
 
@@ -39,14 +38,15 @@ static void    MxBinWrite (double *matrix);
 static void    MxASCIIWrite(double *matrix);
 static void    MxKotzOutMathematica(double *matrix);
 static void    MxSortEig(double *evals, double *evecs);
-static void    MxEVlapack(double *origU, double *S,double *EV, int dim);
+static void    MxEVLapackSym(double *U);
+static void    MxEVLapackNonSym(double *U);
 static void    MxFixevecs(double *, double *);
 
 /* private vars and arrays */
 static int      dim = 0;
 static double   _kT = 1.;
-static double  *EV        = NULL;   /* array 4 eigenvalues */
-static double  *EV_mesch  = NULL;   /* ev from meschach-routine, ie in other order */
+static double  *evals     = NULL;
+static double  *evecs     = NULL;
 static double  *_sqrPI    = NULL;   /* left constant array */
 static double  *sqrPI_    = NULL;   /* right constant array */
 static double  *D         = NULL;   /* matrix with degree of degeneacy */
@@ -57,20 +57,9 @@ static TypeDegSaddle *saddle = NULL;
 void
 MxInit (int d)
 {
-  int i;
   _kT = 0.00198717*(273.15 + opt.T);
   if (d > 0 ) dim = d;
   else { fprintf(stderr, "dim <= 0\n"); exit(EXIT_FAILURE); }
-  
-  EV     = (double *) MxNew (dim*sizeof(double));
-  if(!opt.absrb){
-    _sqrPI = (double *) MxNew (dim*dim*sizeof(double));
-    sqrPI_ = (double *) MxNew (dim*dim*sizeof(double));
-  }
-  if(opt.method == 'A'){
-    D      = (double *) MxNew (dim*dim*sizeof(double));
-    for(i=0;i<dim*dim;i++) D[i] = 1.;
-  }
 }
 
 /*==*/
@@ -99,120 +88,194 @@ MxBar2Matrix ( BarData *Data, double *R)
     MxASCIIWrite(U);
   return (U);
 }
+/*==*/
+void
+MxGetSpace (double **p8)
+{
+  *p8   = (double *) MxNew (dim*sizeof(double));
+  evals = (double *) MxNew (dim*sizeof(double));
+  evecs = (double *) MxNew (dim*dim*sizeof(double));
+  assert(evals!=NULL); assert(evecs!=NULL); assert(p8!=NULL);
+  
+  if(!opt.absrb){
+    _sqrPI = (double *) MxNew (dim*dim*sizeof(double));
+    sqrPI_ = (double *) MxNew (dim*dim*sizeof(double));
+  }
+}
 
 /*==*/
-double*
-MxStartVec (void)
+void
+MxStartVec (double **p0)
 {
   int i;
-  double *p0 = NULL;
+  double *pzero = NULL;
 
-  p0 = (double *) MxNew((dim+1)*sizeof(double));
+  pzero = (double *) MxNew(dim*sizeof(double));
   for (i = 1; i < (int) *opt.pini; i+=2)
-    p0[(int)opt.pini[i]-1] = (double)opt.pini[i+1];
+    pzero[(int)opt.pini[i]-1] = (double)opt.pini[i+1];
   /* -1 because our lmins start with 1, not with 0 (as Data does ) */
-
-  if (opt.want_verbose) MxPrint (p0, "p0", 'v');
-  return (p0);
+  
+  if (opt.want_verbose) MxPrint (pzero, "p0", 'v');
+  *p0=pzero;
 }
 
 /*==*/
 /* calculate equilibrium distribution */
-double*
-MxEqDistr ( BarData *Data )
+void
+MxEqDistr ( BarData *Data, double *p8 )
 {
   int i;
-  double *p8, Z = 0.;
-  p8 = (double *) MxNew ((dim+1)*sizeof(double));
-
-  for(i = 0; i < dim; i++)
-    Z += exp(-((double)Data[i].FGr/_kT));
-  for(i = 0; i < dim; i++)
-    p8[i] = exp(-((double) Data[i].FGr/_kT))/Z;
+  double Z = 0.;
   
   if(opt.absrb){
     for(i = 0; i < dim; i++)
       p8[i] = 0.;
-    p8[dim] = 1.0; /* last entry is the 'new' absorbing state */
+    p8[dim-1] = 1.0; /* last entry is the 'new' absorbing state */
+  }
+  else{
+    for(i = 0; i < dim; i++) Z += exp(-((double)Data[i].FGr/_kT));
+    for(i = 0; i < dim; i++) p8[i] = exp(-((double) Data[i].FGr/_kT))/Z;
   }
   if(opt.want_verbose) MxPrint (p8, "p8", 'v');
-  return (p8);
+  return;
 }
 
 /*==*/
-double*
-MxEqDistrFULL (SubInfo *E)
+void
+MxEqDistrFULL (SubInfo *E, double *p8 )
 {
   int i;
-  double *p8, Z = 0.;
-  p8 = (double *) MxNew (dim*sizeof(double));
-
-  for(i = 0; i < dim; i++) Z += exp(-E[i].energy/_kT);
-  for(i = 0; i < dim; i++) p8[i] = exp(-E[i].energy/_kT)/Z;
+  double Z = 0.;
 
   if(opt.absrb){
     for(i = 0; i < dim; i++)
       p8[i] = 0.;
     p8[opt.absrb-1] = 1.;
   }
+  else{
+    for(i = 0; i < dim; i++) Z += exp(-E[i].energy/_kT);
+    for(i = 0; i < dim; i++) p8[i] = exp(-E[i].energy/_kT)/Z;
+  }
   if(opt.want_verbose) MxPrint (p8, "p8", 'v');
-  return (p8);
+  return;
 }
 
 /*==*/
-double*
-MxSymmetr ( double *U, double *P8 )
+void
+MxEqDistrFromLinSys ( double *U, double **p8 )
 {
-  int i, j;
-  double *S=NULL, *tmpMx=NULL;
+  extern void dgesv_(int *N,int *NRHS,double *A,int *LDA,int *IPIV,
+		     double *B,int *LDB,int *INFO);
+  int i,j,n, nrhs, nfo, *ipiv=NULL;
+  double *A=NULL, *B=NULL;
+  long double sumsq;
   
-  S     = (double *) MxNew (dim*dim*sizeof(double));
-  tmpMx = (double *) MxNew (dim*dim*sizeof(double));
-    
-  for(i = 0; i < dim; i++) {
-    for(j = 0; j < dim; j++) {
-      if( i == j) {
-	sqrPI_[dim*i+j] = sqrt(P8[i]);            /* pos right */
-	_sqrPI[dim*i+j] = 1/(sqrPI_[dim*i+j]);}}} /* neg left */
-  fprintf(stderr,"dim is %d\n", dim);
-  mmul(tmpMx, _sqrPI, U, dim); mmul(S, tmpMx, sqrPI_, dim);
-  /*   if (opt.want_verbose) { */
-  /*   MxPrint (_sqrPI, "_sqrPI (= negative Wurzl von pi)", 'm'); */
-  /*   MxPrint (sqrPI_, "sqrPI_ (= Wurzl von pi)", 'm'); */
-  /*   MxPrint (tmpMx, "tmpMx (= negative Wurzl von pi * U)", 'm'); */
-  /*  MxPrint (S, "S before (= tmpMx * Wurzl von pi)", 'm'); } */
-  free(tmpMx);
-  /* correct for numerical errors */
-  for (i = 0; i < dim; i++) {
-    for (j = 0; j < dim; j++) {
-      S[dim*i+j] = (S[dim*i+j]+S[dim*j+i])/2;
-      S[dim*j+i] = S[dim*i+j];
-    }
+  n=dim-1;
+  A    = (double *)malloc(n*n*sizeof(double));
+  B    = (double *)malloc(n*sizeof(double));
+  ipiv = (int *)malloc(n*sizeof(int));
+  nrhs=1;
+  
+  for(i=1;i<=n;i++)   /* all except first row */
+    for(j=0;j<n;j++)
+      A[n*(i-1)+j]=U[dim*i+j];
+  for(n=0,i=1;i<dim;i++,n++) 
+    B[n]=U[dim*i+(dim-1)];
+  dim=n;
+  if(opt.want_verbose){
+    MxPrint(A, "A in MxEqDistrFromLinSys", 'm' );
+    MxPrint(B, "B in MxEqDistrFromLinSys", 'v' );
   }
-  if (opt.want_verbose) MxPrint (S, "force symmetrized S", 'm');
+
+  dgesv_(&n, &nrhs, A, &n, ipiv, B, &n, &nfo);
+  if(nfo != 0){
+    fprintf(stderr, "dgesv exited with value %d\n", nfo);
+    exit(EXIT_FAILURE);
+  }
+  if(opt.want_verbose){
+    MxPrint(B, "B in MxEqDistrFromLinSys", 'v' );
+  }
+  dim=n+1;
+  *p8[0]=1.;
+  for(i=1;i<dim;i++)
+    *(*p8+i)=B[i-1];
+  if(opt.want_verbose){
+    MxPrint(*p8, "p8 in MxEqDistrFromLinSys before norm", 'v' );
+  }
+  /* now normalize the new p8 */
+   sumsq=0.0;
+  for (i=0;i<dim;i++)
+    sumsq += SQ(*(*p8+i));
+  if(sumsq > 0.0)
+    sumsq=1./sqrtl(sumsq);
+  for (i=0;i<dim;i++)
+    *(*p8+i)  *= sumsq;
+  if(opt.want_verbose){
+    MxPrint(*p8, "p8 in MxEqDistrFromLinSys after  norm", 'v' );
+   }
+  free(A);
+  free(B);
+  free(ipiv);
+  exit(EXIT_SUCCESS);
+}
+
+/*==*/
+void
+MxDiagonalize ( double *U, double **_S, double *P8 )
+{
+  int i,j;
+  double csum, *tmpMx=NULL;
+
+  if(opt.dumpMathematica == 1)  MxKotzOutMathematica(U);
+  if(!opt.absrb){
+    tmpMx = (double *) MxNew (dim*dim*sizeof(double));
+    
+    for(i = 0; i < dim; i++) {
+      for(j = 0; j < dim; j++) {
+	if( i == j) {
+	  sqrPI_[dim*i+j] = sqrt(P8[i]);            /* pos right */
+	  _sqrPI[dim*i+j] = 1/(sqrPI_[dim*i+j]);}}} /* neg left */
+    mmul(tmpMx, _sqrPI, U, dim);
+    memset(U,0,dim*dim*sizeof(double));
+    mmul(U, tmpMx, sqrPI_, dim);
+    free(tmpMx);
+    /* correct for numerical errors */
+    for (i = 0; i < dim; i++) {
+      for (j = 0; j < dim; j++) {
+	U[dim*i+j] = (U[dim*i+j]+U[dim*j+i])/2;
+	U[dim*j+i] = U[dim*i+j];
+      }
+    }
+    if (opt.want_verbose) MxPrint (U, "force symmetrized U", 'm');
+  }
   
   if (opt.dumpU){
-    fprintf(stderr, "in MxSymmetr: writing S to mx.bin\n");
-    MxBinWrite(S);
+    fprintf(stderr, "in MxDiagonalize: writing U to mx.bin\n");
+    MxBinWrite(U);
   }
-  eigen(S, EV, dim);  /* S is overwritten with its eigenvectors */ 
-  if (opt.want_verbose){
-    MxPrint (S, "Eigenvectors of S", 'm');MxPrint(EV, "Eigenvalues of S", 'v'); }
-  for (i=0;i<dim;i++){
-    if (EV[i] > 1.){
-      fprintf(stderr, "\nEV[%i] is > 1: %25.22g, now setting to 1.\n", i, EV[i]);
-      EV[i] = 1.;
-    }
-  }
+
+  if(opt.absrb)
+    MxEVLapackNonSym(U);
+  else    
+    MxEVLapackSym(U);
   
-  /* compensate 4 translation of matrix U */
-  for(i = 0; i < dim; i++) EV[i] = EV[i] - 1;
-  return (S);
+  MxSortEig(evals, evecs);
+  
+  if (opt.want_verbose){
+    MxPrint(evecs, "Eigenvectors of U (LAPACK)", 'm');
+    MxPrint(evals, "Eigenvalues of  U (LAPACK)", 'v');
+  }
+  for (i=0;i<dim;i++)
+    if (evals[i]>(1.0-FEPS)) evals[i]=1.0;
+
+  if(opt.absrb)
+    MxFixevecs(evecs,evals);
+  *_S=evecs;
 }
 
 /*==*/
 /* S which comes into this function contains the (right) eigenvectors  
-calculated either by ccmath (non-abs) or meschach (absorbing case) */
+calculated by LAPACK */
 void
 MxIterate (double *p0, double *p8, double *S)
 {
@@ -230,7 +293,7 @@ MxIterate (double *p0, double *p8, double *S)
     tmpVec2 = exp(time * EV) *tmpVec 
     p(t)    = S * tmpVec2 
   */
-  int i,  count = 0, pdiff_counter = 0;
+  int i,  count = 0, pdiff_counter = 0, tzero_flag=0;
   double time, check = 0.;
   double *CL = NULL, *CR, *exptL, *tmpVec, *tmpVec2, *pt, *St, *pdiff;
   double *ptFULL = NULL;  /* prob dist 4 of the effective lmins of the tree at time t */
@@ -263,10 +326,7 @@ MxIterate (double *p0, double *p8, double *S)
     S_inv  = (double *) MxNew (dim*dim*sizeof(double));
     mcopy(S_inv, S, dim*dim);
     minv(S_inv,dim);
-    for(i = 0; i < dim; i++) EV_mesch[i] -= 1;  /* compensate 4 translation of matrix U */
-    free(EV);         /* was allocated in MxInit */
-    EV = EV_mesch;    /* let EV point at EV_mesch */
-    if(opt.want_verbose) MxPrint(EV_mesch, "EV_mesch in MxIterate", 'v');
+    if(opt.want_verbose) MxPrint(evals, "evals in MxIterate", 'v');
     vmul (tmpVec, S_inv, p0, dim);
     free(S_inv);
   }
@@ -279,6 +339,8 @@ MxIterate (double *p0, double *p8, double *S)
     }
   }
   check = 0.;
+  for(i = 0; i < dim; i++) evals[i] -= 1;  /* compensate 4 translation of matrix U */
+  
   
   /* solve fundamental equation */
   print_settings();
@@ -287,11 +349,12 @@ MxIterate (double *p0, double *p8, double *S)
     for (i = 0; i < dim; i++) printf("%e ", fabs(p0[i]));
     printf("\n");
     opt.t0 = TZERO;
+    tzero_flag=1;
   }
       
   for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
     for (i = 0; i < dim; i++)
-      exptL[dim*i+i] = exp(time*EV[i]);
+      exptL[dim*i+i] = exp(time*evals[i]);
     vmul(tmpVec2, exptL, tmpVec, dim);
     if(!opt.absrb)  vmul(pt, CL, tmpVec2, dim);
     else            vmul(pt, S, tmpVec2, dim);
@@ -305,8 +368,9 @@ MxIterate (double *p0, double *p8, double *S)
 		i+1, time, pt[i]);
 	exit(EXIT_FAILURE);
       }
-       if(opt.method=='F') ptFULL[E[i].ag] += pt[i]; /* map individual structure -> gradient basins */
-       else   printf("%e ", fabs(pt[i]));
+      /* map individual structure -> gradient basins */
+      if(opt.method=='F') ptFULL[E[i].ag] += pt[i]; 
+      else   printf("%e ", fabs(pt[i]));
       check += fabs(pt[i]); 
     }
     if(opt.method=='F') 
@@ -342,6 +406,12 @@ MxIterate (double *p0, double *p8, double *S)
     if(opt.method=='F') memset(ptFULL, 0, (lmins+1)*sizeof(double));
     fflush(stdout);
   }
+  if ( tzero_flag && (time < opt.t8) ){
+    printf(" %e ", opt.t8);
+    for (i = 0; i < dim; i++)
+       printf("%e ", fabs(pt[i]));
+     printf("\n");
+  }
   printf("# of iterations: %d\n", count);
 
   /*** end solve fundamental equation ***/
@@ -351,7 +421,7 @@ MxIterate (double *p0, double *p8, double *S)
      free(p8FULL);
      free(E);
   }
-  free(EV);
+  free(evals);
   free(exptL);
   free(CL);
   free(tmpVec);
@@ -385,7 +455,9 @@ MxMethodeA (BarData *Data)
   double m_saddle, Zabs, abs_rate, *T, *U;
 
   U = (double *) MxNew (dim*dim*sizeof(double));
-
+  D  = (double *) MxNew ((dim+1)*(dim+1)*sizeof(double)); /* BRAUCH'MA DES IMMA ? */
+  for(i=0;i<((dim+1)*(dim+1));i++) D[i] = 1.;
+  
   for( i = 0; i < dim; i++)
     for( j = i+1; j < dim; j++){
       m_saddle = max_saddle(i, j, Data);
@@ -466,7 +538,7 @@ MxMethodeINPUT (BarData *Data, double *Input)
   double *U=NULL, Zabs, abs_rate;
 
   if (opt.want_verbose) MxPrint(Input, "Input Matrix", 'm');
-
+    
   if (opt.absrb) {  /*==== absorbing  states ====*/
     dim++;
     fprintf(stderr, "dim increased to %i\n", dim);
@@ -595,7 +667,6 @@ static char*
 time_stamp(void)
 {
   time_t  cal_time;
-  
   cal_time = time(NULL);
   return ( ctime(&cal_time) );
 }
@@ -657,9 +728,7 @@ MxDoDegeneracyStuff(void)
   for(i = 0; i < dim; i++)  /* make matrix symmetric */
     for(j = 0; j < dim; j++)
       if (i != j)
-	D[dim*j+i] = D[dim*i+j];
-  
-  
+	D[dim*j+i] = D[dim*i+j];  
   if (opt.want_verbose) {
     sprintf (Aname, "%s", "D (degeneracies)");
     MxPrint (D, Aname, 'm');
@@ -669,68 +738,23 @@ MxDoDegeneracyStuff(void)
 }
 
 /*==*/
-void
-MxEVnonsymMx(double *origU, double **_S)
-{
-  int i,j, check = 1;
-  double *evecs = NULL, *evals = NULL, csum;
-  
-  if(opt.dumpMathematica == 1)  MxKotzOutMathematica(origU);
-  
-  evecs = (double *) MxNew (dim*dim*sizeof(double));
-  evals = (double *) MxNew (dim * sizeof(double));
-
-  for (j=0;j<dim;j++) {  /* uU ausseschmeissen !!!! */
-    origU[dim*j+j]=1.0;
-    for (i=0;i<dim;i++){
-      if (i==j) continue;
-      origU[dim*j+j] -= origU[dim*i+j];
-    }
-  }
-
-  MxEVlapack(origU, evecs, evals, dim);
-  MxSortEig(evals, evecs);
-  for (i=0;i<dim;i++) {
-    csum=0.0;
-    for (j=0;j<dim;j++)
-      csum += evecs[dim*j+i];
-    if (csum <0)
-      for (j=0;j<dim;j++)  evecs[dim*j+i] = -evecs[dim*j+i];
-  }
-  *_S = evecs;
-  EV_mesch = evals;
-
-  if (opt.want_verbose){
-    MxPrint (evals, "evals_LAPACK", 'v');
-    MxPrint (evecs, "evecs_LAPACK", 'm');
-  }
-  for (i=0;i<dim;i++)
-    if (evals[i]>(1.0-FEPS)) evals[i]=1.0;
-    
-  MxFixevecs(evecs,evals);
-}
-
-static void norm2(double *mx)
+static void
+norm2(double *mx)
 {
   /* normalize columns of matrix mx */
   /* (to euclidean norm 1)*/
   int i,j;
   long double sumsq;
   
-  for (j=0;j<dim;j++)
-    {
-      sumsq=0.0;
-      for (i=0;i<dim;i++)
-	{
-	  sumsq += SQ(mx[dim*i+j]);
-	}
-      if(sumsq > 0.0)
-	sumsq=1./sqrtl(sumsq);
-      for (i=0;i<dim;i++)
-	{
-	  mx[dim*i+j] *= sumsq;
-	}
-    }
+  for (j=0;j<dim;j++){
+    sumsq=0.0;
+    for (i=0;i<dim;i++)
+      sumsq += SQ(mx[dim*i+j]);
+    if(sumsq > 0.0)
+      sumsq=1./sqrtl(sumsq);
+    for (i=0;i<dim;i++)
+      mx[dim*i+j] *= sumsq;
+  }
   return;
 }
 	  
@@ -1003,7 +1027,7 @@ static void
 MxKotzOutMathematica(double *matrix)
 {
   int i,j;
-  FILE *MATHEMATICA_OUT;
+  FILE *MATHEMATICA_OUT=NULL;
   char *mathematica_file = "mxMat.txt";
   
   MATHEMATICA_OUT = fopen(mathematica_file, "w");
@@ -1096,9 +1120,42 @@ MxFirstPassageTime(double *U, double *p8)
 }
 
 static void
-MxEVlapack(double *origU, double *S,double *EV, int dim)
+MxEVLapackSym(double *U){
+/*   extern void dsyev_(char *jobz, char *uplo, int *n, double *A,int *lda, */
+/* 		     double *w, double *work, int *lwork, int *info); */
+  extern void dsyevx_(char *jobz,char *range,char *uplo,int *n,double *A,
+		      int *lda,double *vl,double *vu,int *il,int *iu,
+		      double *abstol,int *m,double *w,double *z,int *ldz,
+		      double *work,int *lwork,int *iwork,int *ifail,int *info);
+  double *work=NULL;
+  double abstol=FEPS ,tmp, vl,vu;
+  int i,j,lwork, il,iu,nfo,m, *iwork=NULL, *ifail=NULL;
+
+  lwork = dim*(dim+6);
+  work   = (double *) malloc (lwork * sizeof(double));
+  iwork  =    (int *) malloc (5*(dim) * sizeof(int));
+  ifail  =    (int *) malloc (dim * sizeof(int));
+  
+  dsyevx_("V","A","U",&dim,U,&dim,&vl,&vu,&il,&iu,
+	 &abstol,&m, evals,evecs,&dim,work, &lwork, iwork,
+	 ifail, &nfo );
+  //dsyev_("V","U",&dim, S, &dim, evals, work, &lwork, &nfo);
+  if(nfo != 0){
+    fprintf(stderr, "dsyevx exited with value %d\n", nfo);
+    exit(EXIT_FAILURE);
+  }
+
+  free(work);
+  free(iwork);
+  free(ifail);
+  for (i=0;i<dim;i++)
+    for (j=i+1;j<dim;j++){
+      tmp = evecs[dim*i+j];evecs[dim*i+j]=evecs[dim*j+i];evecs[dim*j+i]=tmp;}
+}
+
+static void
+MxEVLapackNonSym(double *origU)
 /* input: matrix origU, space for (right)evec-matrix S, */
-/* array for eigenvalues EV and dimension dim           */
 /* since fortran sucks, we transpose the input matrix   */
 /* and still want the right eigenvectors                */
 /* matrix of right eigenvecs is transposed  to have */
@@ -1110,45 +1167,43 @@ MxEVlapack(double *origU, double *S,double *EV, int dim)
 		      double *ABNRM, double *RCONDE, double *RCONDV, double *WORK,
 		      int *LWORK, int *IWORK, int *INFO);
   
-  double *evals_re, *evals_im;
+  double *evals_re=NULL, *evals_im=NULL,*scale=NULL;
+  double *rconde=NULL,*rcondv=NULL,*work=NULL, abnrm;
   int one,dimx2,ilo,ihi,lwork, *iwork,nfo;
-  double *X,*scale,abnrm,*rconde,*rcondv,*work;
-  double *Q;
   /* for sorting */
-  int k;
+  int i,j,k;
   float p;
-  int i,j;
   double tmp;
   
-  dim=dim+5000;
+  dim=dim+500;
   one=1;
   dimx2 = 2*dim;
   lwork = dim*(dim+6);
   
   evals_re = (double *) malloc (dim * sizeof(double));
   evals_im = (double *) malloc (dim * sizeof(double));
-  X        = (double *) malloc (dim*dim * sizeof(double));
-  Q        = (double *) malloc (dim*dim * sizeof(double));
-  scale = (double *) malloc (dim * sizeof(double));
-  rconde = (double *) malloc (dim * sizeof(double));
-  rcondv = (double *) malloc (dim * sizeof(double));
-  work = (double *)  malloc (lwork * sizeof(double));
-  iwork = (int *)  malloc (2*(dim -2) * sizeof(int));
-  
-  if ( (evals_re && evals_im && X && Q && scale && rconde && rcondv && work && iwork)==0)
-    { fprintf(stderr,"no space for temporary lapack arrays!\n"); exit(EXIT_FAILURE);}
-  
-  dim=dim-5000;
-  for (i=0;i<dim*dim;i++) Q[i]=origU[i];
+  scale    = (double *) malloc (dim * sizeof(double));
+  rconde   = (double *) malloc (dim * sizeof(double));
+  rcondv   = (double *) malloc (dim * sizeof(double));
+  work     = (double *) malloc (lwork * sizeof(double));
+  iwork    =    (int *) malloc (2*(dim -2) * sizeof(int));
+  dim=dim-500;
+  if ( (evals_re && evals_im && scale && rconde && \
+	rcondv && work && iwork)==0){
+    fprintf(stderr,"no space for temporary lapack arrays!\n");
+    exit(EXIT_FAILURE);
+  }
+ 
   /* instead of more fiddling, we transpose the input */
   for (i=0;i<dim;i++)
-    for (j=i+1;j<dim;j++){ tmp = Q[dim*i+j];Q[dim*i+j]=Q[dim*j+i];Q[dim*j+i]=tmp;}
+    for (j=i+1;j<dim;j++){
+      tmp = origU[dim*i+j];origU[dim*i+j]=origU[dim*j+i];origU[dim*j+i]=tmp;}
   
-  dgeevx_("B","N","V","V",&dim,Q,&dim,evals_re,evals_im,NULL,&one  ,X ,&dim, \
-	  &ilo, &ihi,  scale,&abnrm ,rconde, rcondv, work,  &lwork  , iwork, &nfo);
+  dgeevx_("B","N","V","V",&dim,origU,&dim,evals_re,evals_im,NULL,&one,\
+	  evecs ,&dim, &ilo, &ihi,  scale,&abnrm ,rconde, rcondv, work, \
+	  &lwork  , iwork, &nfo);
     
-  for (i=0;i<dim*dim;i++) S[i]=X[i];
-  for (i=0;i<dim;i++) EV[i]=evals_re[i];
+  for (i=0;i<dim;i++) evals[i]=evals_re[i];
   for (i=0;i<dim;i++) 
     if ((evals_re[i] != 0.0) && fabs(evals_im[i]/evals_re[i])>1.e-15)
       fprintf(stderr,"eigenvalue %d is %g + i*%g, which is somewhat complex\n",
@@ -1156,12 +1211,11 @@ MxEVlapack(double *origU, double *S,double *EV, int dim)
 
   /*transpose output*/
   for (i=0;i<dim;i++)
-    for (j=i+1;j<dim;j++){ tmp = S[dim*i+j];S[dim*i+j]=S[dim*j+i];S[dim*j+i]=tmp;}
+    for (j=i+1;j<dim;j++){
+      tmp = evecs[dim*i+j];evecs[dim*i+j]=evecs[dim*j+i];evecs[dim*j+i]=tmp;}
   
   free(evals_re);
   free(evals_im);
-  free(X);
-  free(Q);
   free(scale);
   free(rconde);
   free(rcondv);
