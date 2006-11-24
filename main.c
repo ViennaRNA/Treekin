@@ -2,8 +2,8 @@
 /*=   main.c                                                      =*/
 /*=   main file for treekin                                       =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-10 13:04:09 mtw>          =*/
-/*=   $Id: main.c,v 1.21 2006/11/10 13:51:39 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-24 15:34:42 mtw>          =*/
+/*=   $Id: main.c,v 1.22 2006/11/24 15:01:38 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -41,18 +41,14 @@ main (int argc, char **argv)
       ParseRatesFile(&R, dim);
   }
   MxInit (dim);
-
-  p0 = MxStartVec ();
+  U  = MxBar2Matrix(Data, R);
+  MxGetSpace(&p8);
+  MxStartVec(&p0);
   if(opt.method == 'F') 
-    p8 = MxEqDistrFULL (E);
+    MxEqDistrFULL (E, p8);
   else
-    p8 = MxEqDistr (Data);
-  
-  if(opt.method == 'F')
-    U = MxBar2Matrix (NULL, R);
-  else
-    U = MxBar2Matrix (Data, R);
-  
+    MxEqDistr (Data, p8);
+    
   if(opt.fpt){
     MxFPT(U, p8);
     MxFirstPassageTime(U, p8);
@@ -60,8 +56,7 @@ main (int argc, char **argv)
 
   if(opt.matexp) MxExponent(p0,p8,U);
   else{
-    if(opt.absrb) MxEVnonsymMx(U, &S);
-    else S = MxSymmetr (U, p8);
+    MxDiagonalize (U, &S, p8);
     MxIterate (p0, p8, S);
     free(S);free(p8);
   }
