@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-27 14:02:35 mtw>          =*/
-/*=   $Id: calc.c,v 1.40 2006/11/27 13:49:45 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-27 23:56:02 mtw>          =*/
+/*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -919,9 +919,9 @@ MxBinWrite(double *Mx, char what[], char T)
   
   wosis=what;
   if (opt.basename == NULL)
-    len=strlen(suffix)+strlen(wosis)+2;
+    len=strlen(suffix)+strlen(wosis)+4;
   else
-    len=strlen(opt.basename)+strlen(wosis)+strlen(suffix)+2;
+    len=strlen(opt.basename)+strlen(wosis)+strlen(suffix)+4;
   binfile = (char *)calloc(len, sizeof(char));
   assert(binfile != NULL);
   if(opt.basename != NULL){ 
@@ -958,7 +958,7 @@ MxBinWrite(double *Mx, char what[], char T)
     exit(EXIT_FAILURE);
   }
   fclose(BINOUT);
-  free(binfile);
+  //  if(binfile) free(binfile);
 }
 
 /*==*/
