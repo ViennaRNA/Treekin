@@ -1,2 +1,16 @@
 gengetopt:
 gengetopt < treekin.ggo --file=treekin_cmdline --unamed-opts
+
+ATTENTION:
+use --rrecover and --wrecover options with catution:
+first: run treekin with -w, i.e. let it diagonalize the input matrix once and write
+       the eigenvalues and eigenvectors to the corresponding *.{evals,evecs}.bin files
+second: run treekin with the -r option, i.e let it read those *.{evals,evecs}.bin files
+        and do ONLY the iteration (no diagonalization)
+NOTE: when using --rrecover and --wrecover option in combination with the -a option,
+      treekin assumes that the absorbing state between consecutive calls of the program 
+      are the _same_ (since the information about the absorbing state influences the 
+      transition matrix).
+      If you change the -a option while calling treekin with --rrecover, treekin will
+      produce junk output (since the transition matrix that has been diagonalized earlier 
+      is different from the current one, due to the different absorbing state)
