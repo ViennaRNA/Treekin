@@ -2,8 +2,8 @@
 /*=   barparser.c                                                 =*/
 /*=   routines for reading bar-files and other input for treekin  =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-14 18:37:55 mtw>          =*/
-/*=   $Id: barparser.c,v 1.22 2006/11/14 17:45:14 mtw Exp $       =*/
+/*=   Last changed Time-stamp: <2006-11-25 22:52:02 mtw>          =*/
+/*=   $Id: barparser.c,v 1.23 2006/11/27 13:45:41 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -283,26 +283,6 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
   *my_saddle = temp;
   fclose(my_file);
   return count; /*return # of saddles read */
-}
-
-/*==*/
-int
-MxBinRead(double **Mx)
-{
-  int dimension=0;
-  FILE *BININ;
-  char *binfile = "rates.bin";
-  double *data=NULL;
-
-  BININ = fopen(binfile, "r+");
- /*    perror("Opening bin file"), exit(EXIT_FAILURE); */
-  
-  fread(&dimension,sizeof(int),1,BININ);
-  data = (double *)calloc(dimension*dimension, sizeof(double));
-  fread(data, sizeof(double), dimension*dimension,BININ);
-  *Mx = data;
-  fclose(BININ);
-  return dimension;
 }
 
 /*==*/
