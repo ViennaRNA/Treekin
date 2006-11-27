@@ -2,8 +2,8 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-24 18:34:07 mtw>          =*/
-/*=   $Id: calc.c,v 1.39 2006/11/24 18:24:11 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2006-11-27 14:02:35 mtw>          =*/
+/*=   $Id: calc.c,v 1.40 2006/11/27 13:49:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -34,13 +34,15 @@ static double  max_saddle(int i, int j, BarData *Data);
 static void    print_settings(void);
 static char   *time_stamp(void);
 static void    MxDoDegeneracyStuff(void);
-static void    MxBinWrite (double *matrix);
-static void    MxASCIIWrite(double *matrix);
-static void    MxKotzOutMathematica(double *matrix);
+static void    MxBinWrite (double *Mx, char what[], char T);
+static int     MxBinRead(double** Mx, char what[], char T);
+static void    MxASCIIWrite(double *Mx);
+static void    MxKotzOutMathematica(double *Mx);
 static void    MxSortEig(double *evals, double *evecs);
 static void    MxEVLapackSym(double *U);
 static void    MxEVLapackNonSym(double *U);
 static void    MxFixevecs(double *, double *);
+static void    MxDiagHelper(double *P8);
 
 /* private vars and arrays */
 static int      dim = 0;
@@ -84,7 +86,6 @@ MxBar2Matrix ( BarData *Data, double *R)
     exit(EXIT_FAILURE);
   }
   if (opt.dumpU)
-   /*    MxBinWrite(U); */
     MxASCIIWrite(U);
   return (U);
 }
@@ -170,57 +171,59 @@ MxEqDistrFromLinSys ( double *U, double **p8 )
   double *A=NULL, *B=NULL;
   long double sumsq;
 
-  for(i=0;i<dim;i++)
-    U[dim*i+i]-=1.;
-  
-  n=dim-1;
-  A    = (double *)malloc(n*n*sizeof(double));
-  B    = (double *)malloc(n*sizeof(double));
-  ipiv = (int *)malloc(n*sizeof(int));
-  nrhs=1;
- 
-  for(i=1;i<=n;i++)   /* all except first row */
-    for(j=1;j<=n;j++)
-      A[n*(i-1)+(j-1)]=U[dim*i+j];
-  for(n=0,i=1;i<dim;i++,n++) 
-    B[n]=-U[dim*i];
-  dim=n;
-  trnm(A,n);
-  if(opt.want_verbose){
-    MxPrint(A, "A in MxEqDistrFromLinSys", 'm' );
-    MxPrint(B, "B in MxEqDistrFromLinSys", 'v' );
+  if(opt.absrb){
+    for(i = 0; i < dim; i++)
+      *(*p8+i) = 0.;
+    *(*p8+(dim-1)) = 1.0; /* last entry is the 'new' absorbing state */
   }
-
-  dgesv_(&n, &nrhs, A, &n, ipiv, B, &n, &nfo);
-  if(nfo != 0){
-    fprintf(stderr, "dgesv exited with value %d\n", nfo);
-    exit(EXIT_FAILURE);
+  else{
+    for(i=0;i<dim;i++)
+      U[dim*i+i]-=1.;
+    
+    n=dim-1;
+    A    = (double *)malloc(n*n*sizeof(double));
+    B    = (double *)malloc(n*sizeof(double));
+    ipiv = (int *)malloc(n*sizeof(int));
+    nrhs=1;
+    
+    for(i=1;i<=n;i++)   /* all except first row */
+      for(j=1;j<=n;j++)
+	A[n*(i-1)+(j-1)]=U[dim*i+j];
+    for(n=0,i=1;i<dim;i++,n++) 
+      B[n]=-U[dim*i];
+    dim=n;
+    trnm(A,n);
+    /*  if(opt.want_verbose){ */
+    /*       MxPrint(A, "A in MxEqDistrFromLinSys", 'm' ); */
+    /*       MxPrint(B, "B in MxEqDistrFromLinSys", 'v' ); */
+    /*     } */
+    dgesv_(&n, &nrhs, A, &n, ipiv, B, &n, &nfo);
+    if(nfo != 0){
+      fprintf(stderr, "dgesv exited with value %d\n", nfo);
+      exit(EXIT_FAILURE);
+    }
+    /*  if(opt.want_verbose) MxPrint(B, "B in MxEqDistrFromLinSys", 'v' ); */
+    dim=n+1;
+    *p8[0]=1.;
+    for(i=1;i<dim;i++) *(*p8+i)=B[i-1];
+    /*  if(opt.want_verbose) */
+    /*       MxPrint(*p8, "p8 in MxEqDistrFromLinSys before norm", 'v' ); */
+    /* now normalize the new p8 */
+    sumsq=0.0;
+    for (i=0;i<dim;i++)
+      sumsq += SQ(*(*p8+i));
+    if(sumsq > 0.0)
+      sumsq=1./sqrtl(sumsq);
+    for (i=0;i<dim;i++)
+      *(*p8+i)  *= sumsq;
+    free(A);
+    free(B);
+    free(ipiv);
+    for(i=0;i<dim;i++)
+      U[dim*i+i]+=1.;
   }
-  if(opt.want_verbose) MxPrint(B, "B in MxEqDistrFromLinSys", 'v' );
-  
-  dim=n+1;
-  *p8[0]=1.;
-  for(i=1;i<dim;i++)
-    *(*p8+i)=B[i-1];
   if(opt.want_verbose)
-    MxPrint(*p8, "p8 in MxEqDistrFromLinSys before norm", 'v' );
-
-  /* now normalize the new p8 */
-   sumsq=0.0;
-  for (i=0;i<dim;i++)
-    sumsq += SQ(*(*p8+i));
-  if(sumsq > 0.0)
-    sumsq=1./sqrtl(sumsq);
-  for (i=0;i<dim;i++)
-    *(*p8+i)  *= sumsq;
-  if(opt.want_verbose){
-    MxPrint(*p8, "p8 in MxEqDistrFromLinSys after  norm", 'v' );
-   }
-  free(A);
-  free(B);
-  free(ipiv);
-   for(i=0;i<dim;i++)
-    U[dim*i+i]+=1.;
+    MxPrint(*p8, "p8", 'v' );
 }
 
 /*==*/
@@ -229,16 +232,11 @@ MxDiagonalize ( double *U, double **_S, double *P8 )
 {
   int i,j;
   double csum, *tmpMx=NULL;
-
+  
   if(opt.dumpMathematica == 1)  MxKotzOutMathematica(U);
   if(!opt.absrb){
     tmpMx = (double *) MxNew (dim*dim*sizeof(double));
-    
-    for(i = 0; i < dim; i++) {
-      for(j = 0; j < dim; j++) {
-	if( i == j) {
-	  sqrPI_[dim*i+j] = sqrt(P8[i]);            /* pos right */
-	  _sqrPI[dim*i+j] = 1/(sqrPI_[dim*i+j]);}}} /* neg left */
+    MxDiagHelper(P8);   
     mmul(tmpMx, _sqrPI, U, dim);
     memset(U,0,dim*dim*sizeof(double));
     mmul(U, tmpMx, sqrPI_, dim);
@@ -252,11 +250,7 @@ MxDiagonalize ( double *U, double **_S, double *P8 )
     }
     if (opt.want_verbose) MxPrint (U, "force symmetrized U", 'm');
   }
-  
-  if (opt.dumpU){
-    fprintf(stderr, "in MxDiagonalize: writing U to mx.bin\n");
-    MxBinWrite(U);
-  }
+  if (opt.dumpU) MxBinWrite(U, "U", 'm');
 
   if(opt.absrb)
     MxEVLapackNonSym(U);
@@ -275,6 +269,47 @@ MxDiagonalize ( double *U, double **_S, double *P8 )
   if(opt.absrb)
     MxFixevecs(evecs,evals);
   *_S=evecs;
+  if(opt.wrecover){
+    MxBinWrite(evals, "evals", 'v');
+    MxBinWrite(evecs, "evecs", 'm');
+  }
+}
+
+/*==*/
+static void
+MxDiagHelper(double *P8)
+{
+  int i,j;
+  for(i = 0; i < dim; i++) 
+    for(j = 0; j < dim; j++) 
+      if( i == j) {
+	sqrPI_[dim*i+j] = sqrt(P8[i]);          /* pos right */
+	_sqrPI[dim*i+j] = 1/(sqrPI_[dim*i+j]);  /* neg left */
+      } 
+}
+
+/*==*/
+void
+MxRecover (double **_S, double *P8)
+{
+  MxDiagHelper(P8);
+  free(evecs);
+  free(evals);
+  
+  if(MxBinRead(&evecs, "evecs", 'm') != dim ){
+    fprintf(stderr, "ERROR: MxBinRead() returns wrong dimension for evecs\n");
+    exit(EXIT_FAILURE);
+  }
+  if(MxBinRead(&evals, "evals", 'v') != dim){
+    fprintf(stderr, "ERROR: MxBinRead() returns wrong dimension for evals\n");
+    exit(EXIT_FAILURE);
+  }
+  *_S=evecs;
+  if(opt.want_verbose){
+    MxPrint(evals, "MxRecover: Eigenvalues", 'v');
+    MxPrint(evecs, "MxRecover: Eigenvectors", 'm');
+  }
+  return;
 }
 
 /*==*/
@@ -579,8 +614,6 @@ MxMethodeINPUT (BarData *Data, double *Input)
     U[dim*i+i] = -tmp+1.;   /* make U a stochastic matrix */
   }
   if(opt.want_verbose) MxPrint (U,"U with Methode I" , 'm');
-  if (opt.dumpU) MxBinWrite(U);
-
   free(Input);
   return U;
 }
@@ -633,7 +666,7 @@ MxPrint(double *mx, char *name, char T)
     break;
   case 'v':
     fprintf(stderr,"%s:\n", name);    
-    for (k = 0; k < dim; k++) fprintf(stderr,"%15.10f ", mx[k]);
+    for (k = 0; k < dim; k++) fprintf(stderr,"%10.4g ", mx[k]);
     fprintf(stderr,"\n---\n");
     break;
   default:
@@ -656,6 +689,8 @@ print_settings(void)
 	 opt.t8,
 	 opt.T
 	 );
+  if(opt.basename != NULL) printf("# basename: %s\n",opt.basename);
+  else printf("# basename: <stdin>\n");
   if (opt.tinc) printf("# time increment: %.2f\n", opt.tinc);
   else printf("# time increment: %.2f \n", opt.tinc);
   if(opt.want_degenerate == 1)printf("# degeneracy:  on\n");
@@ -875,31 +910,114 @@ MxSortEig(double *evals, double *evecs)
 
 /*==*/
 static void
-MxBinWrite(double *matrix)
+MxBinWrite(double *Mx, char what[], char T)
 {
-  int i, j;
-  FILE *BINOUT;
-  char *binfile = "mx.bin";
-
+  int i,j,len=-1;
+  FILE *BINOUT=NULL;
+  char *wosis=NULL, *binfile=NULL, *suffix = "bin";
+  size_t info;
+  
+  wosis=what;
+  if (opt.basename == NULL)
+    len=strlen(suffix)+strlen(wosis)+2;
+  else
+    len=strlen(opt.basename)+strlen(wosis)+strlen(suffix)+2;
+  binfile = (char *)calloc(len, sizeof(char));
+  assert(binfile != NULL);
+  if(opt.basename != NULL){ 
+    strcpy(binfile, opt.basename); strcat(binfile, ".");
+    strcat(binfile, wosis); strcat(binfile, ".");
+    strcat(binfile, suffix);
+  }
+  else{  /* this should not happen */
+    strcpy(binfile,wosis); strcat(binfile, ".");
+    strcat(binfile,suffix);
+  }
+  fprintf(stderr, "MxBinWrite: writing %s to %s\n", wosis, binfile);
   BINOUT = fopen(binfile, "w");
   if (!BINOUT){
-    fprintf(stderr, "could not open file pointer 4 binary outfile\n");
-    exit(EXIT_FAILURE);
+    fprintf(stderr, "ERROR: could not open file pointer for\
+    binary outfile %s\n", binfile); exit(EXIT_FAILURE);
   }
   /* first write dim to file */
-  fwrite(&dim,sizeof(int),1,BINOUT);
-  /* then write matrix entries */
-  for(i=0;i<dim;i++)
-    for(j=0;j<dim;j++)
-      fwrite(&matrix[dim*i+j],sizeof(double),1,BINOUT);
-
-  fprintf(stderr, "matrix written to binfile\n");
+  info = fwrite(&dim,sizeof(int),1,BINOUT);
+  switch(T) {
+  case 'm':  /* write matrix entries */
+    for(i=0;i<dim;i++)
+      for(j=0;j<dim;j++)
+	info=fwrite(&Mx[dim*i+j],sizeof(double),1,BINOUT);
+    fprintf(stderr, "\n");
+    break;
+  case 'v': /* write vector entries */
+    for(i=0;i<dim;i++)
+      info=fwrite(&Mx[i],sizeof(double),1,BINOUT);
+      fprintf(stderr, "\n");
+    break;
+  default:
+    fprintf(stderr, "ERROR MxBinWrite(): no handler for type %c\n",T);
+    exit(EXIT_FAILURE);
+  }
   fclose(BINOUT);
+  free(binfile);
+}
+
+/*==*/
+static int
+MxBinRead(double **Mx, char what[], char T)
+{
+  int dimension=0,len=-1;
+  FILE *BININ=NULL;
+  char *wosis=NULL, *binfile=NULL, *suffix="bin";
+  double *data=NULL;
+  size_t info;
+  
+  wosis=what;
+  if (opt.basename == NULL)
+    len=strlen(suffix)+strlen(wosis)+4;
+  else
+    len=strlen(opt.basename)+strlen(wosis)+strlen(suffix)+4;
+  binfile = (char *)calloc(len, sizeof(char));
+  assert(binfile != NULL);
+  if(opt.basename != NULL){ 
+    strcpy(binfile, opt.basename); strcat(binfile, ".");
+    strcat(binfile, wosis); strcat(binfile, ".");
+    strcat(binfile, suffix);
+  }
+  else{  /* this should not happen */
+    strcpy(binfile,wosis); strcat(binfile, ".");
+    strcat(binfile,suffix);
+  }
+  fprintf(stderr, "MxBinRead: reading %s from %s\n", wosis, binfile);
+  BININ = fopen(binfile, "r+");
+  if (!BININ){
+    fprintf(stderr, "ERROR: could not open file pointer for\
+    binary infile %s\n", binfile); exit(EXIT_FAILURE);
+  }
+  /* read dimension from file */
+  info = fread(&dimension,sizeof(int),1,BININ);
+  switch(T){  /* read data */
+  case 'm':
+    data = (double *)calloc(dimension*dimension, sizeof(double));
+    info=fread((void*)data, sizeof(double), dimension*dimension,BININ);
+    break;
+  case 'v':
+    data = (double *)calloc(dimension, sizeof(double));
+    fread(data, sizeof(double), dimension,BININ);
+    break;
+  default:
+    fprintf(stderr, "ERROR MxBinRead(): no handler for type %c\n",T);
+    exit(EXIT_FAILURE);
+  }
+  
+  *Mx = data;
+  fclose(BININ);
+  free(binfile);
+  return dimension;
 }
 
 /*==*/
 static void
-MxASCIIWrite(double *matrix)
+MxASCIIWrite(double *Mx)
 {
   int i, j;
   FILE *ASCIIOUT;
@@ -912,7 +1030,7 @@ MxASCIIWrite(double *matrix)
   }
   for(i=0;i<dim;i++){
     for(j=0;j<dim;j++){
-      fprintf(ASCIIOUT,"%15.10g ", matrix[dim*i+j]);
+      fprintf(ASCIIOUT,"%15.10g ", Mx[dim*i+j]);
     }
     fprintf(ASCIIOUT,"\n");
   }
@@ -1028,7 +1146,7 @@ MxFPT(double *U, double *p8)
 
 /*==*/
 static void
-MxKotzOutMathematica(double *matrix)
+MxKotzOutMathematica(double *Mx)
 {
   int i,j;
   FILE *MATHEMATICA_OUT=NULL;
@@ -1044,9 +1162,9 @@ MxKotzOutMathematica(double *matrix)
     fprintf(MATHEMATICA_OUT, "{");
     for(j=0;j<dim;j++){
       if (j != (dim-1))
-	fprintf(MATHEMATICA_OUT, "%25.22f, ", matrix[dim*i+j]);
+	fprintf(MATHEMATICA_OUT, "%25.22f, ", Mx[dim*i+j]);
       else
-	fprintf(MATHEMATICA_OUT, "%25.22f}", matrix[dim*i+j]);
+	fprintf(MATHEMATICA_OUT, "%25.22f}", Mx[dim*i+j]);
     }
     if (i != (dim-1))
       fprintf(MATHEMATICA_OUT, ",\n");
