@@ -2,8 +2,8 @@
 /*=   barparser.h                                                 =*/
 /*=   header file for parsing bar-files etc.                      =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-09-29 13:02:16 mtw>          =*/
-/*=   $Id: barparser.h,v 1.11 2006/09/29 16:35:41 mtw Exp $       =*/
+/*=   Last changed Time-stamp: <2006-11-25 22:47:42 mtw>          =*/
+/*=   $Id: barparser.h,v 1.12 2006/11/27 13:46:29 mtw Exp $       =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -48,7 +48,6 @@ int  ParseBarfile (FILE *fp, BarData **lmin);
 int  ParseInfile(FILE *infile_fp, double **microrates);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
 void ParseRatesFile(double **Raten, int dim);
-int  MxBinRead(double**);
 #endif
 
 /* End of file */
