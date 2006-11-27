@@ -2,8 +2,8 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-24 19:19:07 mtw>          =*/
-/*=   $Id: globals.c,v 1.15 2006/11/24 18:24:11 mtw Exp $        =*/
+/*=   Last changed Time-stamp: <2006-11-25 17:19:02 mtw>          =*/
+/*=   $Id: globals.c,v 1.16 2006/11/27 13:48:34 mtw Exp $        =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -168,6 +168,11 @@ set_parameters(void)
     display_settings();
     if (opt.pini != NULL) free(opt.pini);
     exit(EXIT_SUCCESS);
+  }
+  if (opt.rrecover && opt.wrecover){
+    opt.wrecover = 0;
+    fprintf(stderr, "WARNING: both options -w and -r were given\n");
+    fprintf(stderr, "         disabling -w now, since they are mutually exclusive !\n");
   }
 }
 
