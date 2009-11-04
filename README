@@ -1,6 +1,3 @@
-gengetopt:
-gengetopt < treekin.ggo --file=treekin_cmdline --unamed-opts
-
 ATTENTION:
 use --rrecover and --wrecover options with catution:
 first: run treekin with -w, i.e. let it diagonalize the input matrix once and write
