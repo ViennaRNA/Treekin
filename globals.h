@@ -37,6 +37,7 @@ typedef struct {         /* command-line options */
   FILE *INFILE;          /* input file (usually bar-file) */
   char *sequence;        /* sequence */
   int fpt;               /* switch for fpt-related calculations */
+  char *rate_matrix;     /* path to the file containing the rate matrix, if given */
 } treekin_options;
 
 treekin_options opt;

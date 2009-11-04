@@ -76,6 +76,18 @@ set_parameters(void)
   else if (strncmp(args_info.method_arg, "I", 1)==0)
     opt.method = 'I';
 
+  if (args_info.ratesfile_given){
+    opt.rate_matrix = strdup(args_info.ratesfile_arg);
+    FILE *bla = fopen(opt.rate_matrix, "r");
+    if(!bla){
+      fprintf(stderr, "Cannot open rate matrix file '%s'\n", opt.rate_matrix);
+      exit(EXIT_FAILURE);
+    }
+    fclose(bla);
+  }
+  else opt.rate_matrix = "rates.out";
+    
+
   if (args_info.p0_given){
     int i, j=1, lmintmp;
     double poptmp = 0., probtmp = 0., *pinitmp=NULL;
@@ -83,15 +95,15 @@ set_parameters(void)
     *pinitmp = 1;
     for (i=0; i<args_info.p0_given; i++,j+=2){
       if (sscanf(args_info.p0_arg[i], "%d=%lg",&lmintmp, &poptmp) == 0)
-	exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
       if(lmintmp <1){
-	fprintf(stderr, "States in --p0 must be >=1\n");
-	exit (EXIT_FAILURE);	
+        fprintf(stderr, "States in --p0 must be >=1\n");
+        exit (EXIT_FAILURE);        
       }
       else if (poptmp >0. && poptmp < 1.01){
-	*(pinitmp + j)     = (double) lmintmp;
-	*(pinitmp + j + 1) = poptmp;
-	*pinitmp += 2;
+        *(pinitmp + j)     = (double) lmintmp;
+        *(pinitmp + j + 1) = poptmp;
+        *pinitmp += 2;
       }  
     }
 
@@ -99,16 +111,16 @@ set_parameters(void)
       probtmp += pinitmp[i];
     if (probtmp <= 0.99 || probtmp >= 1.01){
       fprintf(stderr, "Values of --p0 must sum up to 1 (currently %5.2f)\n",
-	      probtmp);
+              probtmp);
       /* normalize input */ 
       for (i = 2; i < *pinitmp; i +=2)
-	pinitmp[i] /= probtmp;
+        pinitmp[i] /= probtmp;
 
       probtmp = 0.0;
       for (i = 2; i < *pinitmp; i +=2)
-	probtmp += pinitmp[i]; 
+        probtmp += pinitmp[i]; 
       fprintf(stderr, "WARNING:  --p0 values normalized sum up to %5.2f\n",
-	      probtmp);
+              probtmp);
     }
     opt.pini = pinitmp;
   }
@@ -204,42 +216,42 @@ display_settings(void)
   int i,j;
   fprintf(stderr,
           "Settings:\n"
-	  "--absorb   = %3i\n"
-	  "--t0       = %8.4f\n"
-	  "--t8       = %7.2g\n"
-	  "--tinc     = %6.2f\n"
-	  "--Temp     = %6.2f\n"
-	  "--method   = %c\n"
-	  "--nstates  = %d\n"
-	  "--fpt      = %d\n"
-	  "-d         = %d\n"
-	  "-e         = %d\n"
-	  "-u         = %d\n"
-	  "-x         = %d\n"
-	  "-b         = %d\n"
-	  "-r         = %d\n"
-	  "-w         = %d\n"
-	  "-v         = %d\n",
-	  opt.absrb,
-	  opt.t0,
-	  opt.t8,
-	  opt.tinc,
-	  opt.T,
-	  opt.method,
-	  opt.n,
-	  opt.fpt,
-	  opt.want_degenerate,
-	  opt.matexp,
-	  opt.dumpU,
-	  opt.dumpMathematica,
-	  opt.binrates,
-	  opt.rrecover,
-	  opt.wrecover,
-	  opt.want_verbose);
+          "--absorb   = %3i\n"
+          "--t0       = %8.4f\n"
+          "--t8       = %7.2g\n"
+          "--tinc     = %6.2f\n"
+          "--Temp     = %6.2f\n"
+          "--method   = %c\n"
+          "--nstates  = %d\n"
+          "--fpt      = %d\n"
+          "-d         = %d\n"
+          "-e         = %d\n"
+          "-u         = %d\n"
+          "-x         = %d\n"
+          "-b         = %d\n"
+          "-r         = %d\n"
+          "-w         = %d\n"
+          "-v         = %d\n",
+          opt.absrb,
+          opt.t0,
+          opt.t8,
+          opt.tinc,
+          opt.T,
+          opt.method,
+          opt.n,
+          opt.fpt,
+          opt.want_degenerate,
+          opt.matexp,
+          opt.dumpU,
+          opt.dumpMathematica,
+          opt.binrates,
+          opt.rrecover,
+          opt.wrecover,
+          opt.want_verbose);
   for (i=0,j=1;i<args_info.p0_given;i++,j+=2){
     fprintf(stderr,
-	    "--p0      %4i=%.2f\n",
-	    (int)opt.pini[j],opt.pini[j+1]);
+            "--p0      %4i=%.2f\n",
+            (int)opt.pini[j],opt.pini[j+1]);
   }
 }
 

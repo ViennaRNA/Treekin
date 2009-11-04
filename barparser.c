@@ -124,17 +124,17 @@ ParseRatesFile(double **Raten, int dim)
   assert(tmp_rates != NULL);
   assert(rate != NULL);
 
-  if (opt.basename == NULL) len = strlen(suffix) + 2;
-  else len = strlen(opt.basename) + strlen(suffix) + 2;
+  if (opt.basename == NULL) len = strlen(opt.rate_matrix) + 2;
+  else len = strlen(opt.basename) + strlen(opt.rate_matrix) + 2;
   rate_file = (char *)calloc(len, sizeof(char));
   assert(rate_file != NULL);
   if(opt.basename != NULL){ /* we do NOT read from stdin */
     strcpy(rate_file, opt.basename);
     strcat(rate_file, ".");
-    strcat(rate_file, suffix);
+    strcat(rate_file, opt.rate_matrix);
   }
   else /* read from stdin */
-    strcpy(rate_file,suffix);
+    strcpy(rate_file,opt.rate_matrix);
   fprintf(stderr, "WARNING: reading input matrix from file %s\n\n",
 	  rate_file);
   rates_FP = fopen(rate_file, "r+");
