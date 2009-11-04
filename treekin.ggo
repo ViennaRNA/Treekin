@@ -1,3 +1,15 @@
+# Name of your program
+package "treekin" # don't use package if you're using automake
+purpose ""
+
+# Version of your program
+version "0.2"   # don't use version if you're using automake
+
+
+# command line options passed to gengetopt
+args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-opts"
+
+# Options
 option "absorb" a "Make a state absorbing" typestr="state" int no
 option "method" m "Select method to build transition matrix:\nA ==>Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI==>use rates from barriers" values="A","F","I" default="A" no
 option "t0" - "Start time" typestr="time" double no
