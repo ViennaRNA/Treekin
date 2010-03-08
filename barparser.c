@@ -22,7 +22,7 @@
 #define LMINBASE 100
 #define ARRAYSIZE 10000
 
-static char *getline(FILE *fp);
+static char *my_getline(FILE *fp);
 
 /*==*/
 int
@@ -42,12 +42,12 @@ ParseInfile(FILE *infile_fp, double **microrates)
   /* FIRST: read (subopt)-infile with energies & gradient basins */
   tmp_subI = (SubInfo *)calloc(as1, sizeof(SubInfo));
   assert(tmp_subI != NULL);
-  line = getline(infile_fp);
+  line = my_getline(infile_fp);
   opt.sequence = (char *)calloc(2048,sizeof(char));
   assert(opt.sequence != NULL);
   sscanf(line, "%s %*f", opt.sequence);
   free(line);
-  while((line=getline(infile_fp)) != NULL){
+  while((line=my_getline(infile_fp)) != NULL){
     if(indx+1 >= as1){
       as1 *= 2;
       tmp_subI = (SubInfo *)realloc(tmp_subI,as1*sizeof(SubInfo));
@@ -77,7 +77,7 @@ ParseInfile(FILE *infile_fp, double **microrates)
   mr_FP = fopen(mrfile, "r+");
   mr = (mr_t *)calloc(as2, sizeof(mr_t));
   assert(mr != NULL);
-  while((line=getline(mr_FP)) != NULL){
+  while((line=my_getline(mr_FP)) != NULL){
     if(indx+1 >= as2){
       as2 *= 2;
       mr = (mr_t *)realloc(mr, as2*sizeof(mr_t));
@@ -139,7 +139,7 @@ ParseRatesFile(double **Raten, int dim)
   fprintf(stderr, "WARNING: reading input matrix from file %s\n\n",
 	  rate_file);
   rates_FP = fopen(rate_file, "r+");
-  while((raten_line = getline(rates_FP)) != NULL){ 
+  while((raten_line = my_getline(rates_FP)) != NULL){ 
     cp = raten_line;
     while(sscanf(cp,"%lf%n", rate+j,&read) == 1){
       tmp_rates[dim*j+i] = *(rate+j);
@@ -171,14 +171,14 @@ ParseBarfile( FILE *fp, BarData **lmin)
   tmp = (BarData *) calloc (LMINBASE, sizeof(BarData));
   tmpseq = (char *) calloc (500, sizeof(char));
   *lmin = NULL;
-  line = getline(fp); /* get sequence from first line */
+  line = my_getline(fp); /* get sequence from first line */
   if(sscanf(line, "%s", tmpseq) == 0){
     fprintf(stderr, "could not get sequence from first line of barfile\n");
     exit(EXIT_FAILURE);
   }
   opt.sequence = tmpseq;
   free(line);
-  for (count = 0, line = getline(fp); line != NULL; count++, line = getline(fp)) {
+  for (count = 0, line = my_getline(fp); line != NULL; count++, line = my_getline(fp)) {
     if (count >= size) {
       tmp = (BarData *) realloc (tmp, (size+LMINBASE)*sizeof(BarData));
       size += LMINBASE;
@@ -254,7 +254,7 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
   temp = (TypeDegSaddle *) calloc (size, sizeof(TypeDegSaddle));
    
   my_file = fopen(filename, "r");
-  while ((line = getline(my_file)) != NULL) {
+  while ((line = my_getline(my_file)) != NULL) {
     remember_line = line;
     if((count+1) == size){
       newsize = 2 * size;
@@ -288,7 +288,7 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
 
 /*==*/
 char *
-getline(FILE *fp)
+my_getline(FILE *fp)
 { 
   char s[512], *line, *cp; 
   line = NULL;  
