@@ -82,9 +82,10 @@ ParseInfile(FILE *infile_fp, double **microrates)
       as2 *= 2;
       mr = (mr_t *)realloc(mr, as2*sizeof(mr_t));
     }
-    sscanf(line, "%d %d %lf %*d", &mr[indx].i, &mr[indx].j, &mr[indx].rate);
-    fprintf(stderr,"indx %i\n", indx);
-    indx++;
+    if(sscanf(line, "%d %d %lf %*d", &mr[indx].i, &mr[indx].j, &mr[indx].rate) == 3){
+      fprintf(stderr,"indx %i\n", indx);
+      indx++;
+    }
     free(line);
   }
   fclose(mr_FP);
