@@ -7,7 +7,9 @@
 treekin [\fIoptions\fP] < \fIfoo.bar\fP
 .SH "DESCRIPTION"
 .LP 
-\fBtreekin\fR computes a reduced dynamics of biopolymers by means of a  Markov process that (generally) operates at the level of macrostates (basins of attraction) of energy landscapes.
+\fBtreekin\fR computes a reduced dynamics of biopolymer folding  by means
+of a  Markov process that (generally) operates at the level of macrostates,
+i.e. basins of attraction in the underlying energy landscapes.
 .br 
 \fBtreekin\fR reads a barfile \fIfoo.bar\fR  and (optionally) a file \fIrates.out\fR in the current working directory (as computed by \fBbarriers\fR).
 .SH "OPTIONS"
@@ -31,19 +33,23 @@ I ==> Apply microscrates from barriers
 Set the start population probability of state \fIs\fR to \fIx\fR. This option can be given multiple times. Note that the sum of all population probabilities must be 1.
 .TP 
 \fB     \-\-t0 time\fR
-Set simulation start time in arbitrary units (default 0.1)
+Set simulation start time in internal units (default 0.1)
 .TP 
 \fB     \-\-t8 time\fR
-Set simulation stop time in arbitrary units (default 1e+09)
+Set simulation stop time in internal units (default 1e+09)
 .TP 
 \fB     \-\-tinc increment\fR
-Time scaling factor for logarithmic ime scale (default 1.02)
+Time scaling factor for logarithmic time scale (default 1.02)
 .TP 
 \fB\-T,  \-\-Temp temp\fR
 Set the simulation temperature in Celsius to \fItemp\fR (default 37.0)
 .TP 
 \fB     \-\-info\fR
 Show all settings (default off)
+.TP
+\fB	\-f, \-\-ratesfile file
+Name of the textfile containing the (barriers) rate matrix.
+(NOTE: rates should have been printed using the '%10.4g' format).
 .TP 
 \fB\-h \-\-help\fR
 Output help information and exit.
@@ -89,14 +95,21 @@ the resulting barfile (foo.bar) and rates file (rates.out) are then processed by
 .LP 
 treekin \-\-p0 2=1 \-m I < foo.bar
 .LP 
-Here, the simulation starts with 100% of the initial population in macrostate 2. The transition matrix is constructed from a set of microscopic rates (as computed by \fBbarriers\fR). Generally, the microstate dynamics is much more accurate than the simple Arrhenius\-like dynamics. 
+Here, the simulation starts with 100% of the initial population in
+macrostate 2 (the second lowest minimum in the barrier tree). The transition matrix is constructed from a set of microscopic rates (as computed by \fBbarriers\fR). Generally, the microstate dynamics is much more accurate than the simple Arrhenius\-like dynamics. 
 .br 
-The first column in the output is the time, all other columns correspond to individual (macro)states of the simulation.
+The first column in the output is the time, all other columns list the
+population of the individual (macro)states of the simulation.
 .SH "REFERENCES"
 If you use this program in your work you might want to cite:
 .LP 
 M.T. Wolfinger, W.A. Svrcek\-Seiler, Ch. Flamm, I.L. Hofacker, P.F. Stadler (2004) Efficient Folding Dynamics of RNA Secondary Structures
 J.Phys.A: Math.Gen. 37: 4731\-4741
+.LP
+I.L. Hofacker, Ch. Flamm, Ch. Heine, M.T. Wolfinger, G. Scheuermann,
+P.F. Stadler (2010)
+BarMap: RNA Folding on Dynamic Energy Landscapes
+RNA (in press)
 .SH "AUTHORS"
 .LP 
 Michael Wolfinger, Ivo Hofacker, Christoph Flamm, Andreas Svrcek\-Sailer, Peter Stadler. Send comments to <ivo@tbi.univie.ac.at>

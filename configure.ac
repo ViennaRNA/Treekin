@@ -8,7 +8,7 @@ if test -f "VERSION.txt"; then
    m4_define(TREEKIN_VERSION,
        m4_esyscmd(cat VERSION.txt  | sed 's/\-.*$//' | tr -d '\n\r'))
 fi
-AC_INIT([Treekin],0.3, [mtw@tbi.univie.ac.at], [Treekin])
+AC_INIT([Treekin],TREEKIN_VERSION, [mtw@tbi.univie.ac.at], [Treekin])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(calc.c)
 AC_CONFIG_HEADERS(config.h)
@@ -121,8 +121,7 @@ dnl ---------------------------------------------------------------------------
 dnl Output
 dnl ---------------------------------------------------------------------------
 
-AC_CONFIG_FILES([./Makefile])
-dnl AC_CONFIG_FILES([./liblattice.pc])
+AC_CONFIG_FILES([Makefile])
 
 AC_OUTPUT
 
