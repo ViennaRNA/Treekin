@@ -47,8 +47,8 @@ ParseInfile(FILE *infile_fp, double **microrates)
   assert(opt.sequence != NULL);
   sscanf(line, "%s %*f", opt.sequence);
   free(line);
-  while((line=my_getline(infile_fp)) != NULL){
-    if(indx+1 >= as1){
+  while((line=my_getline(infile_fp)) != NULL) {
+    if(indx+1 >= as1) {
       as1 *= 2;
       tmp_subI = (SubInfo *)realloc(tmp_subI,as1*sizeof(SubInfo));
     }
@@ -59,30 +59,37 @@ ParseInfile(FILE *infile_fp, double **microrates)
   }
   dim = indx;
   indx = 0;
-  
+
   /* SECOND: read microrates file */
   if (opt.basename == NULL) len = strlen(mrsuffix) + 2;
   else len = strlen(opt.basename) + strlen(mrsuffix) + 2;
   mrfile = (char *)calloc(len, sizeof(char));
   assert(mrfile != NULL);
-   if(opt.basename != NULL){ /* we do NOT read from stdin */
+  if(opt.basename != NULL) { /* we do NOT read from stdin */
     strcpy(mrfile, opt.basename);
     strcat(mrfile, ".");
     strcat(mrfile, mrsuffix);
   }
   else /* read from stdin */
     strcpy(mrfile,mrsuffix);
-   
+
   fprintf(stderr, "WARNING: reading microrates from file %s\n\n", mrfile);
   mr_FP = fopen(mrfile, "r+");
+  if (mr_FP == NULL) {
+    fprintf(stderr, "Cannot open file \"%s\" (microrates)", mrfile);
+    free(mrfile);
+    free(opt.sequence);
+    free(mrfile);
+    exit(EXIT_FAILURE);
+  }
   mr = (mr_t *)calloc(as2, sizeof(mr_t));
   assert(mr != NULL);
-  while((line=my_getline(mr_FP)) != NULL){
-    if(indx+1 >= as2){
+  while((line=my_getline(mr_FP)) != NULL) {
+    if(indx+1 >= as2) {
       as2 *= 2;
       mr = (mr_t *)realloc(mr, as2*sizeof(mr_t));
     }
-    if(sscanf(line, "%d %d %lf %*d", &mr[indx].i, &mr[indx].j, &mr[indx].rate) == 3){
+    if(sscanf(line, "%d %d %lf %*d", &mr[indx].i, &mr[indx].j, &mr[indx].rate) == 3) {
       fprintf(stderr,"indx %i\n", indx);
       indx++;
     }
@@ -93,7 +100,7 @@ ParseInfile(FILE *infile_fp, double **microrates)
   /* THIRD: fill up transition matrix */
   tmp_mr  = (double *)calloc(dim*dim, sizeof(double));
   assert(tmp_mr != NULL);
-  for(a=0;a<indx;a++){
+  for(a=0; a<indx; a++) {
     int i,j;
     i = mr[a].i;
     j = mr[a].j;
@@ -106,7 +113,7 @@ ParseInfile(FILE *infile_fp, double **microrates)
   lmins = l;
   E = tmp_subI;
   fprintf(stderr, "dimension = %d, lmins = %d \n", dim, lmins);
-  
+
   return dim;
 }
 
@@ -129,7 +136,7 @@ ParseRatesFile(double **Raten, int dim)
   else len = strlen(opt.basename) + strlen(opt.rate_matrix) + 2;
   rate_file = (char *)calloc(len, sizeof(char));
   assert(rate_file != NULL);
-  if(opt.basename != NULL){ /* we do NOT read from stdin */
+  if(opt.basename != NULL) { /* we do NOT read from stdin */
     strcpy(rate_file, opt.basename);
     strcat(rate_file, ".");
     strcat(rate_file, opt.rate_matrix);
@@ -137,11 +144,18 @@ ParseRatesFile(double **Raten, int dim)
   else /* read from stdin */
     strcpy(rate_file,opt.rate_matrix);
   fprintf(stderr, "WARNING: reading input matrix from file %s\n\n",
-	  rate_file);
+          rate_file);
   rates_FP = fopen(rate_file, "r+");
-  while((raten_line = my_getline(rates_FP)) != NULL){ 
+  if (rates_FP == NULL) {
+    fprintf(stderr, "Cannot open file \"%s\" (rates)", rate_file);
+    free(tmp_rates);
+    free(rate);
+    free(rate_file);
+    exit(EXIT_FAILURE);
+  }
+  while((raten_line = my_getline(rates_FP)) != NULL) {
     cp = raten_line;
-    while(sscanf(cp,"%lf%n", rate+j,&read) == 1){
+    while(sscanf(cp,"%lf%n", rate+j,&read) == 1) {
       tmp_rates[dim*j+i] = *(rate+j);
       cp+=read;
       j++;
@@ -172,7 +186,7 @@ ParseBarfile( FILE *fp, BarData **lmin)
   tmpseq = (char *) calloc (500, sizeof(char));
   *lmin = NULL;
   line = my_getline(fp); /* get sequence from first line */
-  if(sscanf(line, "%s", tmpseq) == 0){
+  if(sscanf(line, "%s", tmpseq) == 0) {
     fprintf(stderr, "could not get sequence from first line of barfile\n");
     exit(EXIT_FAILURE);
   }
@@ -186,61 +200,120 @@ ParseBarfile( FILE *fp, BarData **lmin)
     p = strtok(line, sep);
     v = 1;
     sscanf(p, "%d",  &tmp[count].number);
-    while(p != NULL){
+    while(p != NULL) {
       p = strtok(NULL, sep);
-      if (p == NULL) break; 
-      if (isgraph(*p) && *p != '-' && !isdigit(*p)){ /* secondary structures */
-	switch ((int)*p){
-	case 40:      /* '(' */
-	case 46:      /* '.' */
-	case 70:      /* 'F' */
-	case 126:     /* '~' */
-	  continue;
-	default:
-	  fprintf(stderr, "%c does not seem to be a RNA secondary structure nor a SAW\n", *p);
-	  continue;
-	}
+      if (p == NULL) break;
+      if (isgraph(*p) && *p != '-' && !isdigit(*p)) { /* secondary structures */
+        switch ((int)*p) {
+        case 40:      /* '(' */
+        case 46:      /* '.' */
+        case 70:      /* 'F' */
+        case 126:     /* '~' */
+          continue;
+        default:
+          fprintf(stderr, "%c does not seem to be a RNA secondary structure nor a SAW\n", *p);
+          continue;
+        }
       }
-   
+
       v++;
-      switch (v){
+      switch (v) {
       case 2:
-	sscanf(p, "%lg", &tmp[count].energy);
-	break;
+        sscanf(p, "%lg", &tmp[count].energy);
+        break;
       case 3:
-	sscanf(p, "%d", &tmp[count].father);
-	break;
+        sscanf(p, "%d", &tmp[count].father);
+        break;
       case 4:
-	sscanf(p, "%lg", &tmp[count].ediff);
-	break;
+        sscanf(p, "%lg", &tmp[count].ediff);
+        break;
       case 5:
-	sscanf(p, "%lg", &tmp[count].bsize);
-	break;
+        sscanf(p, "%lg", &tmp[count].bsize);
+        break;
       case 6:
-	sscanf(p, "%lg", &tmp[count].fathers_bsize);
-	break;
+        sscanf(p, "%lg", &tmp[count].fathers_bsize);
+        break;
       case 7:
-	sscanf(p, "%lg", &tmp[count].F);
-	break;
+        sscanf(p, "%lg", &tmp[count].F);
+        break;
       case 8:
-	sscanf(p, "%lg", &tmp[count].Gr_bsize);
-	break;
+        sscanf(p, "%lg", &tmp[count].Gr_bsize);
+        break;
       case 9:
-	sscanf(p, "%lg",  &tmp[count].FGr);
-	break;
+        sscanf(p, "%lg",  &tmp[count].FGr);
+        break;
       default:
-	break;
+        break;
       }
     }
     if (line != NULL) free(line);
   }
-   
+
   if (line != NULL) free(line);
 
   tmp = (BarData *) realloc (tmp, count*sizeof(BarData));
   *lmin = tmp;
   return count;
 }
+
+int  ParseLocfile (FILE *fp, double **energies)
+{
+  char *line = NULL, *tmpseq = NULL, *p, sep[] = " ";
+  int count = 0, v = 0;
+  int size = LMINBASE;
+  tmpseq = (char *) calloc (500, sizeof(char));
+
+  line = my_getline(fp); /* get sequence from first line */
+  if(sscanf(line, "%s", tmpseq) == 0) {
+    fprintf(stderr, "could not get sequence from first line of locminfile\n");
+    exit(EXIT_FAILURE);
+  }
+  opt.sequence = tmpseq;
+  free(line);
+
+  double *energy = (double*) calloc (LMINBASE, sizeof(double));
+
+  for (count = 0, line = my_getline(fp); line != NULL; count++, line = my_getline(fp)) {
+    if (count >= size) {
+      energy = (double*) realloc (energy, (size+LMINBASE)*sizeof(double));
+      size += LMINBASE;
+    }
+    p = strtok(line, sep);
+    v = 1;
+    int number;
+    sscanf(p, "%d",  &number);
+
+    while(p != NULL) {
+      p = strtok(NULL, sep);
+      if (p == NULL) break;
+      if (isgraph(*p) && *p != '-' && !isdigit(*p)) { /* secondary structures */
+        switch ((int)*p) {
+        case 40:      /* '(' */
+        case 46:      /* '.' */
+        case 70:      /* 'F' */
+        case 126:     /* '~' */
+          continue;
+        default:
+          fprintf(stderr, "%c does not seem to be a RNA secondary structure nor a SAW\n", *p);
+          continue;
+        }
+      }
+      if (v==1) {
+        sscanf(p, "%lg", &energy[number-1]);
+        if (count!=number-1) fprintf(stderr, "WARNING: rnalocmin file not sorted\n");
+      }
+      v++;
+    }
+
+    if (line != NULL) free(line);
+  }
+
+  if (line != NULL) free(line);
+
+  *energies = energy;
+  return count;
+}
+
 
 /*==*/
 /* parses file saddles.txt from barriers */
@@ -252,16 +325,16 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
   FILE *my_file;
   TypeDegSaddle *temp;
   temp = (TypeDegSaddle *) calloc (size, sizeof(TypeDegSaddle));
-   
+
   my_file = fopen(filename, "r");
   while ((line = my_getline(my_file)) != NULL) {
     remember_line = line;
-    if((count+1) == size){
+    if((count+1) == size) {
       newsize = 2 * size;
       temp = (TypeDegSaddle *) realloc (temp, newsize*sizeof(TypeDegSaddle));
       if(!temp) {
-	fprintf(stderr, "Could not realloc tmp structure array in ParseSaddleFile\n");
-	exit(EXIT_FAILURE);
+        fprintf(stderr, "Could not realloc tmp structure array in ParseSaddleFile\n");
+        exit(EXIT_FAILURE);
       }
       size = newsize;
     }
@@ -270,8 +343,8 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
     temp[count].list[0] = 0; /* list[0] contains # of lmins connected by that saddle */
     while( *line != '\0') {
       if(temp[count].list[0] == 99) {
-	fprintf (stderr, " too many lmins in saddles.txt\n");
-	exit(EXIT_FAILURE);
+        fprintf (stderr, " too many lmins in saddles.txt\n");
+        exit(EXIT_FAILURE);
       }
       p = 0;
       sscanf(line, "%d %n", &temp[count].list[temp[count].list[0]+1], &p);
@@ -279,7 +352,7 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
       temp[count].list[0]++;
     }
     count++;
-    free(remember_line); 
+    free(remember_line);
   }
   *my_saddle = temp;
   fclose(my_file);
@@ -289,15 +362,15 @@ ParseSaddleFile(TypeDegSaddle **my_saddle)
 /*==*/
 char *
 my_getline(FILE *fp)
-{ 
-  char s[512], *line, *cp; 
-  line = NULL;  
-  do { 
+{
+  char s[512], *line, *cp;
+  line = NULL;
+  do {
     if(fgets(s, 512, fp) == NULL) break;
     cp = strchr(s, '\n');
-    if(cp != NULL) *cp = '\0'; 
-    if(line == NULL) line = (char *) calloc(strlen(s) + 1, sizeof(char)); 
-    else line = (char *) realloc(line, strlen(s) + strlen(line) + 1); 
+    if(cp != NULL) *cp = '\0';
+    if(line == NULL) line = (char *) calloc(strlen(s) + 1, sizeof(char));
+    else line = (char *) realloc(line, strlen(s) + strlen(line) + 1);
     strcat (line, s);
   } while (cp == NULL);
   return (line);

@@ -5,27 +5,27 @@ purpose "Calculate a macrostate dynamics of biopolymers"
 # Version of your program
 version "0.2"   # don't use version if you're using automake
 
-
 # command line options passed to gengetopt
 args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-opts"
 
 # Options
 option "absorb"             a "Make a state absorbing" typestr="state" int no
-option "method"             m "Select method to build transition matrix:\nA ==>Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI==>use rates from barriers" values="A","F","I" default="A" no
+option "method"             m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI ==> use rates from barriers\nL ==> locale minima - use only energies" values="A","F","I","L" default="A" no
 option "t0"                 - "Start time" typestr="time" double no
 option "t8"                 - "Stop time" typestr="time" double no
-option "Temp"               T "Temperatur in Celsius" double no
+option "Temp"               T "Temperature in Celsius" double no
 option "nstates"            n "Read <int> states"  int no
 option "p0"                 - "Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1)" string no multiple
 option "tinc"               - "Time scaling factor (for log time-scale)" double no
-option "degeneracy"         d "Consider degeracy in transition rates" flag off
+option "degeneracy"         d "Consider degeneracy in transition rates" flag off
 option "exponent"           e "Use matrix-expontent routines, NO diagonalization" flag off
 option "umatrix"            u "Dump transition matrix U to a binary file mx.bin" flag off
 option "mathematicamatrix"  x "Dump transition matrix U to Mathematica-readable file mxMat.txt" flag off
-option "bin"                b "assume binary input" flag off
-option "fpt"                - "calculate first passage times" flag off
+option "bin"                b "Assume binary input" flag off
+option "fpt"                t "Calculate first passage times\n\"all\" - calculate all fpt's(slow)\n<num> - calculate fpt's to state <num> from all states" string no
 option "recover"            r "Recover from pre-calculated Eigenvalues and Eigenvectors" flag off
 option "wrecover"           w "Write recovery file containing Eigenvalues and Eigenvectors" flag off
-option "info"               - "show settings" flag off
-option "ratesfile"          f  "Name of the textfile containing the (barriers) rate matrix\n(NOTE: the rate matrix must have been print out with '%10.4g' per entry otherwise treekin will calculate crap" string no
-option "verbose"            v  "verbose output" flag off
+option "info"               - "Show settings" flag off
+option "ratesfile"          f "Name of the textfile containing the (barriers) rate matrix\n(NOTE: the rate matrix must have been print out with '%10.4g' per entry otherwise treekin will calculate crap)" string no
+option "verbose"            v "Verbose output" flag off
+option "fptfile"            - "File where to write first passage times (meaningfull only with -t option)" string no

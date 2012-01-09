@@ -14,11 +14,12 @@
 #ifndef _CALC_H_
 #define _CALC_H_
 #include "barparser.h"
+#include "globals.h"
 
 void    MxInit (int d);
 void    MxGetSpace(double **p8);
 double *MxBar2Matrix (BarData *Data, double *);
-void    MxEqDistr (BarData *Data, double *p8);
+void    MxEqDistr (BarData *Data, double **p8);
 void    MxEqDistrFULL (SubInfo *E, double *p8);
 void    MxDiagonalize (double *U, double **_S, double *PI);
 void    MxRecover(double **_S, double *P8);
@@ -26,8 +27,18 @@ void    MxStartVec (double **p0) ;
 void    MxIterate (double *p0, double *p8, double *S);
 void    MxMemoryCleanUp (void);
 void    MxExponent(double *p0, double *p8, double *U);
-void    MxFPT(double *U, double *p8);
-void    MxFirstPassageTime(double *, double *);
-#endif 
+void    MxFirstPassageTime(double *U, double *p8);
+
+void    MxFPT(double *U, double *p8, FILE *out);
+void    MxEqDistrFromLinSys(double *U, double **p8);
+void    MxEqDistrFromLocalBalance(double *U, double **p8);
+void    MxFPTSimple(double *U);
+double *MxFPTOneState(double *U, int state);
+
+double  MxFPTRandom(double *P, double *U, int src, int dst, int packets);
+void    MxFPTRnd(double *U, int packets);
+
+
+#endif
 
 /* End of file */

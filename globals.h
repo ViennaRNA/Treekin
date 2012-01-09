@@ -15,9 +15,12 @@
 
 #define TZERO 0.1
 
+typedef enum { false = 0, true = 1 } bool;
+
 typedef struct {         /* command-line options */
   char *basename;        /* base name of processed file */
   int absrb;             /* make one lmin absorbing */
+  int real_abs;          /* remember absorbing state */
   int want_linear;       /* logarithmic time-scale */
   int want_verbose;      /* verbose output */
   int want_degenerate;   /* consider degeneracy */
@@ -36,8 +39,10 @@ typedef struct {         /* command-line options */
   char method;           /* method to build transition matrix */
   FILE *INFILE;          /* input file (usually bar-file) */
   char *sequence;        /* sequence */
-  int fpt;               /* switch for fpt-related calculations */
+  int  fpt;              /* switch for fpt-related calculations */
+  int  fpt_num;          /* state to count ftp's to (-1 for all states)*/
   char *rate_matrix;     /* path to the file containing the rate matrix, if given */
+  char *fpt_file;        /* output file for first passage times */
 } treekin_options;
 
 treekin_options opt;
@@ -45,6 +50,9 @@ int lmins; /* # of lmins in the barrier tree, needed in FULL process */
 
 void parse_commandline(int argc, char **argv);
 
+void free_gengetopt();
+
+void MxFPrint(double *mx, char *name, char T, FILE *out);
 void MxPrint(double *mx, char *name, char T);
 #endif
 /* End of file */
