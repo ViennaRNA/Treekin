@@ -14,7 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
+
 #include <getopt.h>
+
 #include "globals.h"
 #include "treekin_cmdline.h"
 
@@ -86,8 +89,6 @@ set_parameters(void)
     opt.method = 'F';
   else if (strncmp(args_info.method_arg, "I", 1)==0)
     opt.method = 'I';
-  else if (strncmp(args_info.method_arg, "L", 1)==0)
-    opt.method = 'L';
 
 
   if (args_info.ratesfile_given) {
@@ -99,7 +100,10 @@ set_parameters(void)
     }
     fclose(bla);
   }
-  else opt.rate_matrix = "rates.out";
+  else {
+    opt.rate_matrix = (char*) calloc (10, sizeof(char));
+    strcpy(opt.rate_matrix, "rates.out");
+  }
 
   if (args_info.fptfile_given) {
     opt.fpt_file = strdup(args_info.fptfile_arg);
@@ -182,6 +186,9 @@ set_parameters(void)
       fprintf(stderr, "Value of --nstates must be >= 1\n");
       exit (EXIT_FAILURE);
     }
+  } else {
+    // set opt.n to infinity
+    opt.n = INT_MAX;
   }
   if (args_info.degeneracy_given) opt.want_degenerate = 1;
   if (args_info.verbose_given) opt.want_verbose = 1;

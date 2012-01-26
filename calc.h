@@ -27,7 +27,6 @@ void    MxStartVec (double **p0) ;
 void    MxIterate (double *p0, double *p8, double *S);
 void    MxMemoryCleanUp (void);
 void    MxExponent(double *p0, double *p8, double *U);
-void    MxFirstPassageTime(double *U, double *p8);
 
 void    MxFPT(double *U, double *p8, FILE *out);
 void    MxEqDistrFromLinSys(double *U, double **p8);

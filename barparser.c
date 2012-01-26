@@ -47,7 +47,7 @@ ParseInfile(FILE *infile_fp, double **microrates)
   assert(opt.sequence != NULL);
   sscanf(line, "%s %*f", opt.sequence);
   free(line);
-  while((line=my_getline(infile_fp)) != NULL) {
+  while((line=my_getline(infile_fp)) != NULL && (indx < opt.n)) {
     if(indx+1 >= as1) {
       as1 *= 2;
       tmp_subI = (SubInfo *)realloc(tmp_subI,as1*sizeof(SubInfo));
@@ -123,14 +123,12 @@ ParseRatesFile(double **Raten, int dim)
 {
   int i = 0, j = 0, read = 0, len=-1;
   char *cp=NULL, *raten_line=NULL, *rate_file=NULL;
-  char *suffix = "rates.out";
-  double *rate=NULL, *tmp_rates=NULL;
+  //char *suffix = "rates.out";
+  double rate, *tmp_rates=NULL;
   FILE *rates_FP=NULL;
 
   tmp_rates = (double *)calloc(dim*dim,sizeof(double));
-  rate = (double *)calloc(dim,sizeof(double));
   assert(tmp_rates != NULL);
-  assert(rate != NULL);
 
   if (opt.basename == NULL) len = strlen(opt.rate_matrix) + 2;
   else len = strlen(opt.basename) + strlen(opt.rate_matrix) + 2;
@@ -143,32 +141,29 @@ ParseRatesFile(double **Raten, int dim)
   }
   else /* read from stdin */
     strcpy(rate_file,opt.rate_matrix);
-  fprintf(stderr, "WARNING: reading input matrix from file %s\n\n",
-          rate_file);
+  fprintf(stderr, "WARNING: reading input matrix from file %s\n\n", rate_file);
+
   rates_FP = fopen(rate_file, "r+");
   if (rates_FP == NULL) {
     fprintf(stderr, "Cannot open file \"%s\" (rates)", rate_file);
     free(tmp_rates);
-    free(rate);
     free(rate_file);
     exit(EXIT_FAILURE);
   }
-  while((raten_line = my_getline(rates_FP)) != NULL) {
+  while((raten_line = my_getline(rates_FP)) != NULL && i < dim) {
     cp = raten_line;
-    while(sscanf(cp,"%lf%n", rate+j,&read) == 1) {
-      tmp_rates[dim*j+i] = *(rate+j);
+    while(sscanf(cp,"%lf%n", &rate,&read) == 1 && j < dim) {
+      tmp_rates[dim*j+i] = rate;
       cp+=read;
       j++;
     }
     j=0;
     i++;
-    memset(rate, 0, (size_t)(dim*sizeof(double)));
     free(raten_line);
   }
 
   *Raten = tmp_rates;
   fclose(rates_FP);
-  free(rate);
   free(rate_file);
   return;
 }
@@ -192,7 +187,7 @@ ParseBarfile( FILE *fp, BarData **lmin)
   }
   opt.sequence = tmpseq;
   free(line);
-  for (count = 0, line = my_getline(fp); line != NULL; count++, line = my_getline(fp)) {
+  for (count = 0, line = my_getline(fp); line != NULL && count < opt.n; count++, line = my_getline(fp)) {
     if (count >= size) {
       tmp = (BarData *) realloc (tmp, (size+LMINBASE)*sizeof(BarData));
       size += LMINBASE;
@@ -255,65 +250,6 @@ ParseBarfile( FILE *fp, BarData **lmin)
   *lmin = tmp;
   return count;
 }
-
-int  ParseLocfile (FILE *fp, double **energies)
-{
-  char *line = NULL, *tmpseq = NULL, *p, sep[] = " ";
-  int count = 0, v = 0;
-  int size = LMINBASE;
-  tmpseq = (char *) calloc (500, sizeof(char));
-
-  line = my_getline(fp); /* get sequence from first line */
-  if(sscanf(line, "%s", tmpseq) == 0) {
-    fprintf(stderr, "could not get sequence from first line of locminfile\n");
-    exit(EXIT_FAILURE);
-  }
-  opt.sequence = tmpseq;
-  free(line);
-
-  double *energy = (double*) calloc (LMINBASE, sizeof(double));
-
-  for (count = 0, line = my_getline(fp); line != NULL; count++, line = my_getline(fp)) {
-    if (count >= size) {
-      energy = (double*) realloc (energy, (size+LMINBASE)*sizeof(double));
-      size += LMINBASE;
-    }
-    p = strtok(line, sep);
-    v = 1;
-    int number;
-    sscanf(p, "%d",  &number);
-
-    while(p != NULL) {
-      p = strtok(NULL, sep);
-      if (p == NULL) break;
-      if (isgraph(*p) && *p != '-' && !isdigit(*p)) { /* secondary structures */
-        switch ((int)*p) {
-        case 40:      /* '(' */
-        case 46:      /* '.' */
-        case 70:      /* 'F' */
-        case 126:     /* '~' */
-          continue;
-        default:
-          fprintf(stderr, "%c does not seem to be a RNA secondary structure nor a SAW\n", *p);
-          continue;
-        }
-      }
-      if (v==1) {
-        sscanf(p, "%lg", &energy[number-1]);
-        if (count!=number-1) fprintf(stderr, "WARNING: rnalocmin file not sorted\n");
-      }
-      v++;
-    }
-
-    if (line != NULL) free(line);
-  }
-
-  if (line != NULL) free(line);
-
-  *energies = energy;
-  return count;
-}
-
 
 /*==*/
 /* parses file saddles.txt from barriers */

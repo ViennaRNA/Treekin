@@ -41,7 +41,6 @@ main (int argc, char **argv)
 
   switch (opt.method) {
     case 'F': dim = ParseInfile(opt.INFILE, &R); break;
-    case 'L': dim = ParseLocfile(opt.INFILE, &R); break;
     case 'I':
         dim = ParseBarfile (opt.INFILE, &Data);
         ParseRatesFile(&R, dim);

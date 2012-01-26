@@ -49,7 +49,6 @@ int  ParseInfile(FILE *infile_fp, double **microrates);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
 void ParseRatesFile(double **Raten, int dim);
 
-int  ParseLocfile (FILE *fp, double **energies);
 #endif
 
 /* End of file */

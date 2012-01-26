@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2011-10-19 17:08:20 ivo>          =*/
+/*=   Last changed Time-stamp: <2006-11-27 23:56:02 mtw>          =*/
 /*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
@@ -41,7 +41,7 @@ static void    MxASCIIWrite(double *Mx);
 static void    MxKotzOutMathematica(double *Mx);
 static void    MxSortEig(double *evals, double *evecs);
 static void    MxEVLapackSym(double *U);
-tatic void    MxEVLapackNonSym(double *U);
+static void    MxEVLapackNonSym(double *U);
 static void    MxFixevecs(double *, double *);
 static void    MxDiagHelper(double *P8);
 
@@ -220,7 +220,7 @@ MxEqDistrFromLinSys( double *U, double **p8 )
     //DGESV computes the solution to a real system of linear equations A * X = B
     dgesv_(&n, &nrhs, A, &n, ipiv, B, &n, &nfo);
     if(nfo != 0) {
-      fprintf(stderr, "dgesv exited with value %d\n", nfo);
+      fprintf(stderr, "dgesv exited with value %d (do rates have good dimension?)\n", nfo);
       exit(EXIT_FAILURE);
     }
     if (opt.want_verbose) MxPrint(B, "X in MxEqDistrFromLinSys", 'v' );
