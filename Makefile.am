@@ -7,7 +7,8 @@ treekin_SOURCES = main.c\
                   mxccm.c       mxccm.h\
                   barparser.c   barparser.h\
                   exp_matrix.c  exp_matrix.h\
-                  treekin_cmdline.c treekin_cmdline.h
+                  treekin_cmdline.c treekin_cmdline.h\
+									calcpp.cpp		calcpp.h
 
 EXTRA_DIST = VERSION.txt treekin.ggo treekin_cmdline.c treekin_cmdline.h
 

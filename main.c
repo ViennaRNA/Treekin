@@ -22,6 +22,8 @@
 #include "barparser.h"
 #include "globals.h"
 
+#include "calcpp.h"
+
 
 int
 main (int argc, char **argv)
@@ -52,8 +54,13 @@ main (int argc, char **argv)
 
   U  = MxBar2Matrix(Data, R);
 
-  MxGetSpace(&p8);
   MxStartVec(&p0);
+
+  // check for ergodicity + adjust to that
+  MxEgro(U, p0, dim);
+  if (opt.want_verbose) MxPrint(U, "Ergodic U", 'm');
+
+  MxGetSpace(&p8);
 
   fprintf(stderr, "Time to initialize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
   clck1 = clock();
@@ -65,8 +72,6 @@ main (int argc, char **argv)
     //MxEqDistrFromLocalBalance((TESTING?uU:U), &p8);
     MxEqDistrFromLinSys(U, &p8);
   }
-
-  clck1 = clock();
 
   // first passage times computation
   if(opt.fpt) {
@@ -97,7 +102,7 @@ main (int argc, char **argv)
     clck1 = clock();
   }
 
-  // iteration
+  // diagonalization + iteration
   if(opt.matexp) MxExponent(p0,p8,U);
   else {
     if(opt.rrecover) /* read pre-calculated eigenv{alues,ectors} */

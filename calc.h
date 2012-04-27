@@ -37,6 +37,7 @@ double *MxFPTOneState(double *U, int state);
 double  MxFPTRandom(double *P, double *U, int src, int dst, int packets);
 void    MxFPTRnd(double *U, int packets);
 
+void    PrintDummy(double *line);
 
 #endif
 

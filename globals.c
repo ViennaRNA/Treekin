@@ -144,7 +144,7 @@ set_parameters(void)
               probtmp);
     }
     opt.pini = pinitmp;
-  }
+  } else opt.pini = NULL;
 
   if (args_info.absorb_given) {
     if( (opt.real_abs = opt.absrb = args_info.absorb_arg) <= 0 ) {

@@ -51,6 +51,7 @@ dnl ---------------------------------------------------------------------------
 dnl Checks for various programs and packages.
 dnl ---------------------------------------------------------------------------
 
+AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_RANLIB
 AC_PROG_INSTALL

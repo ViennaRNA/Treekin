@@ -15,7 +15,7 @@
 
 #define TZERO 0.1
 
-typedef enum { false = 0, true = 1 } bool;
+//typedef enum { false = 0, true = 1 } bool;
 
 typedef struct {         /* command-line options */
   char *basename;        /* base name of processed file */

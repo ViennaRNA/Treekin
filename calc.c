@@ -22,6 +22,8 @@
 #include "calc.h"       /* does all matrix stuff for markov process */
 #include "globals.h"    /* contains getopt-stuff */
 
+#include "calcpp.h"
+
 #define FEPS  1.0e-15
 #define SQ(X) ((X)*(X))
 
@@ -121,9 +123,15 @@ MxStartVec (double **p0)
   double *pzero = NULL;
 
   pzero = (double *) MxNew(dim*sizeof(double));
-  for (i = 1; i < (int) *opt.pini; i+=2)
-    pzero[(int)opt.pini[i]-1] = (double)opt.pini[i+1];
-  /* -1 because our lmins start with 1, not with 0 (as Data does ) */
+
+  if (opt.pini) {
+    for (i = 1; i < (int) *opt.pini; i+=2)
+      pzero[(int)opt.pini[i]-1] = (double)opt.pini[i+1];
+    /* -1 because our lmins start with 1, not with 0 (as Data does ) */
+  } else {
+    // all into first state...
+    pzero[0]=1.0;
+  }
 
   if (opt.want_verbose) MxPrint (pzero, "p0", 'v');
   *p0=pzero;
@@ -271,8 +279,12 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     tmpMx = (double *) MxNew (dim*dim*sizeof(double));
     MxDiagHelper(P8);
     mmul(tmpMx, _sqrPI, U, dim);
+    if (opt.want_verbose) MxPrint (_sqrPI, "_sqrPI", 'm');
+    if (opt.want_verbose) MxPrint (tmpMx, "tmpMx = _sqrPI*U", 'm');
+    if (opt.want_verbose) MxPrint (sqrPI_, "sqrPI_", 'm');
     memset(U,0,dim*dim*sizeof(double));
     mmul(U, tmpMx, sqrPI_, dim);
+    if (opt.want_verbose) MxPrint (U, "U = _sqrPI*U*sqrPI_", 'm');
     free(tmpMx);
 
     if (opt.want_verbose) MxPrint (U, "force symmetrized U(uncorrected)", 'm');
@@ -286,7 +298,12 @@ MxDiagonalize ( double *U, double **_S, double *P8)
         U[dim*j+i] = U[dim*i+j];
       }
     }
+    if (isnan(err)) {
+      fprintf(stderr, "Matrix is not ergodic! Exiting...");
+      exit(-1);
+    }
     fprintf(stderr, "Corrected numerical error: %e (%e per number)\n", (double)err, (double)(err/(long double)(dim*dim)));
+
 
     if (opt.want_verbose) MxPrint (U, "force symmetrized U", 'm');
   }
@@ -426,9 +443,7 @@ MxIterate (double *p0, double *p8, double *S)
   /* solve fundamental equation */
   print_settings();
   if (opt.t0 == 0.0) {
-    printf(" %e ", 0.0);
-    for (i = 0; i < dim; i++) printf("%e ", fabs(p0[i]));
-    printf("\n");
+    PrintProb(p0, dim, 0.0);
     opt.t0 = TZERO;
     tzero_flag=1;
   }
@@ -443,21 +458,12 @@ MxIterate (double *p0, double *p8, double *S)
 
     count++;  /* # of iterations */
 
-    printf(" %e ", time);  /* print p(t) to stdout */
     for (i = 0; i < dim; i++) {
-      if(pt[i] < -0.01) {
-        fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n",
-                i+1, time, pt[i]);
-        exit(EXIT_FAILURE);
-      }
-      /* map individual structure -> gradient basins */
       if(opt.method=='F') ptFULL[E[i].ag] += pt[i];
-      else   printf("%e ", fabs(pt[i]));
-      check += fabs(pt[i]);
     }
-    if(opt.method=='F')
-      for(i = 1; i <= lmins; i++) printf("%e ", fabs(ptFULL[i]));
-    printf("\n");
+
+    // print probabilities with respect to corrected ergodicity
+    check = PrintProb(opt.method=='F'?ptFULL:pt, dim, time);
 
     if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
       fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
@@ -493,10 +499,7 @@ MxIterate (double *p0, double *p8, double *S)
     fflush(stdout);
   }
   if ( tzero_flag && (time < opt.t8) ) {
-    printf(" %e ", opt.t8);
-    for (i = 0; i < dim; i++)
-      printf("%e ", fabs(pt[i]));
-    printf("\n");
+    PrintProb(pt, dim, opt.t8);
   }
   printf("# of iterations: %d\n", count);
 
@@ -770,6 +773,13 @@ void
 MxPrint(double *mx, char *name, char T)
 {
   MxFPrint(mx, name, T, stderr);
+}
+
+void    PrintDummy(double *line)
+{
+  print_settings();
+  PrintProb(line, 1, opt.t0);
+  PrintProb(line, 1, opt.t8);
 }
 
 /*==*/
@@ -1647,6 +1657,7 @@ void MxEqDistrFromLocalBalance ( double *U, double **p8 )
       res[i] /= qsum;
     }
 }
+
 
 
 /* End of file */
