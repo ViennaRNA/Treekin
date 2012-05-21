@@ -11,11 +11,11 @@ args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-o
 # Options
 option "absorb"             a "Make a state absorbing" typestr="state" int no
 option "method"             m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI ==> use rates from barriers" values="A","F","I" default="A" no
-option "t0"                 - "Start time" typestr="time" double no
-option "t8"                 - "Stop time" typestr="time" double no
+option "t0"                 - "Start time" typestr="time" default="0.1" double no
+option "t8"                 - "Stop time" typestr="time" default="1e9" double no
 option "Temp"               T "Temperature in Celsius" double no
 option "nstates"            n "Read <int> states (not tested)"  int no
-option "p0"                 - "Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1)" string no multiple
+option "p0"                 - "Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1)\n(example: \"--p0 2=0.5\" - state 2 has initial population 50 percent)" string no multiple
 option "tinc"               - "Time scaling factor (for log time-scale)" double no
 option "degeneracy"         d "Consider degeneracy in transition rates" flag off
 option "exponent"           e "Use matrix-expontent routines, NO diagonalization" flag off

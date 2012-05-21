@@ -153,18 +153,14 @@ set_parameters(void)
     }
   }
 
-  if (args_info.t0_given) {
-    if( (opt.t0 = args_info.t0_arg) < 0.0 ) {
-      fprintf(stderr, "Value of --t0 must be >= 0.\n");
-      exit (EXIT_FAILURE);
-    }
+  if( (opt.t0 = args_info.t0_arg) < 0.0 ) {
+    fprintf(stderr, "Value of --t0 must be >= 0.\n");
+    exit (EXIT_FAILURE);
   }
 
-  if (args_info.t8_given) {
-    if( (opt.t8 = args_info.t8_arg) <= 0. ) {
-      fprintf(stderr, "Value of --t8 must be >= 0.\n");
-      exit (EXIT_FAILURE);
-    }
+  if( (opt.t8 = args_info.t8_arg) <= 0. ) {
+    fprintf(stderr, "Value of --t8 must be >= 0.\n");
+    exit (EXIT_FAILURE);
   }
 
   if (args_info.tinc_given) {
