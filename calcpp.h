@@ -3,7 +3,7 @@
 
 
 // check for ergodicity
-void MxEgro(double *U, double *p0, int dim);
+void MxEgro(double **U, double **p0, int dim);
 
 // print probabilities (adds zero (non-ergodic) columns)
 // returns sum of these probabilities

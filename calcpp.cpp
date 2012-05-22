@@ -12,14 +12,18 @@ extern "C" {
 
 using namespace std;
 
-extern "C" void MxEgro(double *U, double *p0, int dim);
+extern "C" void MxEgro(double **U, double **p0, int dim);
 extern "C" double PrintProb(double *line, int dim, double time);
 
 vector<int> reorganize;
 int last_dim;
 
-void MxEgro(double *U, double *p0, int dim)
+void MxEgro(double **Up, double **p0p, int dim)
 {
+  // aliases
+  double *U = *Up;
+  double *p0 = *p0p;
+
   // lokalize first non-empty state
   int first = 0;
   while (p0[first]==0.0) first++;
@@ -72,13 +76,13 @@ void MxEgro(double *U, double *p0, int dim)
     }
     last_dim = dim;
     dim = set_ergo.size();
-    U = (double*)realloc(U, dim*dim*sizeof(double));
+    *Up = (double*)realloc(U, dim*dim*sizeof(double));
 
     // reorganize p0
     for (int i=0; i<set_ergo.size(); i++) {
       p0[i]=p0[reorganize[i]];
     }
-    p0 = (double*)realloc(p0, dim*sizeof(double));
+    *p0p = (double*)realloc(p0, dim*sizeof(double));
 
     // set dimension to global
     MxInit(dim);
@@ -111,13 +115,13 @@ double PrintProb(double *line, int dim, double time)
   } else {
     int j=0;
     for (int i=0; i<last_dim; i++) {
-      if(line[i] < -0.01) {
-        fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, line[i]);
-        exit(EXIT_FAILURE);
-      }
       if (j>reorganize.size() || reorganize[j]!=i) {
         printf("%e ", 0.0);
       } else {
+        if(line[j] < -0.01) {
+          fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, line[i]);
+          exit(EXIT_FAILURE);
+        }
         printf("%e ", fabs(line[j]));
         check += fabs(line[j]);
         j++;

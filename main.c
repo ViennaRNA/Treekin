@@ -57,7 +57,7 @@ main (int argc, char **argv)
   MxStartVec(&p0);
 
   // check for ergodicity + adjust to that
-  MxEgro(U, p0, dim);
+  MxEgro(&U, &p0, dim);
   if (opt.want_verbose) MxPrint(U, "Ergodic U", 'm');
 
   MxGetSpace(&p8);
@@ -122,6 +122,7 @@ main (int argc, char **argv)
 
   if (opt.pini != NULL) free(opt.pini);
   free(U);
+  free(p0);
   if(Data != NULL) free(Data);
   return 0;
 }

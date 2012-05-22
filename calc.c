@@ -390,7 +390,7 @@ MxIterate (double *p0, double *p8, double *S)
     tmpVec2 = exp(time * EV) *tmpVec
     p(t)    = S * tmpVec2
   */
-  int i,  count = 0, pdiff_counter = 0, tzero_flag=0;
+  int i,  count = 0, pdiff_counter = 0;
   double time, check = 0.;
   double *CL = NULL, *CR, *exptL, *tmpVec, *tmpVec2, *pt, *St, *pdiff;
   double *ptFULL = NULL;  /* prob dist 4 of the effective lmins of the tree at time t */
@@ -445,7 +445,6 @@ MxIterate (double *p0, double *p8, double *S)
   if (opt.t0 == 0.0) {
     PrintProb(p0, dim, 0.0);
     opt.t0 = TZERO;
-    tzero_flag=1;
   }
 
   // iterate
@@ -498,7 +497,7 @@ MxIterate (double *p0, double *p8, double *S)
     if(opt.method=='F') memset(ptFULL, 0, (lmins+1)*sizeof(double));
     fflush(stdout);
   }
-  if ( tzero_flag && (time < opt.t8) ) {
+  if (time < opt.t8) {
     PrintProb(pt, dim, opt.t8);
   }
   printf("# of iterations: %d\n", count);
@@ -517,7 +516,6 @@ MxIterate (double *p0, double *p8, double *S)
   free(tmpVec2);
   free(pdiff);
   if(pt != NULL) free(pt);
-  free(p0);
 }
 
 /*==*/
