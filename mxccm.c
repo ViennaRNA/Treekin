@@ -161,6 +161,22 @@ mmul(double *c,double *a,double *b,int n)
 }
 
 void
+mmul_singular(double *c,double *a,double *b,int dim1, int dim2, int dim3)
+{
+  double sum =0;
+  int i,j,k;
+  for (i = 0 ; i<dim1 ; i++) {
+    for (j = 0 ; j<dim3 ; j++) {
+      for (k = 0 ; k<dim2 ; k++) {
+        sum = sum + a[i*dim3+k]*b[k*dim2+j];
+      }
+      c[i*dim3+j] = sum;
+      sum = 0;
+    }
+  }
+}
+
+void
 trnm(double *a,int n)
 {
   double s,*p,*q;

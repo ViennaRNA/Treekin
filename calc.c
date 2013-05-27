@@ -47,6 +47,8 @@ static void    MxEVLapackNonSym(double *U);
 static void    MxFixevecs(double *, double *);
 static void    MxDiagHelper(double *P8);
 
+void MxFPrintD(double *mx, char *name, int dim1, int dim2, FILE *out);
+
 /* private vars and arrays */
 static int      dim = 0;
 static double   _kT = 1.;
@@ -739,6 +741,19 @@ MxNew ( size_t size )
     fprintf (stderr, "ERROR: new_martix() allocation failed\n");
 
   return mx;
+}
+
+void MxFPrintD(double *mx, char *name, int dim1, int dim2, FILE *out)
+{
+  int k, l;
+  fprintf(out,"%s:\n", name);
+  for (k = 0; k < dim1; k++) {
+    for (l=0; l< dim2; l++) {
+      fprintf(out,"%9.5f ", mx[dim2*k+l]);
+    }
+    fprintf(out,"\n");
+  }
+  fprintf(out,"-----------\n");
 }
 
 void MxFPrint(double *mx, char *name, char T, FILE *out)
@@ -1654,6 +1669,74 @@ void MxEqDistrFromLocalBalance ( double *U, double **p8 )
     for (i=0; i<dim; i++) {
       res[i] /= qsum;
     }
+}
+
+void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim)
+{
+  //does: shortened = GG - GB*BB^(-1)*BG, where matrix tmp_rates is split as:
+  //tmp_rates = (GG | GB)
+  //            (BG | BB)
+  // GG has dimension dim*dim; tmp_rates my_dim*my_dim
+  // create matrices:
+
+  int bdim = my_dim - dim;
+  int i,j;
+
+  double *gg = (double *)calloc(dim*dim,sizeof(double));
+  double *bg = (double *)calloc(bdim*dim,sizeof(double));
+  double *bb = (double *)calloc(bdim*bdim,sizeof(double));
+  double *gb = (double *)calloc(dim*bdim,sizeof(double));
+
+  // fill the matrices: (row = i; column = j)
+  for (i=0; i<dim; i++) {
+    for (j=0; j<dim; j++) {
+      gg[dim*i+j] = tmp_rates[my_dim*i+j];
+    }
+  }
+
+  for (i=0; i<bdim; i++) {
+    for (j=0; j<dim; j++) {
+      bg[dim*i+j] = tmp_rates[my_dim*(i+dim)+j];
+    }
+  }
+
+  for (i=0; i<dim; i++) {
+    for (j=0; j<bdim; j++) {
+      gb[bdim*i+j] = tmp_rates[my_dim*i+j+dim];
+    }
+  }
+
+  for (i=0; i<bdim; i++) {
+    for (j=0; j<bdim; j++) {
+      bb[bdim*i+j] = tmp_rates[my_dim*(i+dim)+j+dim];
+    }
+  }
+
+  MxFPrintD(gg, "GG", dim, dim, stderr);
+  MxFPrintD(bg, "BG", bdim, dim, stderr);
+  MxFPrintD(gb, "GB", dim, bdim, stderr);
+  MxFPrintD(bb, "BB", bdim, bdim, stderr);
+
+  // result2 = gb*bb^(-1)*bg
+  minv(bb, bdim);
+  double *result = (double *)calloc(dim*bdim,sizeof(double));
+  mmul_singular(result, gb, bb, dim, bdim, bdim);
+  double *result2 = (double *)calloc(dim*dim,sizeof(double));
+  mmul_singular(result2, result, bg, dim, bdim, dim);
+
+  // result2 = gg - result2
+  for (i=0; i<dim; i++) {
+    for (j=0; j<dim; j++) {
+      result2[dim*i+j] = gg[dim*i+j] - result2[dim*i+j];
+    }
+  }
+
+  *shortened = result2;
+  free(result);
+  free(gg);
+  free(gb);
+  free(bg);
+  free(bb);
 }
 
 

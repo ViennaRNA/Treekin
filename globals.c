@@ -158,14 +158,14 @@ set_parameters(void)
     exit (EXIT_FAILURE);
   }
 
-  if( (opt.t8 = args_info.t8_arg) <= 0. ) {
-    fprintf(stderr, "Value of --t8 must be >= 0.\n");
+  if( (opt.t8 = args_info.t8_arg) <= 0.0 ) {
+    fprintf(stderr, "Value of --t8 must be > 0.\n");
     exit (EXIT_FAILURE);
   }
 
   if (args_info.tinc_given) {
     if( (opt.tinc = args_info.tinc_arg) <= 0. ) {
-      fprintf(stderr, "Value of --tinc must be >= 0.\n");
+      fprintf(stderr, "Value of --tinc must be > 0.\n");
       exit (EXIT_FAILURE);
     }
   }

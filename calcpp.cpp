@@ -35,14 +35,14 @@ void MxEgro(double **Up, double **p0p, int dim)
   set_ergo.insert(first);
   que_ergo.push(first);
 
-  while(!que_ergo.empty() && set_ergo.size()<dim) {
+  while(!que_ergo.empty() && (int)set_ergo.size()<dim) {
     int to_do = que_ergo.front();
     que_ergo.pop();
 
     // collect contingency
     for (int i=0; i<dim; i++) {
       if (i==to_do) continue;
-      if (U[i*dim + to_do]>0.0 && set_ergo.count(i)==0) {
+      if (U[i*dim + to_do]>0.0 && (int)set_ergo.count(i)==0) {
         set_ergo.insert(i);
         que_ergo.push(i);
       }
@@ -50,7 +50,7 @@ void MxEgro(double **Up, double **p0p, int dim)
   }
 
   // check ergodicity
-  if (set_ergo.size()==dim) return; // all ok
+  if ((int)set_ergo.size()==dim) return; // all ok
   else {
     int i=first+1;
     while (i<dim) {
@@ -69,8 +69,8 @@ void MxEgro(double **Up, double **p0p, int dim)
     }
 
     // reorganize matrix
-    for (int i=0; i<set_ergo.size(); i++) {
-      for (int j=0; j<set_ergo.size(); j++) {
+    for (int i=0; i<(int)set_ergo.size(); i++) {
+      for (int j=0; j<(int)set_ergo.size(); j++) {
         U[i*set_ergo.size()+j]=U[reorganize[i]*dim+reorganize[j]];
       }
     }
@@ -79,7 +79,7 @@ void MxEgro(double **Up, double **p0p, int dim)
     *Up = (double*)realloc(U, dim*dim*sizeof(double));
 
     // reorganize p0
-    for (int i=0; i<set_ergo.size(); i++) {
+    for (int i=0; i<(int)set_ergo.size(); i++) {
       p0[i]=p0[reorganize[i]];
     }
     *p0p = (double*)realloc(p0, dim*sizeof(double));
@@ -115,7 +115,7 @@ double PrintProb(double *line, int dim, double time)
   } else {
     int j=0;
     for (int i=0; i<last_dim; i++) {
-      if (j>reorganize.size() || reorganize[j]!=i) {
+      if (j>(int)reorganize.size() || reorganize[j]!=i) {
         printf("%e ", 0.0);
       } else {
         if(line[j] < -0.01) {

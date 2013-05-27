@@ -34,6 +34,11 @@ void    MxEqDistrFromLocalBalance(double *U, double **p8);
 void    MxFPTSimple(double *U);
 double *MxFPTOneState(double *U, int state);
 
+// matrix shortening routine (when nstates specified)
+void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim);
+
+
+// not used! (just for past testing)
 double  MxFPTRandom(double *P, double *U, int src, int dst, int packets);
 void    MxFPTRnd(double *U, int packets);
 

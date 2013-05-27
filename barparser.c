@@ -118,21 +118,18 @@ ParseInfile(FILE *infile_fp, double **microrates)
 }
 
 /*==*/
-void
-ParseRatesFile(double **Raten, int dim)
+int ParseRatesFile(double **Raten, int dim)
 {
   int i = 0, j = 0, read = 0, len=-1;
-  char *cp=NULL, *raten_line=NULL, *rate_file=NULL;
+  char *cp=NULL, *raten_line=NULL;
   //char *suffix = "rates.out";
   double rate, *tmp_rates=NULL;
   FILE *rates_FP=NULL;
 
-  tmp_rates = (double *)calloc(dim*dim,sizeof(double));
-  assert(tmp_rates != NULL);
-
+  // some string initialisation
   if (opt.basename == NULL) len = strlen(opt.rate_matrix) + 2;
   else len = strlen(opt.basename) + strlen(opt.rate_matrix) + 2;
-  rate_file = (char *)calloc(len, sizeof(char));
+  char *rate_file = (char *)calloc(len, sizeof(char));
   assert(rate_file != NULL);
   if(opt.basename != NULL) { /* we do NOT read from stdin */
     strcpy(rate_file, opt.basename);
@@ -140,6 +137,92 @@ ParseRatesFile(double **Raten, int dim)
     strcat(rate_file, opt.rate_matrix);
   }
   else /* read from stdin */
+    strcpy(rate_file, opt.rate_matrix);
+  fprintf(stderr, "WARNING: reading input matrix from file %s\n\n", rate_file);
+
+  // open file
+  rates_FP = fopen(rate_file, "r+");
+  if (rates_FP == NULL) {
+    fprintf(stderr, "Cannot open file \"%s\" (rates)", rate_file);
+    free(tmp_rates);
+    free(rate_file);
+    exit(EXIT_FAILURE);
+  }
+
+  // actual reading:
+  int my_dim = 0;
+    // get length of line
+  raten_line = my_getline(rates_FP);
+  char *p = strtok(raten_line, " \t\n");
+  while (p && sscanf(p, "%lf", &rate)==1) {
+    my_dim++;
+    p = strtok(NULL, " \t\n");
+  }
+
+    // neeed to recpompute the matrices?
+  if (my_dim != dim) {
+    if (my_dim < dim) {
+      fprintf(stderr, "ERROR: wrong rates file, dimension %d (dimension of input: %d)\n", my_dim, dim);
+      free(raten_line);
+      free(rate_file);
+      return -1;
+    }
+    fprintf(stderr, "WARNING: dimensions do not agree: decreasing %d to %d\n", my_dim, dim);
+    tmp_rates = (double *)calloc(my_dim*my_dim,sizeof(double));
+  } else {
+    tmp_rates = (double *)calloc(dim*dim,sizeof(double));
+  }
+  assert(tmp_rates != NULL);
+
+    // read!
+  while(raten_line != NULL) {
+    cp = raten_line;
+    while(cp != NULL && sscanf(cp,"%lf%n", &rate,&read) == 1) {
+      tmp_rates[dim*j+i] = rate;
+      cp+=read;
+      j++;
+    }
+    j=0;
+    i++;
+    free(raten_line);
+    raten_line = my_getline(rates_FP);
+  }
+
+  // shorten the matrix from dimension my_dim to dim:
+  if (dim!=my_dim) {
+    MxRShorten(tmp_rates, Raten, my_dim, dim);
+    free(tmp_rates);
+  } else {
+    *Raten = tmp_rates;
+  }
+  fclose(rates_FP);
+  free(rate_file);
+  return 0;
+}
+
+/* old version
+int ParseRatesFile(double **Raten, int dim)
+{
+  int i = 0, j = 0, read = 0, len=-1;
+  char *cp=NULL, *raten_line=NULL, *rate_file=NULL;
+  //char *suffix = "rates.out";
+  double rate, *tmp_rates=NULL;
+  FILE *rates_FP=NULL;
+
+  // create matrix
+  tmp_rates = (double *)calloc(dim*dim,sizeof(double));
+  assert(tmp_rates != NULL);
+
+  if (opt.basename == NULL) len = strlen(opt.rate_matrix) + 2;
+  else len = strlen(opt.basename) + strlen(opt.rate_matrix) + 2;
+  rate_file = (char *)calloc(len, sizeof(char));
+  assert(rate_file != NULL);
+  if(opt.basename != NULL) { // we do NOT read from stdin
+    strcpy(rate_file, opt.basename);
+    strcat(rate_file, ".");
+    strcat(rate_file, opt.rate_matrix);
+  }
+  else
     strcpy(rate_file,opt.rate_matrix);
   fprintf(stderr, "WARNING: reading input matrix from file %s\n\n", rate_file);
 
@@ -166,7 +249,7 @@ ParseRatesFile(double **Raten, int dim)
   fclose(rates_FP);
   free(rate_file);
   return;
-}
+}*/
 
 /*==*/
 int
@@ -187,7 +270,9 @@ ParseBarfile( FILE *fp, BarData **lmin)
   }
   opt.sequence = tmpseq;
   free(line);
-  for (count = 0, line = my_getline(fp); line != NULL && count < opt.n; count++, line = my_getline(fp)) {
+  count = 0;
+  for (line = my_getline(fp); line != NULL; count++, line = my_getline(fp)) {
+    if (count >= opt.n) break;
     if (count >= size) {
       tmp = (BarData *) realloc (tmp, (size+LMINBASE)*sizeof(BarData));
       size += LMINBASE;
@@ -242,6 +327,7 @@ ParseBarfile( FILE *fp, BarData **lmin)
       }
     }
     if (line != NULL) free(line);
+    count++;
   }
 
   if (line != NULL) free(line);

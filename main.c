@@ -45,11 +45,16 @@ main (int argc, char **argv)
     case 'F': dim = ParseInfile(opt.INFILE, &R); break;
     case 'I':
         dim = ParseBarfile (opt.INFILE, &Data);
-        ParseRatesFile(&R, dim);
+        int res = ParseRatesFile(&R, dim);
+        if (res == -1) {
+          free_gengetopt();
+          exit(EXIT_FAILURE);
+        }
         break;
     case 'A': dim = ParseBarfile (opt.INFILE, &Data); break;
   }
 
+  // iniialise matrices, dont forget to release 'em
   MxInit (dim);
 
   U  = MxBar2Matrix(Data, R);
