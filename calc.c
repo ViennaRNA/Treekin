@@ -746,14 +746,17 @@ MxNew ( size_t size )
 void MxFPrintD(double *mx, char *name, int dim1, int dim2, FILE *out)
 {
   int k, l;
-  fprintf(out,"%s:\n", name);
+  fprintf(out,"%s:{\n", name);
   for (k = 0; k < dim1; k++) {
+    if (k!=0) fprintf(out, ",");
+    fprintf(out, "{");
     for (l=0; l< dim2; l++) {
-      fprintf(out,"%10.4g ", mx[dim2*k+l]);
+      if (l!=0) fprintf(out, ",");
+      fprintf(out,"%10.4g (%4d) ", mx[dim2*k+l], dim2*k+l);
     }
-    fprintf(out,"\n");
+    fprintf(out,"}\n");
   }
-  fprintf(out,"-----------\n");
+  fprintf(out,"}-----------\n");
 }
 
 void MxFPrint(double *mx, char *name, char T, FILE *out)
@@ -1721,18 +1724,24 @@ void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim)
       bb[bdim*i+j] = tmp_rates[my_dim*(i+dim)+j+dim];
     }
   }
-  MxFPrintD(tmp_rates, "Q", my_dim, my_dim, stderr);
+
+  /*MxFPrintD(tmp_rates, "Q", my_dim, my_dim, stderr);
   MxFPrintD(gg, "GG", dim, dim, stderr);
   MxFPrintD(bg, "BG", bdim, dim, stderr);
   MxFPrintD(gb, "GB", dim, bdim, stderr);
   MxFPrintD(bb, "BB", bdim, bdim, stderr);
-
+*/
   // result2 = gb*bb^(-1)*bg
   minv(bb, bdim);
+  //MxFPrintD(bb, "BBinv", bdim, bdim, stderr);
   double *result = (double *)calloc(dim*bdim,sizeof(double));
-  mmul_singular(result, gb, bb, dim, bdim, bdim);
+  mmul_singular(result, gb, bb, dim, bdim, bdim, 0);
+  //MxFPrintD(result, "gb*bb-1", dim, bdim, stderr);
   double *result2 = (double *)calloc(dim*dim,sizeof(double));
-  mmul_singular(result2, result, bg, dim, bdim, dim);
+  mmul_singular(result2, result, bg, dim, bdim, dim, 1);
+
+  //MxFPrintD(result2, "gb*bb-1*bg", dim, dim, stderr);
+
 
   // result2 = gg - result2
   for (i=0; i<dim; i++) {
@@ -1740,6 +1749,8 @@ void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim)
       result2[dim*i+j] = gg[dim*i+j] - result2[dim*i+j];
     }
   }
+
+  //MxFPrintD(result2, "matrix after shortening", dim ,dim, stderr);
 
   *shortened = result2;
   free(result);

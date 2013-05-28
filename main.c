@@ -45,8 +45,8 @@ main (int argc, char **argv)
     case 'F': dim = ParseInfile(opt.INFILE, &R); break;
     case 'I':
         dim = ParseBarfile (opt.INFILE, &Data);
-        int res = ParseRatesFile(&R, dim);
-        if (res == -1) {
+        dim = ParseRatesFile(&R, dim, opt.n);
+        if (dim == -1) {
           free_gengetopt();
           exit(EXIT_FAILURE);
         }

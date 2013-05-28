@@ -18,6 +18,7 @@
 #include "globals.h"
 #include "limits.h"
 #include "ctype.h"
+#include "calc.h"
 
 #define LMINBASE 100
 #define ARRAYSIZE 10000
@@ -28,7 +29,7 @@ static char *my_getline(FILE *fp);
 int
 ParseInfile(FILE *infile_fp, double **microrates)
 {
-  char *line=NULL,*mrsuffix = "microrates.out", *mrfile=NULL;
+  char *line=NULL;
   int a,dim,len,indx=0, l=0, as1 = ARRAYSIZE, as2 = ARRAYSIZE;
   double *tmp_mr=NULL;    /* temp matrix containing microrates */
   SubInfo *tmp_subI=NULL; /* temp array for info on energies of all states */
@@ -61,25 +62,26 @@ ParseInfile(FILE *infile_fp, double **microrates)
   indx = 0;
 
   /* SECOND: read microrates file */
-  if (opt.basename == NULL) len = strlen(mrsuffix) + 2;
-  else len = strlen(opt.basename) + strlen(mrsuffix) + 2;
-  mrfile = (char *)calloc(len, sizeof(char));
-  assert(mrfile != NULL);
+  // some string initialisation
+  if (opt.basename == NULL) len = strlen(opt.rate_matrix) + 2;
+  else len = strlen(opt.basename) + strlen(opt.rate_matrix) + 2;
+  char *rate_file = (char *)calloc(len, sizeof(char));
+  assert(rate_file != NULL);
   if(opt.basename != NULL) { /* we do NOT read from stdin */
-    strcpy(mrfile, opt.basename);
-    strcat(mrfile, ".");
-    strcat(mrfile, mrsuffix);
+    strcpy(rate_file, opt.basename);
+    strcat(rate_file, ".");
+    strcat(rate_file, opt.rate_matrix);
   }
   else /* read from stdin */
-    strcpy(mrfile,mrsuffix);
+    strcpy(rate_file, opt.rate_matrix);
+  fprintf(stderr, "WARNING: reading microrates from file %s\n\n", rate_file);
 
-  fprintf(stderr, "WARNING: reading microrates from file %s\n\n", mrfile);
-  mr_FP = fopen(mrfile, "r+");
+  mr_FP = fopen(rate_file, "r+");
   if (mr_FP == NULL) {
-    fprintf(stderr, "Cannot open file \"%s\" (microrates)", mrfile);
-    free(mrfile);
+    fprintf(stderr, "Cannot open file \"%s\" (microrates)", rate_file);
+    free(rate_file);
     free(opt.sequence);
-    free(mrfile);
+    free(rate_file);
     exit(EXIT_FAILURE);
   }
   mr = (mr_t *)calloc(as2, sizeof(mr_t));
@@ -109,7 +111,7 @@ ParseInfile(FILE *infile_fp, double **microrates)
   }
   *microrates = tmp_mr;
   free(mr);
-  free(mrfile);
+  free(rate_file);
   lmins = l;
   E = tmp_subI;
   fprintf(stderr, "dimension = %d, lmins = %d \n", dim, lmins);
@@ -118,7 +120,7 @@ ParseInfile(FILE *infile_fp, double **microrates)
 }
 
 /*==*/
-int ParseRatesFile(double **Raten, int dim)
+int ParseRatesFile(double **Raten, int dim, int nstates)
 {
   int i = 0, j = 0, read = 0, len=-1;
   char *cp=NULL, *raten_line=NULL;
@@ -158,7 +160,7 @@ int ParseRatesFile(double **Raten, int dim)
 
   char *p = strtok(tmp_line, " \t\n");
   while (p && sscanf(p, "%lf", &rate)==1) {
-    fprintf(stderr, "%d-%lf-\n", my_dim, rate);
+    //fprintf(stderr, "%d-%lf-\n", my_dim, rate);
     my_dim++;
     p = strtok(NULL, " \t\n");
   }
@@ -171,7 +173,6 @@ int ParseRatesFile(double **Raten, int dim)
       free(rate_file);
       return -1;
     }
-    fprintf(stderr, "WARNING: dimensions do not agree: decreasing %d to %d\n", my_dim, dim);
     tmp_rates = (double *)calloc(my_dim*my_dim,sizeof(double));
   } else {
     tmp_rates = (double *)calloc(dim*dim,sizeof(double));
@@ -193,15 +194,18 @@ int ParseRatesFile(double **Raten, int dim)
   }
 
   // shorten the matrix from dimension my_dim to dim:
-  if (dim!=my_dim) {
+  if (dim!=my_dim && my_dim>nstates) {
+    //fprintf(stderr, "my_dim, dim, nstates:%d %d %d\n", dim ,my_dim, nstates);
+    fprintf(stderr, "WARNING: dimensions do not agree: decreasing %d to %d\n", my_dim, dim);
     MxRShorten(tmp_rates, Raten, my_dim, dim);
     free(tmp_rates);
   } else {
+    dim = my_dim;
     *Raten = tmp_rates;
   }
   fclose(rates_FP);
   free(rate_file);
-  return 0;
+  return dim;
 }
 
 /* old version
