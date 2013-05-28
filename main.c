@@ -57,6 +57,7 @@ main (int argc, char **argv)
   // iniialise matrices, dont forget to release 'em
   MxInit (dim);
 
+  // here we create the "almighty" matrix U which is actually only matrix needed for whole program
   U  = MxBar2Matrix(Data, R);
 
   MxStartVec(&p0);

@@ -47,7 +47,7 @@ SubInfo *E;
 int  ParseBarfile (FILE *fp, BarData **lmin);
 int  ParseInfile(FILE *infile_fp, double **microrates);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
-int ParseRatesFile(double **Raten, int dim);
+int  ParseRatesFile(double **Raten, int dim);
 
 #endif
 

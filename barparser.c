@@ -152,9 +152,13 @@ int ParseRatesFile(double **Raten, int dim)
   // actual reading:
   int my_dim = 0;
     // get length of line
-  raten_line = my_getline(rates_FP);
-  char *p = strtok(raten_line, " \t\n");
+  char *tmp_line = my_getline(rates_FP);
+  raten_line = (char*) calloc(strlen(tmp_line)+1, sizeof(char));
+  strcpy(raten_line, tmp_line);
+
+  char *p = strtok(tmp_line, " \t\n");
   while (p && sscanf(p, "%lf", &rate)==1) {
+    fprintf(stderr, "%d-%lf-\n", my_dim, rate);
     my_dim++;
     p = strtok(NULL, " \t\n");
   }
@@ -178,7 +182,7 @@ int ParseRatesFile(double **Raten, int dim)
   while(raten_line != NULL) {
     cp = raten_line;
     while(cp != NULL && sscanf(cp,"%lf%n", &rate,&read) == 1) {
-      tmp_rates[dim*j+i] = rate;
+      tmp_rates[my_dim*j+i] = rate;
       cp+=read;
       j++;
     }
@@ -271,7 +275,7 @@ ParseBarfile( FILE *fp, BarData **lmin)
   opt.sequence = tmpseq;
   free(line);
   count = 0;
-  for (line = my_getline(fp); line != NULL; count++, line = my_getline(fp)) {
+  for (line = my_getline(fp); line != NULL; line = my_getline(fp)) {
     if (count >= opt.n) break;
     if (count >= size) {
       tmp = (BarData *) realloc (tmp, (size+LMINBASE)*sizeof(BarData));

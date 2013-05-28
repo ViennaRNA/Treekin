@@ -749,7 +749,7 @@ void MxFPrintD(double *mx, char *name, int dim1, int dim2, FILE *out)
   fprintf(out,"%s:\n", name);
   for (k = 0; k < dim1; k++) {
     for (l=0; l< dim2; l++) {
-      fprintf(out,"%9.5f ", mx[dim2*k+l]);
+      fprintf(out,"%10.4g ", mx[dim2*k+l]);
     }
     fprintf(out,"\n");
   }
@@ -1584,7 +1584,7 @@ MxEVLapackNonSym(double *origU)
     }
 
   dgeevx_("B", "N", "V", "V", &dim, origU, &dim, evals_re, evals_im, NULL, &one,\
-          evecs ,&dim, &ilo, &ihi, scale, &abnrm, rconde, rcondv, work,\
+        evecs ,&dim, &ilo, &ihi, scale, &abnrm, rconde, rcondv, work,\
           &lwork, iwork, &nfo);
 
   for (i=0; i<dim; i++) evals[i]=evals_re[i];
@@ -1687,6 +1687,16 @@ void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim)
   double *bb = (double *)calloc(bdim*bdim,sizeof(double));
   double *gb = (double *)calloc(dim*bdim,sizeof(double));
 
+  // first we need to fix the diagonal entries tmp_rates[i][i] = sum_j tmp_rates[i][j]
+  for (i = 0; i < my_dim; i++) tmp_rates[my_dim*i+i] = 0.0;
+  for (i = 0; i < my_dim; i++) {
+    double tmp = 0.00;
+    // calculate column sum
+    for(j = 0; j < my_dim; j++)  tmp += tmp_rates[my_dim*j+i];
+    tmp_rates[my_dim*i+i] = -tmp;
+  }
+
+
   // fill the matrices: (row = i; column = j)
   for (i=0; i<dim; i++) {
     for (j=0; j<dim; j++) {
@@ -1711,7 +1721,7 @@ void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim)
       bb[bdim*i+j] = tmp_rates[my_dim*(i+dim)+j+dim];
     }
   }
-
+  MxFPrintD(tmp_rates, "Q", my_dim, my_dim, stderr);
   MxFPrintD(gg, "GG", dim, dim, stderr);
   MxFPrintD(bg, "BG", bdim, dim, stderr);
   MxFPrintD(gb, "GB", dim, bdim, stderr);

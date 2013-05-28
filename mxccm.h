@@ -41,4 +41,8 @@ void mcopy(double *a,double *b,int m);
 /*Invert (in place) a general real matrix A -> Inv(A).*/
 int minv(double *a,int n);
 
+// new by Marcel
+// multiply non-square matrices
+void mmul_singular(double *c,double *a,double *b,int dim1, int dim2, int dim3);
+
 #endif
