@@ -14,8 +14,10 @@ using namespace std;
 
 extern "C" void MxEgro(double **U, double **p0, int dim);
 extern "C" double PrintProb(double *line, int dim, double time);
+extern "C" double PrintProbNR(double *line, int dim, double time);
+extern "C" double PrintProbFull(double *line, int dim, double time, int lmins);
 
-vector<int> reorganize;
+vector<int> reorganize; // reorganize array (so if LM 0 1 3 were reachable and 2 not, reorganize will contain r[0]=0 r[1]=1 r[2]=3), so r[x] = old position of x
 int last_dim;
 
 void MxEgro(double **Up, double **p0p, int dim)
@@ -35,6 +37,7 @@ void MxEgro(double **Up, double **p0p, int dim)
   set_ergo.insert(first);
   que_ergo.push(first);
 
+  // fill the sets of non-empty states
   while(!que_ergo.empty() && (int)set_ergo.size()<dim) {
     int to_do = que_ergo.front();
     que_ergo.pop();
@@ -97,6 +100,54 @@ void MxEgro(double **Up, double **p0p, int dim)
 
 }
 
+double PrintProbFull(double *line, int dim, double time, int lmins)
+{
+  // for full process:
+  vector<double> ptFULL (lmins, 0.0);
+  if (reorganize.size() == 0) {
+    for (int i=0; i<dim; i++) {
+      ptFULL[E[i].ag] += line[i];
+    }
+  } else {
+    for (int i=0; i<dim; i++) {
+      ptFULL[E[reorganize[i]].ag] += line[i];
+    }
+  }
+  // do the printing:
+  double check = 0.0;
+  printf("%e ", time);
+  for (int i=0; i<lmins; i++) {
+    if(ptFULL[i] < -0.01) {
+      fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, ptFULL[i]);
+      exit(EXIT_FAILURE);
+    }
+    /* map individual structure -> gradient basins */
+    else   printf("%e ", fabs(ptFULL[i]));
+    check += fabs(ptFULL[i]);
+  }
+  printf("\n");
+  return check;
+}
+
+double PrintProbNR(double *line, int dim, double time)
+{
+  double check = 0.0;
+  printf("%e ", time);
+
+  for (int i=0; i<dim; i++) {
+    if(line[i] < -0.01) {
+      fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, line[i]);
+      exit(EXIT_FAILURE);
+    }
+    /* map individual structure -> gradient basins */
+    else printf("%e ", fabs(line[i]));
+    check += fabs(line[i]);
+  }
+
+  printf("\n");
+  return check;
+}
+
 double PrintProb(double *line, int dim, double time)
 {
   double check = 0.0;
@@ -109,7 +160,7 @@ double PrintProb(double *line, int dim, double time)
         exit(EXIT_FAILURE);
       }
       /* map individual structure -> gradient basins */
-      else   printf("%e ", fabs(line[i]));
+      else printf("%e ", fabs(line[i]));
       check += fabs(line[i]);
     }
   } else {

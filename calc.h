@@ -16,6 +16,7 @@
 #include "barparser.h"
 #include "globals.h"
 
+void   *MxNew (size_t size);
 void    MxInit (int d);
 void    MxGetSpace(double **p8);
 double *MxBar2Matrix (BarData *Data, double *);

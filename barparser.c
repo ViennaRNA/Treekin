@@ -53,8 +53,13 @@ ParseInfile(FILE *infile_fp, double **microrates)
       as1 *= 2;
       tmp_subI = (SubInfo *)realloc(tmp_subI,as1*sizeof(SubInfo));
     }
-    sscanf(line, "%*s %lg %d %*d", &tmp_subI[indx].energy, &tmp_subI[indx].ag);
+    int res = sscanf(line, "%*s %lg %d %*d", &tmp_subI[indx].energy, &tmp_subI[indx].ag);
+    if (res == 0) res = sscanf(line, "%*d %*s %lg %d %*d", &tmp_subI[indx].energy, &tmp_subI[indx].ag);
+    //fprintf(stderr, "%s %lg %d %d\n", line, tmp_subI[indx].energy, tmp_subI[indx].ag, res);
     if (tmp_subI[indx].ag > l) l = tmp_subI[indx].ag;
+
+    // fix allegiance status:
+    if (tmp_subI[indx].ag > 0) tmp_subI[indx].ag--;
     free(line);
     indx++;
   }
@@ -92,7 +97,7 @@ ParseInfile(FILE *infile_fp, double **microrates)
       mr = (mr_t *)realloc(mr, as2*sizeof(mr_t));
     }
     if(sscanf(line, "%d %d %lf %*d", &mr[indx].i, &mr[indx].j, &mr[indx].rate) == 3) {
-      fprintf(stderr,"indx %i\n", indx);
+      //fprintf(stderr,"indx %i\n", indx);
       indx++;
     }
     free(line);
@@ -164,8 +169,9 @@ int ParseRatesFile(double **Raten, int dim, int nstates)
     my_dim++;
     p = strtok(NULL, " \t\n");
   }
+  free(tmp_line);
 
-    // neeed to recpompute the matrices?
+  // neeed to recpompute the matrices?
   if (my_dim != dim) {
     if (my_dim < dim) {
       fprintf(stderr, "ERROR: wrong rates file, dimension %d (dimension of input: %d)\n", my_dim, dim);

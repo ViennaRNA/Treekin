@@ -28,7 +28,6 @@
 #define SQ(X) ((X)*(X))
 
 /* private function(s) */
-static void   *MxNew (size_t size);
 static double *MxMethodeA (BarData *Data);
 static double *MxMethodeFULL(double *);
 static double *MxMethodeINPUT (BarData *Data, double *);
@@ -188,8 +187,7 @@ MxEqDistrFULL (SubInfo *E, double *p8 )
   }
 
 
-  //if(opt.want_verbose)
-  MxPrint (p8, "p8", 'v');
+  if(opt.want_verbose) MxPrint (p8, "p8", 'v');
   return;
 }
 
@@ -445,7 +443,8 @@ MxIterate (double *p0, double *p8, double *S)
   /* solve fundamental equation */
   print_settings();
   if (opt.t0 == 0.0) {
-    PrintProb(p0, dim, 0.0);
+    if (opt.method=='F')  PrintProbFull(p0, dim, 0.0, lmins);
+    else                  PrintProb(p0, dim, 0.0);
     opt.t0 = TZERO;
   }
 
@@ -459,12 +458,18 @@ MxIterate (double *p0, double *p8, double *S)
 
     count++;  /* # of iterations */
 
-    for (i = 0; i < dim; i++) {
-      if(opt.method=='F') ptFULL[E[i].ag] += pt[i];
+    if(opt.method=='F') {
+      memset(ptFULL, 0, (lmins+1)*sizeof(double));
+      for (i = 0; i < dim; i++) {
+        ptFULL[E[i].ag] += pt[i];
+      }
     }
 
     // print probabilities with respect to corrected ergodicity
-    check = PrintProb(opt.method=='F'?ptFULL:pt, dim, time);
+    if (opt.method=='F') check = PrintProbFull(pt, dim, time, lmins);
+    else                 check = PrintProb(pt, dim, time);
+
+    //PrintProbNR(p8FULL, lmins, -1);
 
     if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
       fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
@@ -476,7 +481,7 @@ MxIterate (double *p0, double *p8, double *S)
       for(i = 1; i <= lmins; i++) {
         pdiff[i] = p8FULL[i] - ptFULL[i];
         if (fabs(pdiff[i]) >= 0.000001) {
-          pdiff_counter++; /* # of lmins whose pdiff is > the threshold */
+          pdiff_counter++;
           break;
         }
       }
@@ -484,23 +489,26 @@ MxIterate (double *p0, double *p8, double *S)
     else {
       for(i = 0; i < dim; i++) {
         pdiff[i] = p8[i] - pt[i];
+
         if (fabs(pdiff[i]) >= 0.000001) {
           pdiff_counter++;
           break;
         }
-      }
-    }
+      }}
+              //PrintProb(p8, dim, -1);
+        //PrintProb(pt, dim, -2);
+    //}
     if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
       break;
     pdiff_counter = 0;
     memset(pdiff, 0, (lmins+1)*sizeof(double));
     /* end check of convergence */
 
-    if(opt.method=='F') memset(ptFULL, 0, (lmins+1)*sizeof(double));
     fflush(stdout);
   }
   if (time < opt.t8) {
-    PrintProb(pt, dim, opt.t8);
+    if (opt.method=='F') PrintProbFull(pt, dim, opt.t8, lmins);
+    else                 PrintProb(pt, dim, opt.t8);
   }
   printf("# of iterations: %d\n", count);
 
@@ -733,7 +741,7 @@ max_saddle(int i, int j, BarData *Data)
 }
 
 /*==*/
-static void*
+void*
 MxNew ( size_t size )
 {
   void *mx = NULL;

@@ -8,5 +8,7 @@ void MxEgro(double **U, double **p0, int dim);
 // print probabilities (adds zero (non-ergodic) columns)
 // returns sum of these probabilities
 double PrintProb(double *line, int dim, double time);
+double PrintProbFull(double *line, int dim, double time, int lmins);
+double PrintProbNR(double *line, int dim, double time);
 
 #endif
