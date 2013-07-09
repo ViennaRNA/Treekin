@@ -60,17 +60,20 @@ main (int argc, char **argv)
   // here we create the "almighty" matrix U which is actually only matrix needed for whole program
   U  = MxBar2Matrix(Data, R);
 
+  // create initial probability vector
   MxStartVec(&p0);
 
   // check for ergodicity + adjust to that
   MxEgro(&U, &p0, dim);
   if (opt.want_verbose) MxPrint(U, "Ergodic U", 'm');
 
+  // allocate space for other matrices
   MxGetSpace(&p8);
 
   fprintf(stderr, "Time to initialize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
   clck1 = clock();
 
+  // calculate equilibrium distribution
   if(opt.method == 'F')
     MxEqDistrFULL (E, p8);
   else {
@@ -124,8 +127,9 @@ main (int argc, char **argv)
     free(S);
     free(p8);
   }
-  MxMemoryCleanUp();
 
+  // clean up the memory
+  MxMemoryCleanUp();
   if (opt.pini != NULL) free(opt.pini);
   free(U);
   free(p0);

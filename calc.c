@@ -1188,7 +1188,7 @@ MxASCIIWrite(double *Mx)
   }
   for(i=0; i<dim; i++) {
     for(j=0; j<dim; j++) {
-      fprintf(ASCIIOUT,"%15.10g ", Mx[dim*i+j]);
+      fprintf(ASCIIOUT,"%15.10g ", Mx[dim*j+i]);
     }
     fprintf(ASCIIOUT,"\n");
   }
@@ -1347,9 +1347,9 @@ MxKotzOutMathematica(double *Mx)
     fprintf(MATHEMATICA_OUT, "{");
     for(j=0; j<dim; j++) {
       if (j != (dim-1))
-        fprintf(MATHEMATICA_OUT, "%25.22f, ", Mx[dim*i+j]);
+        fprintf(MATHEMATICA_OUT, "%25.22f, ", Mx[dim*j+i]);
       else
-        fprintf(MATHEMATICA_OUT, "%25.22f}", Mx[dim*i+j]);
+        fprintf(MATHEMATICA_OUT, "%25.22f}", Mx[dim*j+i]);
     }
     if (i != (dim-1))
       fprintf(MATHEMATICA_OUT, ",\n");
