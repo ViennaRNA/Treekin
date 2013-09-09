@@ -302,7 +302,7 @@ MxDiagonalize ( double *U, double **_S, double *P8)
       fprintf(stderr, "Matrix is not ergodic! Exiting...");
       exit(-1);
     }
-    fprintf(stderr, "Corrected numerical error: %e (%e per number)\n", (double)err, (double)(err/(long double)(dim*dim)));
+    if (!opt.quiet) fprintf(stderr, "Corrected numerical error: %e (%e per number)\n", (double)err, (double)(err/(long double)(dim*dim)));
 
 
     if (opt.want_verbose) MxPrint (U, "force symmetrized U", 'm');
@@ -760,31 +760,32 @@ void MxFPrintD(double *mx, char *name, int dim1, int dim2, FILE *out)
     fprintf(out, "{");
     for (l=0; l< dim2; l++) {
       if (l!=0) fprintf(out, ",");
-      fprintf(out,"%10.4g (%4d) ", mx[dim2*k+l], dim2*k+l);
+      fprintf(out,"%15.7g (%4d) ", mx[dim2*k+l], dim2*k+l);
     }
     fprintf(out,"}\n");
   }
   fprintf(out,"}-----------\n");
 }
 
-void MxFPrint(double *mx, char *name, char T, FILE *out)
+void MxFPrint(double *mx, char *name, char T, FILE *out, int pure)
 {
   int k, l;
   switch (T) {
   case 'm':    /* square matrix */
-    fprintf(out,"%s:\n", name);
+    if (!pure) fprintf(out,"%s:\n", name);
     for (k = 0; k < dim; k++) {
       for (l=0; l< dim; l++) {
-        fprintf(out,"%9.5f ", mx[dim*k+l]);
+        fprintf(out,"%15.7f ", mx[dim*k+l]);
       }
       fprintf(out,"\n");
     }
-    fprintf(out,"---\n");
+    if (!pure) fprintf(out,"---\n");
     break;
   case 'v':
-    fprintf(out,"%s:\n", name);
-    for (k = 0; k < dim; k++) fprintf(out,"%10.7f ", mx[k]);
-    fprintf(out,"\n---\n");
+    if (!pure) fprintf(out,"%s:\n", name);
+    for (k = 0; k < dim; k++) fprintf(out,"%15.7f ", mx[k]);
+    if (!pure) fprintf(out,"\n---\n");
+    else fprintf(out, "\n");
     break;
   default:
     fprintf(out,"ERROR MxPrint(): no handler 4 type %c\n", T);
@@ -796,7 +797,7 @@ void MxFPrint(double *mx, char *name, char T, FILE *out)
 void
 MxPrint(double *mx, char *name, char T)
 {
-  MxFPrint(mx, name, T, stderr);
+  MxFPrint(mx, name, T, stderr, 0);
 }
 
 void    PrintDummy(double *line)
@@ -1019,8 +1020,7 @@ MxFixevecs(double *evecs, double *evals)
 
   if (opt.absrb && (abscount > 1)) {
     int i,j;
-    fprintf(stderr, "\nWARNING: found %d additional absorbing state(s): ",
-            abscount-1);
+    if (!opt.quiet) fprintf(stderr, "\nWARNING: found %d additional absorbing state(s): ", abscount-1);
     for(i=1; i<dim; i++) {
       if(evals[i] == 1) {
         for(j=0; j<dim; j++) {
@@ -1086,7 +1086,7 @@ MxBinWrite(double *Mx, char what[], char T)
     strcat(binfile, ".");
     strcat(binfile,suffix);
   }
-  fprintf(stderr, "MxBinWrite: writing %s to %s\n", wosis, binfile);
+  if (!opt.quiet) fprintf(stderr, "MxBinWrite: writing %s to %s\n", wosis, binfile);
   BINOUT = fopen(binfile, "w");
   if (!BINOUT) {
     fprintf(stderr, "ERROR: could not open file pointer for\
@@ -1099,13 +1099,13 @@ MxBinWrite(double *Mx, char what[], char T)
   case 'm':  /* write matrix entries */
     for(i=0; i<dim; i++)
       for(j=0; j<dim; j++)
-        //info=fwrite(&Mx[dim*i+j],sizeof(double),1,BINOUT);
-        fprintf(stderr, "\n");
+        fwrite(&Mx[dim*i+j],sizeof(double),1,BINOUT);
+        //if (!opt.quiet) fprintf(stderr, "\n");
     break;
   case 'v': /* write vector entries */
     for(i=0; i<dim; i++)
-      //info=fwrite(&Mx[i],sizeof(double),1,BINOUT);
-      fprintf(stderr, "\n");
+      fwrite(&Mx[i],sizeof(double),1,BINOUT);
+      //fprintf(stderr, "\n");
     break;
   default:
     fprintf(stderr, "ERROR MxBinWrite(): no handler for type %c\n",T);
@@ -1192,7 +1192,7 @@ MxASCIIWrite(double *Mx)
     }
     fprintf(ASCIIOUT,"\n");
   }
-  fprintf(stderr, "matrix written to ASCII file\n");
+  if (!opt.quiet) fprintf(stderr, "matrix written to ASCII file\n");
   fclose(ASCIIOUT);
 }
 
@@ -1297,7 +1297,7 @@ MxFPT(double *U, double *p8, FILE *out)
       B[i] -= B[opt.real_abs];
     }
     dim--;
-    MxFPrint(B, "Absorbing times: ", 'v', out);
+    MxFPrint(B, "Absorbing times: ", 'v', out, out!=stderr);
     dim++;
 
     free(B);
@@ -1323,7 +1323,7 @@ MxFPT(double *U, double *p8, FILE *out)
       }
     }
 
-    MxFPrint(M, "First passage times (i-th row, j-th column represents fpt from i-th to j-th state)", 'm', out);
+    MxFPrint(M, "First passage times (i-th row, j-th column represents fpt from i-th to j-th state)", 'm', out, out!=stderr);
     free(M);
     free(Z);
   }
@@ -1369,21 +1369,23 @@ double *MxFPTOneState(double *U, int state)
     return NULL;
   }
 
-  int i,j,nrhs,nfo,*ipiv=NULL;
+  int i,j,nrhs,nfo;
+  int *ipiv=NULL;
+  int n=dim-1;
   double *A=NULL, *B=NULL;
-  A    = (double *)malloc((dim-1)*(dim-1)*sizeof(double));
+  A    = (double *)malloc(n*n*sizeof(double));
   B    = (double *)malloc(dim*sizeof(double));
 
   // A = Q(infinetisimal generator) = U^T-I with state-th column and row deleted (U is transposed!)
-  for(i=0; i<dim-1; i++) {
-    for (j=0; j<dim-1; j++) {
+  for(i=0; i<n; i++) {
+    for (j=0; j<n; j++) {
       int ui = (i>=state?i+1:i);
       int uj = (j>=state?j+1:j);
-      A[(dim-1)*i+j] = U[dim*ui+uj] - (i==j?1.0:0.0);
+      A[n*i+j] = U[dim*ui+uj] - (i==j?1.0:0.0);
     }
   }
 
-  for (i=0; i<dim-1; i++) B[i] = -1.0;
+  for (i=0; i<n; i++) B[i] = -1.0;
 
   /*
   dim--;
@@ -1392,14 +1394,14 @@ double *MxFPTOneState(double *U, int state)
   dim++;
   */
 
-  ipiv = (int *)malloc((dim-1)*sizeof(int));
+  ipiv = (int *)malloc(n*sizeof(int));
   nrhs=1;
 
-  //DGESV computes the solution to a real system of linear equations A * X = B (I think A must be transposed)
-  int n=dim-1;
+  //DGESV computes the solution to a real system of linear equations A * X = B (I think A must be transposed), solution goes to B
   dgesv_(&n, &nrhs, A, &n, ipiv, B, &n, &nfo);
 
-  for (i=dim; i>state; i--) {
+
+  for (i=dim-1; i>state; i--) {
     B[i] = B[i-1];
   }
   B[state] = 0.0;

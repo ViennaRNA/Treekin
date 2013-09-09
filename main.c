@@ -70,7 +70,7 @@ main (int argc, char **argv)
   // allocate space for other matrices
   MxGetSpace(&p8);
 
-  fprintf(stderr, "Time to initialize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
+  if (!opt.quiet) fprintf(stderr, "Time to initialize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
   clck1 = clock();
 
   // calculate equilibrium distribution
@@ -89,7 +89,7 @@ main (int argc, char **argv)
     if (opt.fpt_file!=NULL) {
       fpt = fopen(opt.fpt_file, "w");
       if (fpt==NULL) {
-        fprintf(stderr, "Cannot open file \"%s\" for FPT output, using \"stderr\" instead\n", opt.fpt_file);
+        if (!opt.quiet) fprintf(stderr, "Cannot open file \"%s\" for FPT output, using \"stderr\" instead\n", opt.fpt_file);
         fpt = stderr;
       }
     }
@@ -99,15 +99,16 @@ main (int argc, char **argv)
     } else {                                // only to state opt.ftp_num
       double *res = MxFPTOneState(U, opt.fpt_num-1);  // starting from 0
       if (res != NULL) {
-        fprintf(fpt, "First passage times to state number %d:\n", opt.fpt_num);
+        if (fpt==stderr) fprintf(fpt, "First passage times to state number %d:\n", opt.fpt_num);
         int k;
-        for (k = 0; k < dim; k++) fprintf(fpt, "%10.7f ", res[k]);
-        fprintf(fpt,"\n---\n");
+        for (k = 0; k < dim; k++) fprintf(fpt, "%15.7f ", res[k]);
+        if (fpt==stderr) fprintf(fpt,"\n---\n");
+        else fprintf(fpt, "\n");
         free(res);
       }
     }
     fclose(fpt);
-    fprintf(stderr, "Time to compute fpt: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
+    if (!opt.quiet) fprintf(stderr, "Time to compute fpt: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
     clck1 = clock();
   }
 
@@ -119,11 +120,11 @@ main (int argc, char **argv)
     else {
       clck1 = clock();
       MxDiagonalize (U, &S, p8);
-      fprintf(stderr, "Time to diagonalize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
+      if (!opt.quiet) fprintf(stderr, "Time to diagonalize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
       clck1 = clock();
     }
     MxIterate (p0, p8, S);
-    fprintf(stderr, "Time to iterate: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
+    if (!opt.quiet) fprintf(stderr, "Time to iterate: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
     free(S);
     free(p8);
   }

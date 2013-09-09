@@ -89,7 +89,7 @@ void MxEgro(double **Up, double **p0p, int dim)
 
     // set dimension to global
     MxInit(dim);
-    fprintf(stderr, "WARNING: Matrix is non-ergodic! Decreasing dimension to %d.\n", dim);
+    if (!opt.quiet) fprintf(stderr, "WARNING: Matrix is non-ergodic! Decreasing dimension to %d.\n", dim);
     //MxPrint(U, "Ergodic U", 'm');
 
     if (dim == 1) {

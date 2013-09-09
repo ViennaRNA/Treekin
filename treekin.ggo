@@ -28,4 +28,5 @@ option "wrecover"           w "Write recovery file containing Eigenvalues and Ei
 option "info"               - "Show settings" flag off
 option "ratesfile"          f "Name of the textfile containing the (barriers) rate matrix\n(NOTE: the rate matrix must have been print out with '%10.4g' per entry otherwise treekin will calculate crap)" string no
 option "verbose"            v "Verbose output" flag off
+option "quiet"              q "Be silent" flag off
 option "fptfile"            - "File where to write first passage times (meaningfull only with -t option)" string no

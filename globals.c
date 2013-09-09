@@ -140,7 +140,7 @@ set_parameters(void)
       probtmp = 0.0;
       for (i = 2; i < *pinitmp; i +=2)
         probtmp += pinitmp[i];
-      fprintf(stderr, "WARNING:  --p0 values normalized sum up to %5.2f\n",
+      if (!opt.quiet) fprintf(stderr, "WARNING:  --p0 values normalized sum up to %5.2f\n",
               probtmp);
     }
     opt.pini = pinitmp;
@@ -187,6 +187,7 @@ set_parameters(void)
     opt.n = INT_MAX;
   }
   if (args_info.degeneracy_given) opt.want_degenerate = 1;
+  if (args_info.quiet_flag) opt.quiet = 1;
   if (args_info.verbose_given) opt.want_verbose = 1;
   if (args_info.umatrix_given) opt.dumpU = 1;
   if (args_info.mathematicamatrix_given) opt.dumpMathematica = 1;
@@ -197,8 +198,8 @@ set_parameters(void)
     if (strcmp(args_info.fpt_arg, "all") == 0) {
       opt.fpt_num = -1;
     } else {
-      if (sscanf(args_info.fpt_arg, "%d", &opt.fpt_num) != 1) {
-        fprintf(stderr, "Value of --fpt (-p) must be either \"all\" or non-negative number.\n");
+      if (sscanf(args_info.fpt_arg, "%d", &opt.fpt_num) != 1 || opt.fpt_num<=0) {
+        fprintf(stderr, "Value of --fpt (-t) must be either \"all\" or positive number. (it is \"%s\")\n", args_info.fpt_arg);
         exit (EXIT_FAILURE);
       }
     }
@@ -212,7 +213,7 @@ set_parameters(void)
   }
   if (opt.rrecover && opt.wrecover) {
     opt.wrecover = 0;
-    fprintf(stderr, "WARNING: both options -w and -r were given\n");
+    if (!opt.quiet) fprintf(stderr, "WARNING: both options -w and -r were given\n");
     fprintf(stderr, "         disabling -w now, since they are mutually exclusive !\n");
   }
 }

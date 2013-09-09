@@ -79,7 +79,7 @@ ParseInfile(FILE *infile_fp, double **microrates)
   }
   else /* read from stdin */
     strcpy(rate_file, opt.rate_matrix);
-  fprintf(stderr, "WARNING: reading microrates from file %s\n\n", rate_file);
+  if (!opt.quiet) fprintf(stderr, "WARNING: reading microrates from file %s\n\n", rate_file);
 
   mr_FP = fopen(rate_file, "r+");
   if (mr_FP == NULL) {
@@ -145,7 +145,7 @@ int ParseRatesFile(double **Raten, int dim, int nstates)
   }
   else /* read from stdin */
     strcpy(rate_file, opt.rate_matrix);
-  fprintf(stderr, "WARNING: reading input matrix from file %s\n\n", rate_file);
+  if (!opt.quiet) fprintf(stderr, "WARNING: reading input matrix from file %s\n\n", rate_file);
 
   // open file
   rates_FP = fopen(rate_file, "r+");
@@ -202,7 +202,7 @@ int ParseRatesFile(double **Raten, int dim, int nstates)
   // shorten the matrix from dimension my_dim to dim:
   if (dim!=my_dim && my_dim>nstates) {
     //fprintf(stderr, "my_dim, dim, nstates:%d %d %d\n", dim ,my_dim, nstates);
-    fprintf(stderr, "WARNING: dimensions do not agree: decreasing %d to %d\n", my_dim, dim);
+    if (!opt.quiet) fprintf(stderr, "WARNING: dimensions do not agree: decreasing %d to %d\n", my_dim, dim);
     MxRShorten(tmp_rates, Raten, my_dim, dim);
     free(tmp_rates);
   } else {

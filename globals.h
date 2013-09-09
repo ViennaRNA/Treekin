@@ -43,6 +43,7 @@ typedef struct {         /* command-line options */
   int  fpt_num;          /* state to count ftp's to (-1 for all states)*/
   char *rate_matrix;     /* path to the file containing the rate matrix, if given */
   char *fpt_file;        /* output file for first passage times */
+  int quiet;             // be quiet?
 } treekin_options;
 
 treekin_options opt;
@@ -52,7 +53,7 @@ void parse_commandline(int argc, char **argv);
 
 void free_gengetopt();
 
-void MxFPrint(double *mx, char *name, char T, FILE *out);
+void MxFPrint(double *mx, char *name, char T, FILE *out, int pure);
 void MxPrint(double *mx, char *name, char T);
 #endif
 /* End of file */
