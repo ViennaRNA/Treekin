@@ -37,8 +37,8 @@ parse_commandline(int argc, char **argv)
     fprintf(stderr, "error while parsing command-line options\n");
     exit(EXIT_FAILURE);
   }
-  set_parameters();
 
+  //input file:
   if (args_info.inputs_num) {
     char *infile=NULL;
     to_basename(args_info.inputs[0]);
@@ -53,9 +53,21 @@ parse_commandline(int argc, char **argv)
       exit(EXIT_FAILURE);
     }
     free(infile);
-  }
-  else
+  } else {
     opt.INFILE = stdin;
+  }
+
+  // rate file?
+  if (args_info.ratesfile_given) {
+    opt.RATFILE = fopen(args_info.ratesfile_arg, "r");
+    if (opt.RATFILE == NULL) {
+      if (!opt.quiet) fprintf(stderr, "Cannot open rate file %s!\n", args_info.ratesfile_arg);
+    }
+  } else {
+    opt.RATFILE = NULL;
+  }
+
+  set_parameters();
 }
 
 void free_gengetopt()
@@ -87,23 +99,8 @@ set_parameters(void)
 {
   if(strncmp(args_info.method_arg, "F", 1)==0)
     opt.method = 'F';
-  else if (strncmp(args_info.method_arg, "I", 1)==0)
-    opt.method = 'I';
-
-
-  if (args_info.ratesfile_given) {
-    opt.rate_matrix = strdup(args_info.ratesfile_arg);
-    FILE *bla = fopen(opt.rate_matrix, "r");
-    if(!bla) {
-      fprintf(stderr, "Cannot open rate matrix file '%s'\n", opt.rate_matrix);
-      exit(EXIT_FAILURE);
-    }
-    fclose(bla);
-  }
-  else {
-    opt.rate_matrix = (char*) calloc (10, sizeof(char));
-    strcpy(opt.rate_matrix, "rates.out");
-  }
+  else if (strncmp(args_info.method_arg, "A", 1)==0)
+    opt.method = 'A';
 
   if (args_info.fptfile_given) {
     opt.fpt_file = strdup(args_info.fptfile_arg);
@@ -177,6 +174,13 @@ set_parameters(void)
     }
   }
 
+  // use input as rate matrix if rate matrix is not specified
+  if (!args_info.ratesfile_given && opt.method=='I') {
+    if (!opt.quiet) fprintf(stderr, "Using input as a rate file!\n");
+    opt.RATFILE = opt.INFILE;
+    opt.INFILE = NULL;
+  }
+
   if (args_info.nstates_given) {
     if( (opt.n = args_info.nstates_arg) <= 1 ) {
       fprintf(stderr, "Value of --nstates must be >= 1\n");
@@ -214,7 +218,7 @@ set_parameters(void)
   if (opt.rrecover && opt.wrecover) {
     opt.wrecover = 0;
     if (!opt.quiet) fprintf(stderr, "WARNING: both options -w and -r were given\n");
-    fprintf(stderr, "         disabling -w now, since they are mutually exclusive !\n");
+    if (!opt.quiet) fprintf(stderr, "         disabling -w now, since they are mutually exclusive !\n");
   }
 }
 
@@ -229,7 +233,7 @@ ini_globs(void)
   opt.t8              = 1000000000.;
   opt.want_degenerate =          0;
   opt.tinc            =          1.02;
-  opt.method          =          'A';
+  opt.method          =          'I';
   opt.dumpU           =          0;
   opt.dumpMathematica =          0;
   opt.matexp          =          0;

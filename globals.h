@@ -38,11 +38,12 @@ typedef struct {         /* command-line options */
   double *pini;          /* start population at lmin xxx */
   char method;           /* method to build transition matrix */
   FILE *INFILE;          /* input file (usually bar-file) */
+  FILE *RATFILE;         /* input file (rates) */
   char *sequence;        /* sequence */
   int  fpt;              /* switch for fpt-related calculations */
   int  fpt_num;          /* state to count ftp's to (-1 for all states)*/
-  char *rate_matrix;     /* path to the file containing the rate matrix, if given */
   char *fpt_file;        /* output file for first passage times */
+  char *vis_file;        /* output file for visualisation */
   int quiet;             // be quiet?
 } treekin_options;
 

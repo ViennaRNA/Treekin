@@ -45,9 +45,9 @@ SubInfo *E;
 
 /* functions */
 int  ParseBarfile (FILE *fp, BarData **lmin);
-int  ParseInfile(FILE *infile_fp, double **microrates);
+int  ParseInfile(FILE *infile_fp, FILE *mr_FP, double **microrates);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
-int  ParseRatesFile(double **Raten, int dim, int nstates);
+int  ParseRatesFile(FILE *rates_FP, double **Raten, int nstates);
 
 #endif
 

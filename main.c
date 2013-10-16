@@ -42,11 +42,14 @@ main (int argc, char **argv)
   parse_commandline(argc, argv);
 
   switch (opt.method) {
-    case 'F': dim = ParseInfile(opt.INFILE, &R); break;
+    case 'F': dim = ParseInfile(opt.INFILE, opt.RATFILE, &R); break;
     case 'I':
-        dim = ParseBarfile (opt.INFILE, &Data);
-        dim = ParseRatesFile(&R, dim, opt.n);
-        if (dim == -1) {
+        dim = ParseRatesFile(opt.RATFILE, &R, opt.n);
+        if (opt.INFILE) {
+          ParseBarfile(opt.INFILE, &Data);
+        }
+        if (dim == 0) {
+          fprintf(stderr, "ERROR: Rate file empty!\n");
           free_gengetopt();
           exit(EXIT_FAILURE);
         }
@@ -54,8 +57,9 @@ main (int argc, char **argv)
     case 'A': dim = ParseBarfile (opt.INFILE, &Data); break;
   }
 
-  // iniialise matrices, dont forget to release 'em
+  // initialise matrices, dont forget to release 'em
   MxInit (dim);
+
 
   // here we create the "almighty" matrix U which is actually only matrix needed for whole program
   U  = MxBar2Matrix(Data, R);

@@ -10,18 +10,18 @@ args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-o
 
 # Options
 option "absorb"             a "Make a state absorbing" typestr="state" int no
-option "method"             m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI ==> use rates from barriers" values="A","F","I" default="A" no
+option "method"             m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI ==> use rates from barriers" values="A","F","I" default="I" no
 option "t0"                 - "Start time" typestr="time" default="0.1" double no
 option "t8"                 - "Stop time" typestr="time" default="1E9" double no
-option "Temp"               T "Temperature in Celsius" double no
-option "nstates"            n "Read only <int> states (assume quasi-stationary distribution (derivation of others is = 0))"  int no
-option "p0"                 - "Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1)\n(example: \"--p0 2=0.5\" - state 2 has initial population 50 percent)" string no multiple
-option "tinc"               - "Time scaling factor (for log time-scale)" double no
+option "Temp"               T "Temperature in Celsius" default="37.0" double no
+option "nstates"            n "Read only <int> states (assume quasi-stationary distribution (derivation of others is = 0))" int no
+option "p0"                 - "Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1)\n(example: \"--p0 2=1.0\" - state 2 has initial population 100 percent)" string no multiple
+option "tinc"               - "Time scaling factor (for log time-scale)" default="1.02" double no
 option "degeneracy"         d "Consider degeneracy in transition rates" flag off
 option "exponent"           e "Use matrix-expontent routines, NO diagonalization" flag off
 option "umatrix"            u "Dump transition matrix U to a file mx.txt (and to binary mx.bin - not fixed yet)" flag off
 option "mathematicamatrix"  x "Dump transition matrix U to Mathematica-readable file mxMat.txt" flag off
-option "bin"                b "Assume binary input" flag off
+option "bin"                b "Assume binary rates input" flag off
 option "fpt"                t "Calculate first passage times\n\"all\" - calculate all fpt's(slow)\n<num> - calculate fpt's to state <num> from all states" string no
 option "recover"            r "Recover from pre-calculated Eigenvalues and Eigenvectors" flag off
 option "wrecover"           w "Write recovery file containing Eigenvalues and Eigenvectors" flag off
@@ -30,3 +30,4 @@ option "ratesfile"          f "Name of the textfile containing the (barriers) ra
 option "verbose"            v "Verbose output" flag off
 option "quiet"              q "Be silent" flag off
 option "fptfile"            - "File where to write first passage times (meaningfull only with -t option)" string no
+option "visualize"          - "Filename where to print visualization of rate graph (without file subscript, two files will be generated: .dot and .eps with text and visual representation of graph)" string no

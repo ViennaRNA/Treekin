@@ -851,9 +851,7 @@ MxMemoryCleanUp (void)
   if(sqrPI_)       free(sqrPI_);
   if(opt.sequence) free(opt.sequence);
   if(opt.basename) free(opt.basename);
-  if(opt.rate_matrix) free(opt.rate_matrix);
   if(opt.fpt_file) free(opt.fpt_file);
-  fclose(opt.INFILE);
 
   free_gengetopt();
 }
