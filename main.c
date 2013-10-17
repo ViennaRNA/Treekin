@@ -62,6 +62,11 @@ main (int argc, char **argv)
   // initialise matrices, dont forget to release 'em
   MxInit (dim);
 
+  // visualize the graph:
+  if (args_info.visualize_given) {
+    VisulizeRates(args_info.visualize_arg, R, Data);
+  }
+
 
   // here we create the "almighty" matrix U which is actually only matrix needed for whole program
   U  = MxBar2Matrix(Data, R);

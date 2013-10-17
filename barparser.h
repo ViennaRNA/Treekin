@@ -49,6 +49,9 @@ int  ParseInfile(FILE *infile_fp, FILE *mr_FP, double **microrates);
 int  ParseSaddleFile(TypeDegSaddle **my_saddle);
 int  ParseRatesFile(FILE *rates_FP, double **Raten, int nstates);
 
+// visualisation
+void VisulizeRates(char *filename, double *R, BarData *Data, int dim);
+
 #endif
 
 /* End of file */

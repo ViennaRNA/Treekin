@@ -427,6 +427,23 @@ my_getline(FILE *fp)
   } while (cp == NULL);
   return (line);
 }
+
+// visualisation
+void VisulizeRates(char *filename, double *R, BarData *Data, int dim)
+{
+  FILE *dotf;
+
+  char fname[100];
+  strcpy(fname, filename);
+  strcat(fname, ".dot");
+  dotf = fopen(fname, "w");
+
+
+
+  fclose(dotf);
+}
+
+
 /* End of file */
 
 
