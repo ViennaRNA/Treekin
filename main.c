@@ -63,8 +63,8 @@ main (int argc, char **argv)
   MxInit (dim);
 
   // visualize the graph:
-  if (args_info.visualize_given) {
-    VisulizeRates(args_info.visualize_arg, R, Data);
+  if (opt.vis_file) {
+    VisulizeRates(opt.vis_file, R, Data, dim);
   }
 
 

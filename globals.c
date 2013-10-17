@@ -173,6 +173,9 @@ set_parameters(void)
       exit (EXIT_FAILURE);
     }
   }
+  if (args_info.visualize_given) {
+    opt.vis_file = args_info.visualize_arg;
+  }
 
   // use input as rate matrix if rate matrix is not specified
   if (!args_info.ratesfile_given && opt.method=='I') {
@@ -243,6 +246,7 @@ ini_globs(void)
   opt.rrecover        =          0;
   opt.wrecover        =          0;
   opt.basename        =          NULL;
+  opt.vis_file       =          NULL;
 }
 
 /*==============================*/

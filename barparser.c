@@ -434,13 +434,40 @@ void VisulizeRates(char *filename, double *R, BarData *Data, int dim)
   FILE *dotf;
 
   char fname[100];
+  int i, j;
   strcpy(fname, filename);
   strcat(fname, ".dot");
   dotf = fopen(fname, "w");
 
+  if (dotf) {
+    fprintf(dotf, "digraph G {\n\tnode [width=0.1, height=0.1, shape=circle];\n");
+      // nodes:
+      for (i=0; i<dim; i++) {
+        char energy[20] = "";
+        if (Data!=NULL) sprintf(energy, "\\n%.2f", Data[i].energy);
 
+        fprintf(dotf, "\"%d\" [label=\"%d%s\"]\n", i+1, i+1, energy);
+      }
+      fprintf(dotf, "\n");
 
-  fclose(dotf);
+      // edges:
+      int count = 1;
+      for (i=0; i<dim; i++) {
+        for (j=0; j<dim; j++) {
+          if (i!=j && R[dim*j+i]>0) {
+            fprintf(dotf, "\"%d\" -> \"%d\" [label=\"%10.4g\"]\n", i+1, j+1, R[dim*j+i]);
+            count++;
+          }
+        }
+      }
+      fprintf(dotf, "\n}\n");
+
+    fclose(dotf);
+  }
+
+  char syst[200];
+  sprintf(syst, "dot -Tps < %s > %s.eps", fname, filename);
+  system(syst);
 }
 
 
