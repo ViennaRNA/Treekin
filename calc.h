@@ -35,8 +35,11 @@ void    MxEqDistrFromLocalBalance(double *U, double **p8);
 void    MxFPTSimple(double *U);
 double *MxFPTOneState(double *U, int state);
 
+// read rates from binary file
+int     MxReadBinRates(FILE *rate_file, double **rate_mx, int nstates);
+
 // matrix shortening routine (when nstates specified)
-void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim);
+void    MxRShorten(double *tmp_rates, double **shortened, int new_dim, int old_dim);
 
 // not used! (just for past testing)
 double  MxFPTRandom(double *P, double *U, int src, int dst, int packets);

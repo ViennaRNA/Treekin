@@ -36,7 +36,7 @@ static double  max_saddle(int i, int j, BarData *Data);
 static void    print_settings(void);
 static char   *time_stamp(void);
 static void    MxDoDegeneracyStuff(void);
-static void    MxBinWrite (double *Mx, char what[], char T);
+static void    MxBinWrite(double *Mx, char what[], char T);
 static int     MxBinRead(double** Mx, char what[], char T);
 static void    MxASCIIWrite(double *Mx);
 static void    MxKotzOutMathematica(double *Mx);
@@ -95,8 +95,10 @@ MxBar2Matrix ( BarData *Data, double *R)
              "ERROR in MxBar2Matrix(): No handler 4 method %c\n", opt.method);
     exit(EXIT_FAILURE);
   }
-  if (opt.dumpU)
+  if (opt.dumpU) {
     MxASCIIWrite(U);
+    MxBinWrite(U, "U", 'm');
+  }
   return (U);
 }
 /*==*/
@@ -307,7 +309,6 @@ MxDiagonalize ( double *U, double **_S, double *P8)
 
     if (opt.want_verbose) MxPrint (U, "force symmetrized U", 'm');
   }
-  if (opt.dumpU) MxBinWrite(U, "U", 'm');
 
   if(opt.absrb) {
     MxEVLapackNonSym(U);
@@ -1087,12 +1088,11 @@ MxBinWrite(double *Mx, char what[], char T)
   if (!opt.quiet) fprintf(stderr, "MxBinWrite: writing %s to %s\n", wosis, binfile);
   BINOUT = fopen(binfile, "w");
   if (!BINOUT) {
-    fprintf(stderr, "ERROR: could not open file pointer for\
-    binary outfile %s\n", binfile);
+    fprintf(stderr, "ERROR: could not open file pointer for binary outfile %s\n", binfile);
     exit(EXIT_FAILURE);
   }
   /* first write dim to file */
-  //info = fwrite(&dim,sizeof(int),1,BINOUT);
+  fwrite(&dim,sizeof(int),1,BINOUT);
   switch(T) {
   case 'm':  /* write matrix entries */
     for(i=0; i<dim; i++)
@@ -1150,11 +1150,11 @@ MxBinRead(double **Mx, char what[], char T)
     exit(EXIT_FAILURE);
   }
   /* read dimension from file */
-  //info = fread(&dimension,sizeof(int),1,BININ);
+  fread(&dimension,sizeof(int),1,BININ);
   switch(T) { /* read data */
   case 'm':
     data = (double *)calloc(dimension*dimension, sizeof(double));
-    //info=fread((void*)data, sizeof(double), dimension*dimension,BININ);
+    fread((void*)data, sizeof(double), dimension*dimension,BININ);
     break;
   case 'v':
     data = (double *)calloc(dimension, sizeof(double));
@@ -1682,54 +1682,54 @@ void MxEqDistrFromLocalBalance ( double *U, double **p8 )
     }
 }
 
-void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim)
+void MxRShorten(double *tmp_rates, double **shortened, int new_dim, int old_dim)
 {
   //does: shortened = GG - GB*BB^(-1)*BG, where matrix tmp_rates is split as:
   //tmp_rates = (GG | GB)
   //            (BG | BB)
-  // GG has dimension dim*dim; tmp_rates my_dim*my_dim
+  // GG has dimension dim*dim; tmp_rates new_dim*new_dim
   // create matrices:
 
-  int bdim = my_dim - dim;
+  int bdim = new_dim - old_dim;
   int i,j;
 
-  double *gg = (double *)calloc(dim*dim,sizeof(double));
-  double *bg = (double *)calloc(bdim*dim,sizeof(double));
+  double *gg = (double *)calloc(old_dim*old_dim,sizeof(double));
+  double *bg = (double *)calloc(bdim*old_dim,sizeof(double));
   double *bb = (double *)calloc(bdim*bdim,sizeof(double));
-  double *gb = (double *)calloc(dim*bdim,sizeof(double));
+  double *gb = (double *)calloc(old_dim*bdim,sizeof(double));
 
   // first we need to fix the diagonal entries tmp_rates[i][i] = sum_j tmp_rates[i][j]
-  for (i = 0; i < my_dim; i++) tmp_rates[my_dim*i+i] = 0.0;
-  for (i = 0; i < my_dim; i++) {
+  for (i = 0; i < new_dim; i++) tmp_rates[new_dim*i+i] = 0.0;
+  for (i = 0; i < new_dim; i++) {
     double tmp = 0.00;
     // calculate column sum
-    for(j = 0; j < my_dim; j++)  tmp += tmp_rates[my_dim*j+i];
-    tmp_rates[my_dim*i+i] = -tmp;
+    for(j = 0; j < new_dim; j++)  tmp += tmp_rates[new_dim*j+i];
+    tmp_rates[new_dim*i+i] = -tmp;
   }
 
 
   // fill the matrices: (row = i; column = j)
-  for (i=0; i<dim; i++) {
-    for (j=0; j<dim; j++) {
-      gg[dim*i+j] = tmp_rates[my_dim*i+j];
+  for (i=0; i<old_dim; i++) {
+    for (j=0; j<old_dim; j++) {
+      gg[old_dim*i+j] = tmp_rates[new_dim*i+j];
     }
   }
 
   for (i=0; i<bdim; i++) {
-    for (j=0; j<dim; j++) {
-      bg[dim*i+j] = tmp_rates[my_dim*(i+dim)+j];
+    for (j=0; j<old_dim; j++) {
+      bg[old_dim*i+j] = tmp_rates[new_dim*(i+old_dim)+j];
     }
   }
 
-  for (i=0; i<dim; i++) {
+  for (i=0; i<old_dim; i++) {
     for (j=0; j<bdim; j++) {
-      gb[bdim*i+j] = tmp_rates[my_dim*i+j+dim];
+      gb[bdim*i+j] = tmp_rates[new_dim*i+j+old_dim];
     }
   }
 
   for (i=0; i<bdim; i++) {
     for (j=0; j<bdim; j++) {
-      bb[bdim*i+j] = tmp_rates[my_dim*(i+dim)+j+dim];
+      bb[bdim*i+j] = tmp_rates[new_dim*(i+old_dim)+j+old_dim];
     }
   }
 
@@ -1742,19 +1742,19 @@ void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim)
   // result2 = gb*bb^(-1)*bg
   minv(bb, bdim);
   //MxFPrintD(bb, "BBinv", bdim, bdim, stderr);
-  double *result = (double *)calloc(dim*bdim,sizeof(double));
-  mmul_singular(result, gb, bb, dim, bdim, bdim, 0);
+  double *result = (double *)calloc(old_dim*bdim,sizeof(double));
+  mmul_singular(result, gb, bb, old_dim, bdim, bdim, 0);
   //MxFPrintD(result, "gb*bb-1", dim, bdim, stderr);
-  double *result2 = (double *)calloc(dim*dim,sizeof(double));
-  mmul_singular(result2, result, bg, dim, bdim, dim, 1);
+  double *result2 = (double *)calloc(old_dim*old_dim,sizeof(double));
+  mmul_singular(result2, result, bg, old_dim, bdim, old_dim, 1);
 
   //MxFPrintD(result2, "gb*bb-1*bg", dim, dim, stderr);
 
 
   // result2 = gg - result2
-  for (i=0; i<dim; i++) {
-    for (j=0; j<dim; j++) {
-      result2[dim*i+j] = gg[dim*i+j] - result2[dim*i+j];
+  for (i=0; i<old_dim; i++) {
+    for (j=0; j<old_dim; j++) {
+      result2[old_dim*i+j] = gg[old_dim*i+j] - result2[old_dim*i+j];
     }
   }
 
@@ -1768,6 +1768,26 @@ void MxRShorten(double *tmp_rates, double **shortened, int my_dim, int dim)
   free(bb);
 }
 
+int MxReadBinRates(FILE *rate_file, double **rate_mx, int nstates)
+{
+  int dimension = 0;
+  /* read dimension from file */
+  fread(&dimension,sizeof(int),1,rate_file);
+  double *data = (double *)calloc(dimension*dimension, sizeof(double));
+  fread((void*)data, sizeof(double), dimension*dimension,rate_file);
+
+  *rate_mx = data;
+  fclose(rate_file);
+
+  if (dimension > nstates) {
+    double *tmp;
+    MxRShorten(*rate_mx, &tmp, opt.n, dimension);
+    free(*rate_mx);
+    *rate_mx = tmp;
+    dimension = nstates;
+  }
+  return dimension;
+}
 
 
 /* End of file */

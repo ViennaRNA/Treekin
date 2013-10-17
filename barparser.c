@@ -165,6 +165,70 @@ int ParseRatesFile(FILE *rates_FP, double **Raten, int nstates)
   return my_dim;
 }
 
+int ParseBinRatesFile(FILE *rates_FP, double **Raten, int nstates)
+{
+  char *cp=NULL, *raten_line=NULL;
+  //char *suffix = "rates.out";
+  double rate, *tmp_rates=NULL;
+
+  // valid rate file?
+  if (rates_FP==NULL) {
+    fprintf(stderr, "ERROR: Rate file is NULL!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  // actual reading:
+  int my_dim = 0;
+    // get length of line
+  char *tmp_line = my_getline(rates_FP);
+  raten_line = (char*) calloc(strlen(tmp_line)+1, sizeof(char));
+  strcpy(raten_line, tmp_line);
+
+  char *p = strtok(tmp_line, " \t\n");
+  while (p && sscanf(p, "%lf", &rate)==1) {
+    //fprintf(stderr, "%d-%lf-\n", my_dim, rate);
+    my_dim++;
+    p = strtok(NULL, " \t\n");
+  }
+  free(tmp_line);
+
+  // allocate space
+  tmp_rates = (double *)calloc(my_dim*my_dim,sizeof(double));
+  assert(tmp_rates != NULL);
+
+  // read!
+  int i=0, j=0, read=0;
+  while(raten_line != NULL && i<my_dim) {
+    cp = raten_line;
+    while(cp != NULL && sscanf(cp,"%lf%n", &rate,&read) == 1 && j<my_dim) {
+      tmp_rates[my_dim*j+i] = rate;
+      cp+=read;
+      j++;
+    }
+    j=0;
+    i++;
+    free(raten_line);
+    raten_line = my_getline(rates_FP);
+  }
+
+  // check dimensions:
+  if (j==0) { j=my_dim-1; i--; } // if last line empty
+  if (i!=my_dim-1 || j!=my_dim-1) {
+    if (!opt.quiet) fprintf(stderr, "WARNING: dimensions are corrupted lines: %d(%d); rows: %d(%d)\n", j, my_dim, i, my_dim);
+  }
+
+  // shorten the matrix from dimension my_dim to nstates:
+  if (my_dim>nstates) {
+    if (!opt.quiet) fprintf(stderr, "decreasing %d to %d\n", my_dim, nstates);
+    MxRShorten(tmp_rates, Raten, my_dim, nstates);
+    free(tmp_rates);
+  } else {
+    *Raten = tmp_rates;
+  }
+  fclose(rates_FP);
+  return my_dim;
+}
+
 /* old version
 int ParseRatesFile(double **Raten, int dim)
 {

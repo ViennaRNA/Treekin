@@ -22,7 +22,7 @@ void eigen(double *a,double *ev,int n);
      to diagonal form and update an orthogonal transformation matrix.*/
 int qrevec(double *ev,double *v,double *d,int m);
 
-/*Transform a real symmetric matrix to tridiagonal form and
+/*Transform a real symmetric matrix to tridiagonal form andŔ
      compute the orthogonal matrix of this transformation.*/
 void housev(double *a,double *d,double *dp,int n);
 

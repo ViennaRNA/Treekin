@@ -44,7 +44,9 @@ main (int argc, char **argv)
   switch (opt.method) {
     case 'F': dim = ParseInfile(opt.INFILE, opt.RATFILE, &R); break;
     case 'I':
-        dim = ParseRatesFile(opt.RATFILE, &R, opt.n);
+        if (opt.binrates) dim = MxReadBinRates(opt.RATFILE, &R, opt.n);
+        else dim = ParseRatesFile(opt.RATFILE, &R, opt.n);
+
         if (opt.INFILE) {
           ParseBarfile(opt.INFILE, &Data);
         }
