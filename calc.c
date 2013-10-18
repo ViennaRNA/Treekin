@@ -1682,54 +1682,80 @@ void MxEqDistrFromLocalBalance ( double *U, double **p8 )
     }
 }
 
-void MxRShorten(double *tmp_rates, double **shortened, int new_dim, int old_dim)
+int MxShorten(double **shorten, int nstates, int my_dim, int max) {
+  // shorten the matrix from dimension my_dim to nstates:
+  if (my_dim>nstates) {
+    if (!opt.quiet) fprintf(stderr, "decreasing %d to %d\n", my_dim, nstates);
+
+    // shorten by some value max
+    if (max!=1) {
+      while (my_dim-max > nstates) {
+        MxRShorten(shorten, my_dim, my_dim-max);
+        if (!opt.quiet) fprintf(stderr, "%d done...\n", my_dim-max);
+        my_dim -= max;
+      }
+      MxRShorten(shorten, my_dim, nstates);
+      my_dim = nstates;
+    } else {
+      while (my_dim!=nstates) {
+        MxOneShorten(shorten, my_dim);
+        my_dim--;
+      }
+    }
+  }
+
+  return my_dim;
+}
+
+void MxRShorten(double **shorten, int fulldim, int gdim)
 {
   //does: shortened = GG - GB*BB^(-1)*BG, where matrix tmp_rates is split as:
   //tmp_rates = (GG | GB)
   //            (BG | BB)
-  // GG has dimension dim*dim; tmp_rates new_dim*new_dim
+  // GG has dimension gdim*gdim; tmp_rates fulldim*fulldim
   // create matrices:
 
-  int bdim = new_dim - old_dim;
+  int bdim = fulldim - gdim;
   int i,j;
 
-  double *gg = (double *)calloc(old_dim*old_dim,sizeof(double));
-  double *bg = (double *)calloc(bdim*old_dim,sizeof(double));
+  double *gg = (double *)calloc(gdim*gdim,sizeof(double));
+  double *bg = (double *)calloc(bdim*gdim,sizeof(double));
   double *bb = (double *)calloc(bdim*bdim,sizeof(double));
-  double *gb = (double *)calloc(old_dim*bdim,sizeof(double));
+  double *gb = (double *)calloc(gdim*bdim,sizeof(double));
 
   // first we need to fix the diagonal entries tmp_rates[i][i] = sum_j tmp_rates[i][j]
-  for (i = 0; i < new_dim; i++) tmp_rates[new_dim*i+i] = 0.0;
-  for (i = 0; i < new_dim; i++) {
+  double *tmp_rates = *shorten;
+  for (i = 0; i < fulldim; i++) tmp_rates[fulldim*i+i] = 0.0;
+  for (i = 0; i < fulldim; i++) {
     double tmp = 0.00;
     // calculate column sum
-    for(j = 0; j < new_dim; j++)  tmp += tmp_rates[new_dim*j+i];
-    tmp_rates[new_dim*i+i] = -tmp;
+    for(j = 0; j < fulldim; j++)  tmp += tmp_rates[fulldim*j+i];
+    tmp_rates[fulldim*i+i] = -tmp;
   }
 
 
   // fill the matrices: (row = i; column = j)
-  for (i=0; i<old_dim; i++) {
-    for (j=0; j<old_dim; j++) {
-      gg[old_dim*i+j] = tmp_rates[new_dim*i+j];
+  for (i=0; i<gdim; i++) {
+    for (j=0; j<gdim; j++) {
+      gg[gdim*i+j] = tmp_rates[fulldim*i+j];
     }
   }
 
   for (i=0; i<bdim; i++) {
-    for (j=0; j<old_dim; j++) {
-      bg[old_dim*i+j] = tmp_rates[new_dim*(i+old_dim)+j];
+    for (j=0; j<gdim; j++) {
+      bg[gdim*i+j] = tmp_rates[fulldim*(i+gdim)+j];
     }
   }
 
-  for (i=0; i<old_dim; i++) {
+  for (i=0; i<gdim; i++) {
     for (j=0; j<bdim; j++) {
-      gb[bdim*i+j] = tmp_rates[new_dim*i+j+old_dim];
+      gb[bdim*i+j] = tmp_rates[fulldim*i+j+gdim];
     }
   }
 
   for (i=0; i<bdim; i++) {
     for (j=0; j<bdim; j++) {
-      bb[bdim*i+j] = tmp_rates[new_dim*(i+old_dim)+j+old_dim];
+      bb[bdim*i+j] = tmp_rates[fulldim*(i+gdim)+j+gdim];
     }
   }
 
@@ -1742,33 +1768,62 @@ void MxRShorten(double *tmp_rates, double **shortened, int new_dim, int old_dim)
   // result2 = gb*bb^(-1)*bg
   minv(bb, bdim);
   //MxFPrintD(bb, "BBinv", bdim, bdim, stderr);
-  double *result = (double *)calloc(old_dim*bdim,sizeof(double));
-  mmul_singular(result, gb, bb, old_dim, bdim, bdim, 0);
+  double *result = (double *)calloc(gdim*bdim,sizeof(double));
+  mmul_singular(result, gb, bb, gdim, bdim, bdim, 0);
   //MxFPrintD(result, "gb*bb-1", dim, bdim, stderr);
-  double *result2 = (double *)calloc(old_dim*old_dim,sizeof(double));
-  mmul_singular(result2, result, bg, old_dim, bdim, old_dim, 1);
+  double *result2 = (double *)calloc(gdim*gdim,sizeof(double));
+  mmul_singular(result2, result, bg, gdim, bdim, gdim, 1);
 
   //MxFPrintD(result2, "gb*bb-1*bg", dim, dim, stderr);
 
 
   // result2 = gg - result2
-  for (i=0; i<old_dim; i++) {
-    for (j=0; j<old_dim; j++) {
-      result2[old_dim*i+j] = gg[old_dim*i+j] - result2[old_dim*i+j];
+  for (i=0; i<gdim; i++) {
+    for (j=0; j<gdim; j++) {
+      result2[gdim*i+j] = gg[gdim*i+j] - result2[gdim*i+j];
     }
   }
 
   //MxFPrintD(result2, "matrix after shortening", dim ,dim, stderr);
-
-  *shortened = result2;
   free(result);
+  free(*shorten);
   free(gg);
   free(gb);
   free(bg);
   free(bb);
+  *shorten = result2;
 }
 
-int MxReadBinRates(FILE *rate_file, double **rate_mx, int nstates)
+void MxOneShorten(double **shorten, int fulldim)
+{
+  //does: shortened = GG - GB*BB^(-1)*BG, where matrix tmp_rates is split as:
+  //tmp_rates = (GG | GB)
+  //            (BG | BB)
+  // GG has dimension fulldim-1*fulldim-1; tmp_rates fulldim*fulldim
+  // create matrices:
+
+  int gdim = fulldim-1;
+  double *result = (double *)calloc(gdim*gdim,sizeof(double));
+
+  double *tmp_rates = *shorten;
+
+  int i, j;
+  double c = 1.0/tmp_rates[fulldim*gdim + gdim];
+  for (i=0; i<gdim; i++) {
+    for (j=0; j<gdim; j++) {
+      // just x - a*c^-1*b
+      result[gdim*i+j] = tmp_rates[fulldim*i+j] - c*tmp_rates[fulldim*gdim + i]*tmp_rates[fulldim*j + gdim];
+    }
+  }
+
+  MxFPrintD(tmp_rates, "Q", fulldim, fulldim, stderr);
+  MxFPrintD(result, "Q-1", gdim, gdim, stderr);
+
+  free(*shorten);
+  *shorten = result;
+}
+
+int MxReadBinRates(FILE *rate_file, double **rate_mx, int nstates, int max)
 {
   int dimension = 0;
   /* read dimension from file */
@@ -1779,13 +1834,9 @@ int MxReadBinRates(FILE *rate_file, double **rate_mx, int nstates)
   *rate_mx = data;
   fclose(rate_file);
 
-  if (dimension > nstates) {
-    double *tmp;
-    MxRShorten(*rate_mx, &tmp, opt.n, dimension);
-    free(*rate_mx);
-    *rate_mx = tmp;
-    dimension = nstates;
-  }
+  // decrease dimension
+  dimension = MxShorten(rate_mx, nstates, dimension, max);
+
   return dimension;
 }
 

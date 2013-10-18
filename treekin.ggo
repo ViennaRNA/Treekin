@@ -31,3 +31,5 @@ option "verbose"            v "Verbose output" flag off
 option "quiet"              q "Be silent" flag off
 option "fptfile"            - "File where to write first passage times (meaningfull only with -t option)" string no
 option "visualize"          - "Filename where to print visualization of rate graph (without file subscript, two files will be generated: .dot and .eps with text and visual representation of graph)" string no
+option "just-shorten"       - "Do not diagonalize and iterate, just shorten input (meaningfull only with -n X option or -fpt option or --visualize option)" flag off
+option "max-decrease"       - "Maximal decrease in dimension in one step" default="1000000" int no

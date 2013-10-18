@@ -193,6 +193,10 @@ set_parameters(void)
     // set opt.n to infinity
     opt.n = INT_MAX;
   }
+  if (args_info.just_shorten_flag) {
+    opt.just_sh = 1;
+  }
+  opt.max_decrease = args_info.max_decrease_arg;
   if (args_info.degeneracy_given) opt.want_degenerate = 1;
   if (args_info.quiet_flag) opt.quiet = 1;
   if (args_info.verbose_given) opt.want_verbose = 1;
@@ -246,7 +250,8 @@ ini_globs(void)
   opt.rrecover        =          0;
   opt.wrecover        =          0;
   opt.basename        =          NULL;
-  opt.vis_file       =          NULL;
+  opt.vis_file        =          NULL;
+  opt.just_sh         =          0;
 }
 
 /*==============================*/

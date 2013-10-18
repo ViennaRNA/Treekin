@@ -45,6 +45,8 @@ typedef struct {         /* command-line options */
   char *fpt_file;        /* output file for first passage times */
   char *vis_file;        /* output file for visualisation */
   int quiet;             // be quiet?
+  int just_sh;           // just shorten
+  int max_decrease;      // how many states to decrease at once
 } treekin_options;
 
 treekin_options opt;

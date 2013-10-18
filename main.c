@@ -44,8 +44,8 @@ main (int argc, char **argv)
   switch (opt.method) {
     case 'F': dim = ParseInfile(opt.INFILE, opt.RATFILE, &R); break;
     case 'I':
-        if (opt.binrates) dim = MxReadBinRates(opt.RATFILE, &R, opt.n);
-        else dim = ParseRatesFile(opt.RATFILE, &R, opt.n);
+        if (opt.binrates) dim = MxReadBinRates(opt.RATFILE, &R, opt.n, opt.max_decrease);
+        else dim = ParseRatesFile(opt.RATFILE, &R, opt.n, opt.max_decrease);
 
         if (opt.INFILE) {
           ParseBarfile(opt.INFILE, &Data);
@@ -66,7 +66,6 @@ main (int argc, char **argv)
   if (opt.vis_file) {
     VisulizeRates(opt.vis_file, R, Data, dim);
   }
-
 
   // here we create the "almighty" matrix U which is actually only matrix needed for whole program
   U  = MxBar2Matrix(Data, R);
@@ -123,21 +122,23 @@ main (int argc, char **argv)
     clck1 = clock();
   }
 
-  // diagonalization + iteration
-  if(opt.matexp) MxExponent(p0,p8,U);
-  else {
-    if(opt.rrecover) /* read pre-calculated eigenv{alues,ectors} */
-      MxRecover(&S, p8);
+  if (!opt.just_sh) {
+    // diagonalization + iteration
+    if(opt.matexp) MxExponent(p0,p8,U);
     else {
-      clck1 = clock();
-      MxDiagonalize (U, &S, p8);
-      if (!opt.quiet) fprintf(stderr, "Time to diagonalize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
-      clck1 = clock();
+      if(opt.rrecover) /* read pre-calculated eigenv{alues,ectors} */
+        MxRecover(&S, p8);
+      else {
+        clck1 = clock();
+        MxDiagonalize (U, &S, p8);
+        if (!opt.quiet) fprintf(stderr, "Time to diagonalize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
+        clck1 = clock();
+      }
+      MxIterate (p0, p8, S);
+      if (!opt.quiet) fprintf(stderr, "Time to iterate: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
+      free(S);
+      free(p8);
     }
-    MxIterate (p0, p8, S);
-    if (!opt.quiet) fprintf(stderr, "Time to iterate: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
-    free(S);
-    free(p8);
   }
 
   // clean up the memory

@@ -36,10 +36,12 @@ void    MxFPTSimple(double *U);
 double *MxFPTOneState(double *U, int state);
 
 // read rates from binary file
-int     MxReadBinRates(FILE *rate_file, double **rate_mx, int nstates);
+int     MxReadBinRates(FILE *rate_file, double **rate_mx, int nstates, int max);
 
 // matrix shortening routine (when nstates specified)
-void    MxRShorten(double *tmp_rates, double **shortened, int new_dim, int old_dim);
+int     MxShorten(double **shorten, int nstates, int my_dim, int max);
+void    MxRShorten(double **shorten, int fulldim, int gdim);
+void    MxOneShorten(double **shorten, int fulldim);
 
 // not used! (just for past testing)
 double  MxFPTRandom(double *P, double *U, int src, int dst, int packets);
