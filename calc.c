@@ -1687,6 +1687,17 @@ int MxShorten(double **shorten, int nstates, int my_dim, int max) {
   if (my_dim>nstates) {
     if (!opt.quiet) fprintf(stderr, "decreasing %d to %d\n", my_dim, nstates);
 
+    // first we need to fix the diagonal entries tmp_rates[i][i] = sum_j tmp_rates[i][j]
+    double *tmp_rates = *shorten;
+    int i, j;
+    for (i = 0; i < my_dim; i++) tmp_rates[my_dim*i+i] = 0.0;
+    for (i = 0; i < my_dim; i++) {
+      double tmp = 0.00;
+      // calculate column sum
+      for(j = 0; j < my_dim; j++)  tmp += tmp_rates[my_dim*j+i];
+      tmp_rates[my_dim*i+i] = -tmp;
+    }
+
     // shorten by some value max
     if (max!=1) {
       while (my_dim-max > nstates) {
@@ -1700,6 +1711,7 @@ int MxShorten(double **shorten, int nstates, int my_dim, int max) {
       while (my_dim!=nstates) {
         MxOneShorten(shorten, my_dim);
         my_dim--;
+        if (!opt.quiet && my_dim%100==0 && my_dim>0) fprintf(stderr, "%d done...\n", my_dim);
       }
     }
   }
@@ -1717,22 +1729,12 @@ void MxRShorten(double **shorten, int fulldim, int gdim)
 
   int bdim = fulldim - gdim;
   int i,j;
+  double *tmp_rates = *shorten;
 
   double *gg = (double *)calloc(gdim*gdim,sizeof(double));
   double *bg = (double *)calloc(bdim*gdim,sizeof(double));
   double *bb = (double *)calloc(bdim*bdim,sizeof(double));
   double *gb = (double *)calloc(gdim*bdim,sizeof(double));
-
-  // first we need to fix the diagonal entries tmp_rates[i][i] = sum_j tmp_rates[i][j]
-  double *tmp_rates = *shorten;
-  for (i = 0; i < fulldim; i++) tmp_rates[fulldim*i+i] = 0.0;
-  for (i = 0; i < fulldim; i++) {
-    double tmp = 0.00;
-    // calculate column sum
-    for(j = 0; j < fulldim; j++)  tmp += tmp_rates[fulldim*j+i];
-    tmp_rates[fulldim*i+i] = -tmp;
-  }
-
 
   // fill the matrices: (row = i; column = j)
   for (i=0; i<gdim; i++) {
@@ -1812,12 +1814,12 @@ void MxOneShorten(double **shorten, int fulldim)
   for (i=0; i<gdim; i++) {
     for (j=0; j<gdim; j++) {
       // just x - a*c^-1*b
-      result[gdim*i+j] = tmp_rates[fulldim*i+j] - c*tmp_rates[fulldim*gdim + i]*tmp_rates[fulldim*j + gdim];
+      result[gdim*i+j] = tmp_rates[fulldim*i+j] - c*tmp_rates[fulldim*gdim + j]*tmp_rates[fulldim*i + gdim];
     }
   }
 
-  MxFPrintD(tmp_rates, "Q", fulldim, fulldim, stderr);
-  MxFPrintD(result, "Q-1", gdim, gdim, stderr);
+  //MxFPrintD(tmp_rates, "Q", fulldim, fulldim, stderr);
+  //MxFPrintD(result, "Q-1", gdim, gdim, stderr);
 
   free(*shorten);
   *shorten = result;
