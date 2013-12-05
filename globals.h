@@ -47,6 +47,7 @@ typedef struct {         /* command-line options */
   int quiet;             // be quiet?
   int just_sh;           // just shorten
   int max_decrease;      // how many states to decrease at once
+  char num_err;          // method for numerical error handling
 } treekin_options;
 
 treekin_options opt;

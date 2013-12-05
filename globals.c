@@ -102,6 +102,11 @@ set_parameters(void)
   else if (strncmp(args_info.method_arg, "A", 1)==0)
     opt.method = 'A';
 
+  if(strncmp(args_info.num_err_arg, "I", 1)==0)
+    opt.num_err = 'I';
+  else if (strncmp(args_info.num_err_arg, "R", 1)==0)
+    opt.num_err = 'R';
+
   if (args_info.fptfile_given) {
     opt.fpt_file = strdup(args_info.fptfile_arg);
   } else opt.fpt_file = NULL;
@@ -252,6 +257,7 @@ ini_globs(void)
   opt.basename        =          NULL;
   opt.vis_file        =          NULL;
   opt.just_sh         =          0;
+  opt.num_err         =          'H';
 }
 
 /*==============================*/
