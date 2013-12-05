@@ -12,5 +12,7 @@ double PrintProbFull(double *line, int dim, double time, int lmins);
 double PrintProbNR(double *line, int dim, double time);
 
 
+double TestExpokit(double *R, int dim, double *V);
+
 
 #endif

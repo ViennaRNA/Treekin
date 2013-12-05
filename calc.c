@@ -38,7 +38,8 @@ static char   *time_stamp(void);
 static void    MxDoDegeneracyStuff(void);
 static void    MxBinWrite(double *Mx, char what[], char T);
 static int     MxBinRead(double** Mx, char what[], char T);
-static void    MxASCIIWrite(double *Mx);
+static void    MxASCIIWrite(double *Mx, char *asciifile);
+static void    MxASCIIWriteV(double *Mx, char *asciifile);
 static void    MxKotzOutMathematica(double *Mx);
 static void    MxSortEig(double *evals, double *evecs);
 static void    MxEVLapackSym(double *U);
@@ -96,7 +97,7 @@ MxBar2Matrix ( BarData *Data, double *R)
     exit(EXIT_FAILURE);
   }
   if (opt.dumpU) {
-    MxASCIIWrite(U);
+    MxASCIIWrite(U, "U.txt");
     MxBinWrite(U, "U", 'm');
   }
   return (U);
@@ -331,6 +332,8 @@ MxDiagonalize ( double *U, double **_S, double *P8)
   if(opt.wrecover) {
     MxBinWrite(evals, "evals", 'v');
     MxBinWrite(evecs, "evecs", 'm');
+    MxASCIIWriteV(evals, "evals.txt");
+    MxASCIIWrite(evecs, "evecs.txt");
   }
 }
 
@@ -1173,11 +1176,10 @@ MxBinRead(double **Mx, char what[], char T)
 
 /*==*/
 static void
-MxASCIIWrite(double *Mx)
+MxASCIIWrite(double *Mx, char *asciifile)
 {
   int i, j;
   FILE *ASCIIOUT;
-  char *asciifile = "mx.txt";
 
   ASCIIOUT = fopen(asciifile, "w");
   if (!ASCIIOUT) {
@@ -1191,6 +1193,24 @@ MxASCIIWrite(double *Mx)
     fprintf(ASCIIOUT,"\n");
   }
   if (!opt.quiet) fprintf(stderr, "matrix written to ASCII file\n");
+  fclose(ASCIIOUT);
+}
+
+static void
+MxASCIIWriteV(double *Mx, char *asciifile)
+{
+  int i;
+  FILE *ASCIIOUT;
+
+  ASCIIOUT = fopen(asciifile, "w");
+  if (!ASCIIOUT) {
+    fprintf(stderr, "could not open file pointer 4 ASCII outfile\n");
+    exit(EXIT_FAILURE);
+  }
+  for(i=0; i<dim; i++) {
+      fprintf(ASCIIOUT,"%15.10g ", Mx[i]);
+  }
+  if (!opt.quiet) fprintf(stderr, "vector written to ASCII file\n");
   fclose(ASCIIOUT);
 }
 
@@ -1774,7 +1794,7 @@ void MxRShorten(double **shorten, int fulldim, int gdim)
   double *result2 = (double *)calloc(gdim*gdim,sizeof(double));
   mmul_singular(result2, result, bg, gdim, bdim, gdim, 1);
 
-  //MxFPrintD(result2, "gb*bb-1*bg", dim, dim, stderr);
+  if (opt.want_verbose) MxFPrintD(result2, "gb*bb-1*bg", gdim, gdim, stderr);
 
 
   // result2 = gg - result2

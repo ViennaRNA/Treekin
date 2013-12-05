@@ -10,6 +10,8 @@ extern "C" {
   #include "calc.h"
 }
 
+#include "expokit_wrappers.h"
+
 using namespace std;
 
 extern "C" void MxEgro(double **U, double **p0, int dim);
@@ -182,3 +184,15 @@ double PrintProb(double *line, int dim, double time)
   printf("\n");
   return check;
 }
+
+double TestExpokit(double *R, int dim, double *V)
+{
+  void wrapsingledgexpv_(int * n,int* m,double * t,double* v,double * w,double* tol,
+	double* anorm,double* wsp,int * lwsp,int* iwsp,int *liwsp, int * itrace,int *iflag,
+			int *ia, int *ja, double *a, int *nz, double * res);
+
+
+ return 0.0;
+}
+
+
