@@ -11,6 +11,7 @@ args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-o
 # Options
 option "absorb"             a "Make a state absorbing" typestr="state" int no
 option "method"             m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI ==> use rates from barriers" values="A","F","I" default="I" no
+option "num-err"            - "Method how to deal wih numerical errors in probability:\nI ==> Ignore\nH ==> Halt the program\nR ==> Rescale the probability" values="I","H","R" default="H" no
 option "t0"                 - "Start time" typestr="time" default="0.1" double no
 option "t8"                 - "Stop time" typestr="time" default="1E9" double no
 option "Temp"               T "Temperature in Celsius" default="37.0" double no

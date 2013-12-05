@@ -8,6 +8,7 @@
 
 extern "C" {
   #include "calc.h"
+  #include "expokit_wrappers.h"
 }
 
 using namespace std;
@@ -16,6 +17,7 @@ extern "C" void MxEgro(double **U, double **p0, int dim);
 extern "C" double PrintProb(double *line, int dim, double time);
 extern "C" double PrintProbNR(double *line, int dim, double time);
 extern "C" double PrintProbFull(double *line, int dim, double time, int lmins);
+extern "C" double TestExpokit(double *R, int dim, double *V);
 
 vector<int> reorganize; // reorganize array (so if LM 0 1 3 were reachable and 2 not, reorganize will contain r[0]=0 r[1]=1 r[2]=3), so r[x] = old position of x
 int last_dim;
@@ -119,10 +121,11 @@ double PrintProbFull(double *line, int dim, double time, int lmins)
   for (int i=0; i<lmins; i++) {
     if(ptFULL[i] < -0.01) {
       fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, ptFULL[i]);
-      exit(EXIT_FAILURE);
+      if (opt.num_err == 'H') exit(EXIT_FAILURE);
+      else if (opt.num_err == 'R') ptFULL[i] = 0.0;
     }
     /* map individual structure -> gradient basins */
-    else   printf("%e ", fabs(ptFULL[i]));
+    printf("%e ", fabs(ptFULL[i]));
     check += fabs(ptFULL[i]);
   }
   printf("\n");
@@ -137,10 +140,11 @@ double PrintProbNR(double *line, int dim, double time)
   for (int i=0; i<dim; i++) {
     if(line[i] < -0.01) {
       fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, line[i]);
-      exit(EXIT_FAILURE);
+      if (opt.num_err == 'H') exit(EXIT_FAILURE);
+      else if (opt.num_err == 'R') line[i] = 0.0;
     }
     /* map individual structure -> gradient basins */
-    else printf("%e ", fabs(line[i]));
+    printf("%e ", fabs(line[i]));
     check += fabs(line[i]);
   }
 
@@ -157,10 +161,11 @@ double PrintProb(double *line, int dim, double time)
     for (int i=0; i<dim; i++) {
       if(line[i] < -0.01) {
         fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, line[i]);
-        exit(EXIT_FAILURE);
+        if (opt.num_err == 'H') exit(EXIT_FAILURE);
+        else if (opt.num_err == 'R') line[i] = 0.0;
       }
       /* map individual structure -> gradient basins */
-      else printf("%e ", fabs(line[i]));
+      printf("%e ", fabs(line[i]));
       check += fabs(line[i]);
     }
   } else {
@@ -171,7 +176,8 @@ double PrintProb(double *line, int dim, double time)
       } else {
         if(line[j] < -0.01) {
           fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, line[i]);
-          exit(EXIT_FAILURE);
+          if (opt.num_err == 'H') exit(EXIT_FAILURE);
+          else if (opt.num_err == 'R') line[j] = 0.0;
         }
         printf("%e ", fabs(line[j]));
         check += fabs(line[j]);
@@ -182,3 +188,30 @@ double PrintProb(double *line, int dim, double time)
   printf("\n");
   return check;
 }
+
+double TestExpokit(double *R, int dim, double *V)
+{
+  int n = 5;
+  int m = n-1;
+  double t = 2.1;
+  double v[n];
+  v[0] = 1.0;
+  double w[n];
+  double tol = 0.01;
+  double anorm[25]; //??
+  int lwsp = n*(m+2)+5*(m+2)*(m+2)+7;
+  int liwsp = max(m+2, 7);
+  int iwsp[liwsp];
+  int itrace = 1, iflag = 1;
+  double wsp[lwsp];
+  int ia[10] = {1,2,3,4,5,1,2,3,4,5};
+  int ja[10] = {1,2,3,4,5,2,3,4,5,2};
+  double a[10] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 0.2, 0.3, 0.4, 0.1};
+  int nz = 10;
+  double res[n*n];
+
+  wrapsingledmexpv_(&n, &m, &t, v, w, &tol, anorm, wsp, &lwsp, iwsp, &liwsp, &itrace, &iflag, ia, ja, a, &nz, res);
+
+  return 0.0;
+}
+

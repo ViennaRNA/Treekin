@@ -310,6 +310,7 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     if (opt.want_verbose) MxPrint (U, "force symmetrized U", 'm');
   }
 
+  // get eigenv*
   if(opt.absrb) {
     MxEVLapackNonSym(U);
   } else {
@@ -433,8 +434,12 @@ MxIterate (double *p0, double *p8, double *S)
     for (i = 0; i < dim; i++)   p8FULL[E[i].ag] += p8[i];
     for (i = 0; i < lmins; i++) check += fabs(p8FULL[i]);
     if ( ((check-1) < -0.1) || ((check-1) > 0.1) ) {
-      fprintf(stderr, "overall equilibrium probability is %e != 1. ! exiting\n", check);
-      exit(EXIT_FAILURE);
+      fprintf(stderr, "overall equilibrium probability is %e != 1. !\n", check);
+      if (opt.num_err == 'H') exit(EXIT_FAILURE);
+      else if (opt.num_err == 'R') {
+        for (i=0; i<dim; i++) p8[i] /= check;
+        check = 1.0;
+      }
     }
   }
   check = 0.;
@@ -474,7 +479,7 @@ MxIterate (double *p0, double *p8, double *S)
 
     if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
       fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
-      exit(EXIT_FAILURE);
+      if (opt.num_err == 'H') exit(EXIT_FAILURE);
     }
     check = 0.;
     /* now check if we have converged yet */
@@ -1242,7 +1247,7 @@ MxExponent(double *p0, double *p8, double *U)
 
     if ( ((check-1) < -0.01) || ((check-1) > 0.01) ) {
       fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
-      exit(EXIT_FAILURE);
+      if (opt.num_err == 'H') exit(EXIT_FAILURE);
     }
     memset(pt,   0, dim*sizeof(double));
     memset(pdiff, 0, dim*sizeof(double));
@@ -1563,9 +1568,7 @@ MxEVLapackNonSym(double *origU)
   int one, ilo, ihi, lwork, *iwork, nfo;
   //int dimx2;
   /* for sorting */
-  int i, j;
-  //float p;
-  double tmp;
+  int i;
 
   dim = dim+500;
   one = 1;
@@ -1587,12 +1590,13 @@ MxEVLapackNonSym(double *origU)
   }
 
   /* instead of more fiddling, we transpose the input */
-  for (i=0; i<dim; i++)
+  trnm(origU, dim);
+  /*for (i=0; i<dim; i++)
     for (j=i+1; j<dim; j++) {
       tmp = origU[dim*i+j];
       origU[dim*i+j]=origU[dim*j+i];
       origU[dim*j+i]=tmp;
-    }
+    }*/
 
   dgeevx_("B", "N", "V", "V", &dim, origU, &dim, evals_re, evals_im, NULL, &one,\
         evecs ,&dim, &ilo, &ihi, scale, &abnrm, rconde, rcondv, work,\

@@ -30,6 +30,8 @@ main (int argc, char **argv)
 {
   clock_t clck1 = clock();
 
+  TestExpokit(NULL, 5, NULL);
+
   BarData *Data=NULL;
   /*  U - matrix (Q+I)^T, where Q is infetisimal generator (^T - transposed)
       S - eigenvectors of U
