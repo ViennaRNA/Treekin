@@ -19,7 +19,8 @@ extern "C" void MxEgro(double **U, double **p0, int dim);
 extern "C" double PrintProb(double *line, int dim, double time);
 extern "C" double PrintProbNR(double *line, int dim, double time);
 extern "C" double PrintProbFull(double *line, int dim, double time, int lmins);
-extern "C" double TestExpokit(double *R, int dim, double *V);
+extern "C" int ConvergenceReached(double *p8, double *pt, int dim, int full);
+extern "C" void TestExpokit(double *R, int dim, double *p0, double t_start, double t_end, double t_inc);
 
 vector<int> reorganize; // reorganize array (so if LM 0 1 3 were reachable and 2 not, reorganize will contain r[0]=0 r[1]=1 r[2]=3), so r[x] = old position of x
 int last_dim;
@@ -131,6 +132,13 @@ double PrintProbFull(double *line, int dim, double time, int lmins)
     check += fabs(ptFULL[i]);
   }
   printf("\n");
+
+  // check for overall propability
+  if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
+    fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
+    if (opt.num_err == 'H') exit(EXIT_FAILURE);
+  }
+
   return check;
 }
 
@@ -151,6 +159,13 @@ double PrintProbNR(double *line, int dim, double time)
   }
 
   printf("\n");
+
+  // check for overall propability
+  if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
+    fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
+    if (opt.num_err == 'H') exit(EXIT_FAILURE);
+  }
+
   return check;
 }
 
@@ -188,32 +203,88 @@ double PrintProb(double *line, int dim, double time)
     }
   }
   printf("\n");
+
+  // check for overall propability
+  if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
+    fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
+    if (opt.num_err == 'H') exit(EXIT_FAILURE);
+  }
+
   return check;
 }
 
-double TestExpokit(double *R, int dim, double *V)
+int ConvergenceReached(double *p8, double *pt, int dim, int full) {
+
+  int pdiff_counter = 0;
+  full = (full?1:0);
+  /* now check if we have converged yet */
+  for(int i = 0; i < dim; i++) {
+    if (fabs(p8[i] - pt[i]) >= 0.000001) {
+      pdiff_counter++;
+      break;
+    }
+  }
+
+  if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
+    return 1;
+  pdiff_counter = 0;
+  /* end check of convergence */
+  return false;
+}
+
+void TestExpokit(double *R, int dim, double *p0, double t_start, double t_end, double t_inc)
 {
 
-  int n = 5;
+  int n = dim;
   int m = n-1;
-  double t = 2.1;
-  double v[n];
-  v[0] = 1.0;
   double w[n];
-  double tol = 0.01;
-  double anorm[25]; //??
+  double tol = 0.01; // change to something better maybe?
+  double anorm[n*n]; //??
   int lwsp = n*(m+2)+5*(m+2)*(m+2)+7;
   int liwsp = max(m+2, 7);
   int iwsp[liwsp];
   int itrace = 1, iflag = 1;
   double wsp[lwsp];
-  int ia[10] = {1,2,3,4,5,1,2,3,4,5};
-  int ja[10] = {1,2,3,4,5,2,3,4,5,2};
-  double a[10] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 0.2, 0.3, 0.4, 0.1};
-  int nz = 10;
   double res[n*n];
 
-  wrapsingledmexpv_(&n, &m, &t, v, w, &tol, anorm, wsp, &lwsp, iwsp, &liwsp, &itrace, &iflag, ia, ja, a, &nz, res);
+  // change the R into ia/ja matrix:
 
-  return 0.0;
+    // now get the non-zero ones
+  vector<double> non_zero;
+  vector<int> ia_vec;
+  vector<int> ja_vec;
+  for (int i=0; i<dim; i++) {
+    for (int j=0; j<dim; j++) {
+      if (fabs(R[i*dim+j]-(i==j?1.0:0.0)) > 0.0) {
+        non_zero.push_back(R[i*dim+j]-(i==j?1.0:0.0));
+        ia_vec.push_back(i);
+        ja_vec.push_back(j);
+      }
+    }
+  }
+
+    // convert them into C code
+  int ia[non_zero.size()];
+  int ja[non_zero.size()];
+  double a[non_zero.size()];
+  int nz = non_zero.size();
+  for (unsigned int i=0; i<non_zero.size(); i++) {
+    ia[i] = ia_vec[i];
+    ja[i] = ja_vec[i];
+    a[i] = non_zero[i];
+  }
+
+/*
+  const int nzc = 9;
+  int ia[nzc] = {1,1,1,2,2,2,3,3,3};
+  int ja[nzc] = {1,2,3,1,2,3,1,2,3};
+  double a[nzc] = {-0.9, 0.5, 0.5, 0.5, -1.0, 0.5, 0.4, 0.5, -1.0};
+  int nz = nzc;
+*/
+  // main loop
+  for (double time=t_start; time<=t_end; time *= t_inc) {
+    wrapsingledgexpv_(&n, &m, &time, p0, w, &tol, anorm, wsp, &lwsp, iwsp, &liwsp, &itrace, &iflag, ia, ja, a, &nz, res);
+    PrintProb(w, dim, time);
+  }
+
 }

@@ -11,8 +11,10 @@ double PrintProb(double *line, int dim, double time);
 double PrintProbFull(double *line, int dim, double time, int lmins);
 double PrintProbNR(double *line, int dim, double time);
 
+int ConvergenceReached(double *p8, double *pt, int dim, int full);
 
-double TestExpokit(double *R, int dim, double *V);
+
+void TestExpokit(double *R, int dim, double *p0, double t_start, double t_end, double t_inc);
 
 
 #endif

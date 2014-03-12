@@ -50,7 +50,7 @@ int  ParseSaddleFile(TypeDegSaddle **my_saddle);
 int  ParseRatesFile(FILE *rates_FP, double **Raten, int nstates, int max);
 
 // visualisation
-void VisulizeRates(char *filename, double *R, BarData *Data, int dim);
+void VisualizeRates(char *filename, double *R, BarData *Data, int dim);
 
 #endif
 

@@ -30,8 +30,6 @@ main (int argc, char **argv)
 {
   clock_t clck1 = clock();
 
-  TestExpokit(NULL, 5, NULL);
-
   BarData *Data=NULL;
   /*  U - matrix (Q+I)^T, where Q is infetisimal generator (^T - transposed)
       S - eigenvectors of U
@@ -46,18 +44,18 @@ main (int argc, char **argv)
   switch (opt.method) {
     case 'F': dim = ParseInfile(opt.INFILE, opt.RATFILE, &R); break;
     case 'I':
-        if (opt.binrates) dim = MxReadBinRates(opt.RATFILE, &R, opt.n, opt.max_decrease);
-        else dim = ParseRatesFile(opt.RATFILE, &R, opt.n, opt.max_decrease);
+      if (opt.binrates) dim = MxReadBinRates(opt.RATFILE, &R, opt.n, opt.max_decrease);
+      else dim = ParseRatesFile(opt.RATFILE, &R, opt.n, opt.max_decrease);
 
-        if (opt.INFILE) {
-          ParseBarfile(opt.INFILE, &Data);
-        }
-        if (dim == 0) {
-          fprintf(stderr, "ERROR: Rate file empty!\n");
-          free_gengetopt();
-          exit(EXIT_FAILURE);
-        }
-        break;
+      if (opt.INFILE) {
+        ParseBarfile(opt.INFILE, &Data);
+      }
+      if (dim == 0) {
+        fprintf(stderr, "ERROR: Rate file empty!\n");
+        free_gengetopt();
+        exit(EXIT_FAILURE);
+      }
+      break;
     case 'A': dim = ParseBarfile (opt.INFILE, &Data); break;
   }
 
@@ -66,7 +64,7 @@ main (int argc, char **argv)
 
   // visualize the graph:
   if (opt.vis_file) {
-    VisulizeRates(opt.vis_file, R, Data, dim);
+    VisualizeRates(opt.vis_file, R, Data, dim);
   }
 
   // here we create the "almighty" matrix U which is actually only matrix needed for whole program
@@ -123,6 +121,9 @@ main (int argc, char **argv)
     if (!opt.quiet) fprintf(stderr, "Time to compute fpt: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
     clck1 = clock();
   }
+
+  //TestExpokit(U, dim, p0, opt.t0, opt.t8, opt.tinc);
+
 
   if (!opt.just_sh) {
     // diagonalization + iteration

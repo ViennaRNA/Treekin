@@ -395,7 +395,7 @@ MxIterate (double *p0, double *p8, double *S)
     tmpVec2 = exp(time * EV) *tmpVec
     p(t)    = S * tmpVec2
   */
-  int i,  count = 0, pdiff_counter = 0;
+  int i,  count = 0;
   double time, check = 0.;
   double *CL = NULL, *CR, *exptL, *tmpVec, *tmpVec2, *pt, *St, *pdiff;
   double *ptFULL = NULL;  /* prob dist 4 of the effective lmins of the tree at time t */
@@ -479,41 +479,11 @@ MxIterate (double *p0, double *p8, double *S)
     else                 check = PrintProb(pt, dim, time);
 
     //PrintProbNR(p8FULL, lmins, -1);
-
-    if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
-      fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
-      if (opt.num_err == 'H') exit(EXIT_FAILURE);
-    }
-    check = 0.;
-    /* now check if we have converged yet */
-    if(opt.method=='F') {
-      for(i = 1; i <= lmins; i++) {
-        pdiff[i] = p8FULL[i] - ptFULL[i];
-        if (fabs(pdiff[i]) >= 0.000001) {
-          pdiff_counter++;
-          break;
-        }
-      }
-    }
-    else {
-      for(i = 0; i < dim; i++) {
-        pdiff[i] = p8[i] - pt[i];
-
-        if (fabs(pdiff[i]) >= 0.000001) {
-          pdiff_counter++;
-          break;
-        }
-      }}
-              //PrintProb(p8, dim, -1);
-        //PrintProb(pt, dim, -2);
-    //}
-    if (pdiff_counter < 1) /* all mins' pdiff lies within threshold */
-      break;
-    pdiff_counter = 0;
-    memset(pdiff, 0, (lmins+1)*sizeof(double));
-    /* end check of convergence */
-
+    int reached;
+    if (opt.method=='F') reached = ConvergenceReached(p8FULL, ptFULL, lmins, 1);
+    else                 reached = ConvergenceReached(p8, pt, dim, 0);
     fflush(stdout);
+    if (reached) break;
   }
   if (time < opt.t8) {
     if (opt.method=='F') PrintProbFull(pt, dim, opt.t8, lmins);

@@ -310,7 +310,7 @@ my_getline(FILE *fp)
 }
 
 // visualisation
-void VisulizeRates(char *filename, double *R, BarData *Data, int dim)
+void VisualizeRates(char *filename, double *R, BarData *Data, int dim)
 {
   FILE *dotf;
 
