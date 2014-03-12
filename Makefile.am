@@ -1,8 +1,8 @@
 
 bin_PROGRAMS = treekin
 
-AM_LDFLAGS = -lgfortran
-LDADD = lib_expokit.a $(INTLLIBS)
+#AM_LDFLAGS = -lgfortran
+#LDADD = lib_expokit.a $(INTLLIBS)
 
 treekin_SOURCES = main.c\
                   globals.c     globals.h\
