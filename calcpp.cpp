@@ -232,7 +232,7 @@ int ConvergenceReached(double *p8, double *pt, int dim, int full) {
   return false;
 }
 
-void TestExpokit(double *R, int dim, double *p0, double t_start, double t_end, double t_inc)
+/*void TestExpokit(double *R, int dim, double *p0, double t_start, double t_end, double t_inc)
 {
 
   int n = dim;
@@ -274,17 +274,17 @@ void TestExpokit(double *R, int dim, double *p0, double t_start, double t_end, d
     a[i] = non_zero[i];
   }
 
-/*
-  const int nzc = 9;
-  int ia[nzc] = {1,1,1,2,2,2,3,3,3};
-  int ja[nzc] = {1,2,3,1,2,3,1,2,3};
-  double a[nzc] = {-0.9, 0.5, 0.5, 0.5, -1.0, 0.5, 0.4, 0.5, -1.0};
-  int nz = nzc;
-*/
+
+//  const int nzc = 9;
+//  int ia[nzc] = {1,1,1,2,2,2,3,3,3};
+//  int ja[nzc] = {1,2,3,1,2,3,1,2,3};
+//  double a[nzc] = {-0.9, 0.5, 0.5, 0.5, -1.0, 0.5, 0.4, 0.5, -1.0};
+//  int nz = nzc;
+
   // main loop
   for (double time=t_start; time<=t_end; time *= t_inc) {
     wrapsingledgexpv_(&n, &m, &time, p0, w, &tol, anorm, wsp, &lwsp, iwsp, &liwsp, &itrace, &iflag, ia, ja, a, &nz, res);
     PrintProb(w, dim, time);
   }
 
-}
+}*/
