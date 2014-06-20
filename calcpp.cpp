@@ -8,10 +8,10 @@
 
 extern "C" {
   #include "calc.h"
-  #include "expokit_wrappers.h"
+  //#include "expokit_wrappers.h"
 }
 
-#include "expokit_wrappers.h"
+//#include "expokit_wrappers.h"
 
 using namespace std;
 
