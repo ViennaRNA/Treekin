@@ -13,8 +13,12 @@ double PrintProbNR(double *line, int dim, double time);
 
 int ConvergenceReached(double *p8, double *pt, int dim, int full);
 
+// rescale is --minimal-rate hass been provided
+void MxRescale(double *U, int dim, double desired_rate);
+void MxRescaleH(double *U, int dim, double hard_rescale);
 
-void TestExpokit(double *R, int dim, double *p0, double t_start, double t_end, double t_inc);
+//void TestExpokit(double *R, int dim, double *p0, double t_start, double t_end, double t_inc);
 
+//void TestEigen(double *R, int dim, double **evals, double **evecs);
 
 #endif

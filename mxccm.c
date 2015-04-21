@@ -14,6 +14,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "mxccm.h"
+#include "globals.h"
 
 void
 eigen(double *a,double *ev,int n)
@@ -29,7 +30,7 @@ eigen(double *a,double *ev,int n)
 int
 qrevec(double *ev,double *evec,double *dp,int n)
 {
-  double cc,sc=0.,d,x,y,h,tzr=1.e-15;
+  double cc,sc=0.,d,x,y,h,tzr=opt.FEPS;
   int i,j,k,m,mqr=8*n;
   double *p;
   for(j=0,m=n-1;; ++j) {
@@ -216,7 +217,7 @@ int
 minv(double *a,int n)
 {
   int lc,*le;
-  double s,t,tq=0.,zr=1.e-15;
+  double s,t,tq=0.,zr=opt.FEPS;
   double *pa,*pd,*ps,*p,*q,*q0;
   int i,j,k,m;
   le=(int *)malloc(n*sizeof(int));
@@ -315,7 +316,7 @@ solv(double *a,double *b,int n)
 {
   int i,j,k,lc;
   double *ps,*p,*q,*pa,*pd;
-  double *q0,s,t,tq=0.,zr=1.e-15;
+  double *q0,s,t,tq=0.,zr=opt.FEPS;
   q0=(double *)calloc(n,sizeof(double));
   for(j=0,pa=a,pd=a; j<n ; ++j,++pa,pd+=n+1) {
     if(j) {

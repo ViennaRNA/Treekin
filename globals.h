@@ -48,6 +48,11 @@ typedef struct {         /* command-line options */
   int just_sh;           // just shorten
   int max_decrease;      // how many states to decrease at once
   char num_err;          // method for numerical error handling
+  double FEPS;           // precision
+  int useplusI;          // wheter to use the plus I matrix or no (eigenvalues are all +1)
+  double minimal_rate;   // rescale to minimal rate?
+  double hard_rescale;   // hard rescale rates?
+  char *equil_file;      // file for equilibrium distribution
 } treekin_options;
 
 treekin_options opt;

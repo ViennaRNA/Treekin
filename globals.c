@@ -107,9 +107,20 @@ set_parameters(void)
   else if (strncmp(args_info.num_err_arg, "R", 1)==0)
     opt.num_err = 'R';
 
+  opt.FEPS = args_info.feps_arg;
+  // determines double precision machine parameters
+  extern double dlamch_(char *cmach);
+  if (opt.FEPS<0.0) opt.FEPS = 2*dlamch_("S");
+
+  opt.useplusI = args_info.useplusI_flag;
+
   if (args_info.fptfile_given) {
     opt.fpt_file = strdup(args_info.fptfile_arg);
   } else opt.fpt_file = NULL;
+
+  if (args_info.equil_file_given) {
+    opt.equil_file = args_info.equil_file_arg;
+  } else opt.equil_file = NULL;
 
   if (args_info.p0_given) {
     int i, j=1, lmintmp;
@@ -189,6 +200,20 @@ set_parameters(void)
     opt.INFILE = NULL;
   }
 
+  if (args_info.minimal_rate_given) {
+    if( (opt.minimal_rate = args_info.minimal_rate_arg) <= 0. ) {
+      fprintf(stderr, "Value of --minimal-rate must be > 0.\n");
+      exit (EXIT_FAILURE);
+    }
+  }
+
+  if (args_info.hard_rescale_given) {
+    if( (opt.hard_rescale = args_info.hard_rescale_arg) <= 0. ) {
+      fprintf(stderr, "Value of --hard-rescale must be > 0.\n");
+      exit (EXIT_FAILURE);
+    }
+  }
+
   if (args_info.nstates_given) {
     if( (opt.n = args_info.nstates_arg) <= 1 ) {
       fprintf(stderr, "Value of --nstates must be >= 1\n");
@@ -258,6 +283,11 @@ ini_globs(void)
   opt.vis_file        =          NULL;
   opt.just_sh         =          0;
   opt.num_err         =          'H';
+  opt.FEPS            =          1E-15;
+  opt.useplusI        =          0;
+  opt.minimal_rate    =          0.0;
+  opt.hard_rescale    =          1.0;
+  opt.equil_file      =          NULL;
 }
 
 /*==============================*/

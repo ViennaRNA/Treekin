@@ -24,7 +24,6 @@
 
 #include "calcpp.h"
 
-
 int
 main (int argc, char **argv)
 {
@@ -67,8 +66,12 @@ main (int argc, char **argv)
     VisualizeRates(opt.vis_file, R, Data, dim);
   }
 
-  // here we create the "almighty" matrix U which is actually only matrix needed for whole program
+  // here we create the "almighty" rate matrix U which is actually only matrix needed for whole program
   U  = MxBar2Matrix(Data, R);
+
+  // rescale if minimal_rate has been set:
+  if (opt.hard_rescale != 1.0) MxRescaleH(U, dim, opt.hard_rescale);
+  else if (opt.minimal_rate > 0.0) MxRescale(U, dim, opt.minimal_rate);
 
   // create initial probability vector
   MxStartVec(&p0);
@@ -90,6 +93,15 @@ main (int argc, char **argv)
     //MxEqDistr (Data, &p8);  /* FIX THIS */
     //MxEqDistrFromLocalBalance((TESTING?uU:U), &p8);
     MxEqDistrFromLinSys(U, &p8);
+  }
+
+  // write the equilibrium if we should
+  if (opt.equil_file) {
+    FILE *equil = fopen(opt.equil_file, "w");
+    if (equil) {
+      MxFPrint(p8, "Equilibrium distribution", 'v', equil, 1);
+      fclose(equil);
+    }
   }
 
   // first passage times computation

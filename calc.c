@@ -24,7 +24,6 @@
 
 #include "calcpp.h"
 
-#define FEPS  1.0e-15
 #define SQ(X) ((X)*(X))
 
 /* private function(s) */
@@ -241,6 +240,16 @@ MxEqDistrFromLinSys( double *U, double **p8 )
 
     if (opt.want_verbose) MxPrint(*p8, "p8 in MxEqDistrFromLinSys before norm", 'v' );
 
+    // now check if all are > 0.0
+    for (i=0; i<dim; i++) {
+      if ((*p8)[i]<0.0) {
+        if (i==0) exit(EXIT_FAILURE);
+        fprintf(stderr, "Warning: p8[%5d] is negative (%e), setting it to a nearby value (%e)\n", i+1, (*p8)[i], (*p8)[i-1]);
+        (*p8)[i] = fabs((*p8)[i-1]);
+      }
+    }
+
+
     /* now make the vector stochastic (sum = 1.0) */
     long double sum=0.0;
     for (i=0; i<dim; i++) {
@@ -280,6 +289,7 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     if (opt.want_verbose) MxPrint (U, "input U", 'm');
 
     tmpMx = (double *) MxNew (dim*dim*sizeof(double));
+    //if (opt.want_verbose) MxPrint (P8, "P8", 'v');
     MxDiagHelper(P8);
     mmul(tmpMx, _sqrPI, U, dim);
     if (opt.want_verbose) MxPrint (_sqrPI, "_sqrPI", 'm');
@@ -287,22 +297,28 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     if (opt.want_verbose) MxPrint (sqrPI_, "sqrPI_", 'm');
     memset(U,0,dim*dim*sizeof(double));
     mmul(U, tmpMx, sqrPI_, dim);
-    if (opt.want_verbose) MxPrint (U, "U = _sqrPI*U*sqrPI_", 'm');
+    if (opt.want_verbose) MxPrint (U, "U = _sqrPI*U*sqrPI_ (force symmetrized U - uncorrected)", 'm');
     free(tmpMx);
-
-    if (opt.want_verbose) MxPrint (U, "force symmetrized U(uncorrected)", 'm');
 
     /* correct for numerical errors */
     long double err = 0.0;  // acumulated error
     for (i = 0; i < dim; i++) {
       for (j = 0; j < dim; j++) {
-        err += fabs((U[dim*i+j]+U[dim*j+i])/2 - U[dim*i+j]);
+        long double err_inc = fabs((U[dim*i+j]+U[dim*j+i])/2 - U[dim*i+j]);
+        /*if (isnan(err_inc)) {
+          fprintf(stderr, "%d %d\n", i,j);
+        }*/
+        err += err_inc;
+        if (isnan(err_inc)) {
+          fprintf(stderr, "Weird rates! r(%5d,%5d)=(%e, %e)\n", i, j, U[dim*i+j], U[dim*j+i]);
+          //exit(-1);
+        }
         U[dim*i+j] = (U[dim*i+j]+U[dim*j+i])/2;
         U[dim*j+i] = U[dim*i+j];
       }
     }
     if (isnan(err)) {
-      fprintf(stderr, "Matrix is not ergodic! Exiting...");
+      fprintf(stderr, "Matrix is not ergodic! Exiting... (%Lf)\n", err);
       exit(-1);
     }
     if (!opt.quiet) fprintf(stderr, "Corrected numerical error: %e (%e per number)\n", (double)err, (double)(err/(long double)(dim*dim)));
@@ -311,7 +327,7 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     if (opt.want_verbose) MxPrint (U, "force symmetrized U", 'm');
   }
 
-  // get eigenv*
+    // get eigenv*
   if(opt.absrb) {
     MxEVLapackNonSym(U);
   } else {
@@ -320,12 +336,29 @@ MxDiagonalize ( double *U, double **_S, double *P8)
 
   MxSortEig(evals, evecs);
 
+  /*// ### TEST EIGEN
+  TestEigen(U, dim, NULL, NULL);
+  MxPrint(evecs, "Eigenvectors of U (LAPACK)", 'm');
+  MxPrint(evals, "Eigenvalues of U (LAPACK)", 'v');
+  /// ### END test*/
+
   if (opt.want_verbose) {
     MxPrint(evecs, "Eigenvectors of U (LAPACK)", 'm');
     MxPrint(evals, "Eigenvalues of U (LAPACK)", 'v');
   }
+
+  //for (i=0; i< 10; i++) fprintf(stderr, "%30.20g\n", evals[i]);
+
+  // fix evals[0] to be 1.0
+  if (opt.useplusI) evals[0] = 1.0;
+  else evals[0] = 0.0;
+
+  /*
   for (i=0; i<dim; i++)
-    if (evals[i]>(1.0-FEPS)) evals[i]=1.0;
+    if (evals[i]>(1.0-opt.FEPS)) evals[i]=1.0;
+  */
+
+  //for (i=0; i< 10; i++) fprintf(stderr, "%30.20g\n", evals[i]);
 
   if(opt.absrb)
     MxFixevecs(evecs,evals);
@@ -336,6 +369,10 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     MxASCIIWriteV(evals, "evals.txt");
     MxASCIIWrite(evecs, "evecs.txt");
   }
+
+  // compensate for the +I matrix
+  if (opt.useplusI) for(i = 0; i < dim; i++) evals[i] -= 1.0;  /* compensate 4 translation of matrix U */
+
 }
 
 /*==*/
@@ -446,8 +483,6 @@ MxIterate (double *p0, double *p8, double *S)
     }
   }
   check = 0.;
-  for(i = 0; i < dim; i++) evals[i] -= 1;  /* compensate 4 translation of matrix U */
-
 
   /* solve fundamental equation */
   print_settings();
@@ -754,7 +789,7 @@ void MxFPrint(double *mx, char *name, char T, FILE *out, int pure)
     if (!pure) fprintf(out,"%s:\n", name);
     for (k = 0; k < dim; k++) {
       for (l=0; l< dim; l++) {
-        fprintf(out,"%15.7f ", mx[dim*k+l]);
+        fprintf(out,"%15.7g ", mx[dim*k+l]);
       }
       fprintf(out,"\n");
     }
@@ -762,7 +797,7 @@ void MxFPrint(double *mx, char *name, char T, FILE *out, int pure)
     break;
   case 'v':
     if (!pure) fprintf(out,"%s:\n", name);
-    for (k = 0; k < dim; k++) fprintf(out,"%15.7f ", mx[k]);
+    for (k = 0; k < dim; k++) fprintf(out,"%15.7g ", mx[k]);
     if (!pure) fprintf(out,"\n---\n");
     else fprintf(out, "\n");
     break;
@@ -1450,8 +1485,8 @@ void MxFPTRnd(double *U, int packets)
     P[dim*i+i] = 0.0;
   }
 
-  MxPrint(U, "U", 'm');
-  MxPrint(P, "P", 'm');
+  //MxPrint(U, "U", 'm');
+  //#MxPrint(P, "P", 'm');
 
   if (!opt.absrb) {
     // ergodic option
@@ -1514,22 +1549,41 @@ MxEVLapackSym(double *U) {
                       double *abstol,int *m,double *w,double *z,int *ldz,
                       double *work,int *lwork,int *iwork,int *ifail,int *info);
 
-  double *work=NULL, abstol=FEPS, vl, vu;   // unused or inputs
+  double abstol;
+  abstol = opt.FEPS;
+
+  if (opt.want_verbose) fprintf(stderr, "FEPS precision %20.10g\n", abstol);
+
+
+  double *work=NULL, vl, vu;   // unused or inputs
   int il, iu, m, lwork, *iwork=NULL, *ifail=NULL, nfo;  // unused or inputs
   lwork = dim*(dim+6);
   work   = (double *) malloc (lwork * sizeof(double));
   iwork  =    (int *) malloc (5*(dim) * sizeof(int));
   ifail  =    (int *) malloc (dim * sizeof(int));
 
+  if (!opt.useplusI) for (il=0; il<dim; il++) U[il*dim+il]-=1.0;
+
   // works only with: dim, U, evals, evecs
   dsyevx_("V", "A", "U",&dim, U, &dim, &vl, &vu, &il, &iu,
           &abstol, &m, evals, evecs, &dim, work, &lwork, iwork,
           ifail, &nfo);
   //dsyev_("V","U",&dim, S, &dim, evals, work, &lwork, &nfo);
+
+  //MxPrint(evecs, "Eigenvectors (bad)", 'm');
+  //MxPrint(evals, "Eigenvalues (bad)", 'v');
+
   if(nfo != 0) {
-    fprintf(stderr, "dsyevx exited with value %d\n", nfo);
+    fprintf(stderr, "dsyevx exited with value %d (val=%20.10g)\n", nfo, evals[nfo-1]);
+    for (il=0; il<dim; il++) fprintf(stderr, "%20.10g ", evecs[nfo*dim+il]);
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "\n");
     exit(EXIT_FAILURE);
   }
+
+  if (!opt.useplusI) for (il=0; il<dim; il++) U[il*dim+il]+=1.0;
+
 
   free(work);
   free(iwork);
@@ -1594,7 +1648,7 @@ MxEVLapackNonSym(double *origU)
 
   for (i=0; i<dim; i++) evals[i]=evals_re[i];
   for (i=0; i<dim; i++)
-    if ((evals_re[i] != 0.0) && fabs(evals_im[i]/evals_re[i])>1.e-15)
+    if ((evals_re[i] != 0.0) && fabs(evals_im[i]/evals_re[i])>opt.FEPS)
       fprintf(stderr,"eigenvalue %d is %g + i*%g, which is somewhat complex\n",
               i,evals_re[i],evals_im[i]);
 

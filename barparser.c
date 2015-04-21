@@ -150,7 +150,7 @@ int ParseRatesFile(FILE *rates_FP, double **Raten, int nstates, int max)
   // check dimensions:
   if (j==0) { j=my_dim-1; i--; } // if last line empty
   if (i!=my_dim-1 || j!=my_dim-1) {
-    if (!opt.quiet) fprintf(stderr, "WARNING: dimensions are corrupted lines: %d(%d); rows: %d(%d)\n", j, my_dim, i, my_dim);
+    if (!opt.quiet) fprintf(stderr, "WARNING: dimensions are corrupted lines: %d(%d); rows: %d(%d)\n", j, my_dim-1, i, my_dim-1);
   }
 
   // shorten the matrix from dimension my_dim to nstates:
