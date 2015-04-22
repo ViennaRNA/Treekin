@@ -91,7 +91,7 @@ main (int argc, char **argv)
     MxEqDistrFULL (E, p8);
   else {
     //MxEqDistr (Data, &p8);  /* FIX THIS */
-    //MxEqDistrFromLocalBalance((TESTING?uU:U), &p8);
+    //MxEqDistrFromLocalBalance(U, &p8);
     MxEqDistrFromLinSys(U, &p8);
   }
 

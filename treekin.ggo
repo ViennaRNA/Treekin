@@ -39,3 +39,4 @@ option "useplusI"           - "Use old treekin computation where we add identity
 option "minimal-rate"       - "Rescale all rates to be higher than the minimal rate using formula  \"rate -> rate^(ln(desired_minimal_rate)/ln(minimal_rate))\", where desired_minimal_rate is from input, minimal_rate is the lowest from all rates in rate matrix." double no
 option "hard-rescale"       - "Rescale all rates by a hard exponent (usually 0.0<HR<1.0). Formula: \"rate -> rate^(hard-rescale)\". Overrides --minimal-rate argument." double no
 option "equil-file"         - "Write equilibrium distribution into a file." string no
+

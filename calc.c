@@ -30,7 +30,6 @@
 static double *MxMethodeA (BarData *Data);
 static double *MxMethodeFULL(double *);
 static double *MxMethodeINPUT (BarData *Data, double *);
-static double *MxMethodeLoc(double *);
 static double  max_saddle(int i, int j, BarData *Data);
 static void    print_settings(void);
 static char   *time_stamp(void);
@@ -86,9 +85,6 @@ MxBar2Matrix ( BarData *Data, double *R)
     break;
   case 'I':
     U = MxMethodeINPUT(Data, R);
-    break;
-  case 'L':
-    U = MxMethodeLoc(R);
     break;
   default:
     fprintf (stderr,
@@ -218,7 +214,7 @@ MxEqDistrFromLinSys( double *U, double **p8 )
 
     for(i=1; i<=n; i++) /* all except first row */
       for(j=1; j<=n; j++)
-        A[n*(i-1)+(j-1)]=U[dim*i+j] - (i==j ? 1.0 : 0.0);  //U-I=Q
+        A[n*(i-1)+(j-1)]=U[dim*i+j] - (i==j && opt.useplusI ? 1.0 : 0.0);  //U-I=Q
     for(n=0,i=1; i<dim; i++,n++)
       B[n]=-U[dim*i];
     dim=n;
@@ -229,8 +225,9 @@ MxEqDistrFromLinSys( double *U, double **p8 )
 
     //DGESV computes the solution to a real system of linear equations A * X = B
     dgesv_(&n, &nrhs, A, &n, ipiv, B, &n, &nfo);
-    if(nfo != 0) {
-      fprintf(stderr, "dgesv exited with value %d (do rates have good dimension?)\n", nfo);
+    if (nfo != 0) {
+      fprintf(stderr, "dgesv exited with value %d (Cannot compute the equilibrium distribution) - check if the rates have good dimension(if you, you have probably reached the numerical precision of treekin)\n", nfo);
+      /// TODO switch to compute from detailed balance
       exit(EXIT_FAILURE);
     }
     if (opt.want_verbose) MxPrint(B, "X in MxEqDistrFromLinSys", 'v' );
@@ -241,11 +238,15 @@ MxEqDistrFromLinSys( double *U, double **p8 )
     if (opt.want_verbose) MxPrint(*p8, "p8 in MxEqDistrFromLinSys before norm", 'v' );
 
     // now check if all are > 0.0
-    for (i=0; i<dim; i++) {
+    for (i=dim-1; i!=0; i--) {
       if ((*p8)[i]<0.0) {
         if (i==0) exit(EXIT_FAILURE);
-        fprintf(stderr, "Warning: p8[%5d] is negative (%e), setting it to a nearby value (%e)\n", i+1, (*p8)[i], (*p8)[i-1]);
-        (*p8)[i] = fabs((*p8)[i-1]);
+        fprintf(stderr, "Warning: p8[%5d] is negative (%e), setting it to a nearby value (%e)\n", i+1, (*p8)[i], (i==dim-1?(*p8)[i-1]:(*p8)[i+1]));
+        (*p8)[i] = fabs((i==dim-1?(*p8)[i-1]:(*p8)[i+1]));
+      }
+      if ((*p8)[i]==0.0) {
+        fprintf(stderr, "Warning: p8[%5d] is zero (%e), setting it to a minimum value (%e)\n", i+1, (*p8)[i], 1e-20);
+        (*p8)[i] = 1e-20;
       }
     }
 
@@ -352,6 +353,15 @@ MxDiagonalize ( double *U, double **_S, double *P8)
   // fix evals[0] to be 1.0
   if (opt.useplusI) evals[0] = 1.0;
   else evals[0] = 0.0;
+
+  // check if we have only one eval = 0 / eval = 1
+  i = 0;
+  if (opt.useplusI) while (evals[i] >= 1.0) evals[i++] = 1.0;
+  else              while (evals[i] >= 0.0) evals[i++] = 0.0;
+
+  if (i > 1) {
+    fprintf(stderr, "WARNING: There are multiple evals=%d.0 (%4d) (multiple population traps -- maybe we compute crap)\n", opt.useplusI?1:0, i);
+  }
 
   /*
   for (i=0; i<dim; i++)
@@ -608,7 +618,8 @@ MxMethodeA (BarData *Data)
     double tmp = 0.00;
     /* calculate column sum */
     for(i = 0; i < dim; i++) tmp += U[dim*i+j];
-    U[dim*j+j] = -tmp+1; /* make U a stochastic matrix */
+    U[dim*j+j] = -tmp; /* make U a stochastic matrix */
+    if (opt.useplusI) U[dim*j+j] += 1.0;
   }
   if (opt.want_verbose) MxPrint (U,"U with Methode A", 'm');
   return (U);
@@ -632,7 +643,8 @@ MxMethodeFULL (double *R)
     double tmp = 0.00;
     /* calculate column sum */
     for(i = 0; i < dim; i++) tmp += R[dim*i+j];
-    R[dim*j+j] = -tmp+1; /* make U a stochastic matrix */
+    R[dim*j+j] = -tmp; /* make U a stochastic matrix */
+    if (opt.useplusI) R[dim*j+j] += 1.0;
   }
 
   if (opt.want_verbose) MxPrint (R, "R with Methode F", 'm');
@@ -681,7 +693,8 @@ MxMethodeINPUT (BarData *Data, double *Input)
     double tmp = 0.00;
     // calculate column sum
     for(j = 0; j < dim; j++)  tmp += U[dim*j+i];
-    U[dim*i+i] = -tmp+1.0;   // make U a stochastic matrix U = Q+I ??
+    U[dim*i+i] = -tmp;   // make U a stochastic matrix U = Q+I ??
+    if (opt.useplusI) U[dim*i+i] += 1.0;
   }
 
 /*  // normalize each column to sum=1
@@ -695,45 +708,6 @@ MxMethodeINPUT (BarData *Data, double *Input)
   if(opt.want_verbose) MxPrint (U,"U with Methode I" , 'm');
   free(Input);
   return U;
-}
-
-static double *MxMethodeLoc(double *arr)
-{
-  int i, j;
-
-  double *R = MxNew(dim*dim*sizeof(double));
-
-  if(opt.absrb) { /*==== absorbing  states ====*/
-    for(i = 0; i < dim; i++)
-      R[dim*i+(opt.absrb-1)] = 0. ;
-  }              /*== end absorbing states ==*/
-
-  // we assume that saddle energies are "saddle" above the higher energy
-  // does not matter what exactly in stable distribution cause its only multiplication with exp(-saddle/_kT)
-  float mult = 0.001;                     // multiplicator
-  float saddle = _kT*(log(dim-1)-log(1));  // rate[dim*(dim-1) + (dim-1)] = 0.0
-    // set rates according to energies
-    // rate i->j: exp(e(i)>e(j) ? saddle : saddle + e(i)-e(j))
-  for (i=0; i<dim; i++)
-    for (j=0; j<dim; j++) {
-      if (arr[i]<arr[j]) {
-        R[dim*j+i] = mult*exp(-(arr[j]-arr[i]+saddle)/_kT);
-      } else {
-        R[dim*j+i] = mult*exp(-(saddle)/_kT);
-      }
-    }
-
-  /* set diagonal elements */
-  for (i=0; i<dim; i++) R[dim*i+i] = 0;
-  for (i = 0; i<dim; i++) {
-    double tmp = 0.00;
-    // calculate column sum
-    for(j = 0; j < dim; j++)  tmp += R[dim*j+i];
-    R[dim*i+i] = -tmp+1.0;   // make R a stochastic matrix R = Q+I ??
-  }
-if (opt.want_verbose) MxPrint (R, "R with Methode L", 'm');
-  free(arr);
-  return R;
 }
 
 /*==*/
@@ -1409,7 +1383,7 @@ double *MxFPTOneState(double *U, int state)
     for (j=0; j<n; j++) {
       int ui = (i>=state?i+1:i);
       int uj = (j>=state?j+1:j);
-      A[n*i+j] = U[dim*ui+uj] - (i==j?1.0:0.0);
+      A[n*i+j] = U[dim*ui+uj] - (i==j && opt.useplusI ?1.0:0.0);
     }
   }
 
@@ -1562,7 +1536,7 @@ MxEVLapackSym(double *U) {
   iwork  =    (int *) malloc (5*(dim) * sizeof(int));
   ifail  =    (int *) malloc (dim * sizeof(int));
 
-  if (!opt.useplusI) for (il=0; il<dim; il++) U[il*dim+il]-=1.0;
+  //if (!opt.useplusI) for (il=0; il<dim; il++) U[il*dim+il]-=1.0;
 
   // works only with: dim, U, evals, evecs
   dsyevx_("V", "A", "U",&dim, U, &dim, &vl, &vu, &il, &iu,
@@ -1574,7 +1548,7 @@ MxEVLapackSym(double *U) {
   //MxPrint(evals, "Eigenvalues (bad)", 'v');
 
   if(nfo != 0) {
-    fprintf(stderr, "dsyevx exited with value %d (val=%20.10g)\n", nfo, evals[nfo-1]);
+    fprintf(stderr, "dsyevx exited with value %d (val=%20.10g) (Cannot compute eigenvalues) Try to:\n - lower --feps value (try --feps=-1.0)\n - try using --useplusI option (sometimes the eigenvalues are better computed like that)\n", nfo, evals[nfo-1]);
     for (il=0; il<dim; il++) fprintf(stderr, "%20.10g ", evecs[nfo*dim+il]);
     fprintf(stderr, "\n");
 
@@ -1582,7 +1556,7 @@ MxEVLapackSym(double *U) {
     exit(EXIT_FAILURE);
   }
 
-  if (!opt.useplusI) for (il=0; il<dim; il++) U[il*dim+il]+=1.0;
+  //if (!opt.useplusI) for (il=0; il<dim; il++) U[il*dim+il]+=1.0;
 
 
   free(work);
