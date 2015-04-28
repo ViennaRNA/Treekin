@@ -16,6 +16,7 @@
 #include <time.h>
 #include <math.h>
 #include <assert.h>
+#include <errno.h>
 #include "exp_matrix.h" /* functions for matrix-exponent stuff */
 #include "mxccm.h"      /* functions for eigen-problems stolen from ccmath */
 #include "barparser.h"  /* functions for input */
@@ -319,7 +320,7 @@ MxDiagonalize ( double *U, double **_S, double *P8)
       }
     }
     if (isnan(err)) {
-      fprintf(stderr, "Matrix is not ergodic! Exiting... (%Lf)\n", err);
+      fprintf(stderr, "Rates are not good -- check your rates (maybe the equilibrium was not computed correctly? rerun with --equil-file or -v set)!!!... (%Lf)\n", err);
       exit(-1);
     }
     if (!opt.quiet) fprintf(stderr, "Corrected numerical error: %e (%e per number)\n", (double)err, (double)(err/(long double)(dim*dim)));
@@ -346,6 +347,17 @@ MxDiagonalize ( double *U, double **_S, double *P8)
   if (opt.want_verbose) {
     MxPrint(evecs, "Eigenvectors of U (LAPACK)", 'm');
     MxPrint(evals, "Eigenvalues of U (LAPACK)", 'v');
+  }
+
+  // check for ergodicity of eigenvectors (if not ergodic, then not all the space can be reached)
+  int *reachable = MxErgoEigen(evecs, dim);
+  if (reachable) {
+    fprintf(stderr, "WARNING: Eigenvector matrix is non-ergodic (unreachable states from 1st state):");
+    for (i=0; i<dim; i++) if (!reachable[i]) fprintf(stderr, " %4d", i+1);
+    fprintf(stderr, "\n         the overall probability can start to decrease if this state(s) is(are) populated!!!");
+
+    free(reachable);
+    //exit(EXIT_FAILURE);
   }
 
   //for (i=0; i< 10; i++) fprintf(stderr, "%30.20g\n", evals[i]);
@@ -382,7 +394,6 @@ MxDiagonalize ( double *U, double **_S, double *P8)
 
   // compensate for the +I matrix
   if (opt.useplusI) for(i = 0; i < dim; i++) evals[i] -= 1.0;  /* compensate 4 translation of matrix U */
-
 }
 
 /*==*/
@@ -470,6 +481,12 @@ MxIterate (double *p0, double *p8, double *S)
     vmul (tmpVec, CR, p0, dim);
     free(St);
     free(CR);
+
+    //MxPrint(S, "S", 'm');
+    //MxPrint(CL, "CL", 'm');
+    //MxPrint(_sqrPI, "sqrPI", 'm');
+    //MxPrint(CR, "CR", 'm');
+    //MxPrint(tmpVec, "tmpVec", 'v');
   }
   else { /* absorbing case */
     double *S_inv;
@@ -485,7 +502,7 @@ MxIterate (double *p0, double *p8, double *S)
     for (i = 0; i < lmins; i++) check += fabs(p8FULL[i]);
     if ( ((check-1) < -0.1) || ((check-1) > 0.1) ) {
       fprintf(stderr, "overall equilibrium probability is %e != 1. !\n", check);
-      if (opt.num_err == 'H') exit(EXIT_FAILURE);
+      if (opt.num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
       else if (opt.num_err == 'R') {
         for (i=0; i<dim; i++) p8[i] /= check;
         check = 1.0;
@@ -502,13 +519,30 @@ MxIterate (double *p0, double *p8, double *S)
     opt.t0 = TZERO;
   }
 
+  int underflow[dim];
+  for (i=0; i<dim; i++) underflow[i] = 0;
+
   // iterate
   for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
-    for (i = 0; i < dim; i++)
-      exptL[dim*i+i] = exp(time*evals[i]);
+    for (i = 0; i < dim; i++) {
+      errno = 0;
+      exptL[dim*i+i] = exp(time/opt.times*evals[i]);
+      if ((errno == ERANGE || isnan(exptL[dim*i+i])) && !underflow[i]) {
+        fprintf(stderr, "WARNING: underflow occured on %dth state at time %g -- exp(%g * %g) = %g\n", i+1, time/opt.times, time/opt.times, evals[i], exptL[dim*i+i]);
+                //         the overall probability can start to decrease if this state is still populated!!!\n         p_%d(%g) = %g, so it seems this %s\n", i+1, time/opt.times, time/opt.times, evals[i], exptL[dim*i+i], i+1, time/opt.times, pt[i], pt[i]>0.1?"is DEFINITELLY BAD":(pt[i]>0.001?"is POTENTIALLY BAD":"SHOULD BE OK"));
+        underflow[i] = 1;
+        //exit(EXIT_FAILURE);
+      }
+    }
     vmul(tmpVec2, exptL, tmpVec, dim);
     if(!opt.absrb)  vmul(pt, CL, tmpVec2, dim);
     else            vmul(pt, S, tmpVec2, dim);
+
+    /*if (count%100 == 0) {
+      fprintf(stderr, "Time: %g\n", time/opt.times);
+      MxPrint(tmpVec2, "tmpVec2", 'v');
+      MxPrint(pt, "pt", 'v');
+    }*/
 
     count++;  /* # of iterations */
 
@@ -1245,7 +1279,7 @@ MxExponent(double *p0, double *p8, double *U)
     printf("\n");
 
     if ( ((check-1) < -0.01) || ((check-1) > 0.01) ) {
-      fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
+      fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, check, (opt.num_err == 'R'?"rescaling":"exiting") );
       if (opt.num_err == 'H') exit(EXIT_FAILURE);
     }
     memset(pt,   0, dim*sizeof(double));
@@ -1284,7 +1318,7 @@ MxFPT(double *U, double *p8, FILE *out)
 
     for(i = 0; i < dim-1; i++)
         for(j = 0; j < dim-1; j++) {
-          Z[(dim-1)*i+j] = (i==j?1.0:0.0) - U[dim*i+j]; /* I-U = -Q  (U is transposed) without absorbing state*/
+          Z[(dim-1)*i+j] = (i==j && opt.useplusI?1.0:0.0) - U[dim*i+j]; /* I-U = -Q  (U is transposed) without absorbing state*/
         }
 
     ipiv = (int *)malloc((dim-1)*sizeof(int));
@@ -1311,7 +1345,7 @@ MxFPT(double *U, double *p8, FILE *out)
 
     for(i = 0; i < dim; i++)
       for(j = 0; j < dim; j++) {
-        Z[dim*i+j] = (i==j?1.0:0.0) - U[dim*j+i] + p8[j]; /* I-U+W = W-Q  (U is transposed)*/
+        Z[dim*i+j] = (i==j&& opt.useplusI?1.0:0.0) - U[dim*j+i] + p8[j]; /* I-U+W = W-Q  (U is transposed)*/
       }
 
     //if(opt.want_verbose) MxPrint (Z,"I-U+W" , 'm');

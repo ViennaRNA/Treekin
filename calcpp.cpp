@@ -24,9 +24,43 @@ extern "C" int ConvergenceReached(double *p8, double *pt, int dim, int full);
 //extern "C" void TestEigen(double *R, int dim, double **evals, double **evecs);
 extern "C" void MxRescale(double *U, int dim, double desired_rate);
 extern "C" void MxRescaleH(double *U, int dim, double hard_rescale);
+extern "C" void MxTimes(double *U, int dim, double times);
+extern "C" int *MxErgoEigen(double *U, int dim);
 
 vector<int> reorganize; // reorganize array (so if LM 0 1 3 were reachable and 2 not, reorganize will contain r[0]=0 r[1]=1 r[2]=3), so r[x] = old position of x
 int last_dim;
+
+int *MxErgoEigen(double *U, int dim)
+{
+  int count = 1;
+  vector<bool> reached(dim, false);
+  reached[0] = true;
+
+  queue<int> que_ergo;
+  que_ergo.push(0);
+
+  // fill the sets of non-empty states
+  while(!que_ergo.empty() && count<dim) {
+    int to_do = que_ergo.front();
+    que_ergo.pop();
+
+    // collect contingency
+    for (int i=0; i<dim; i++) {
+      if (i==to_do) continue;
+      if (U[i*dim + to_do]!=0.0 && U[to_do*dim + i]!=0.0 && !reached[i]) {
+        reached[i] = true;
+        que_ergo.push(i);
+        count++;
+      }
+    }
+  }
+
+  // return the array of unreached states:
+  if (dim == count) return NULL;
+  int *result = (int*) malloc(dim*sizeof(int));
+  for (int i=0; i<dim; i++) result[i] = (reached[i]?1:0);
+  return result;
+}
 
 void MxEgro(double **Up, double **p0p, int dim)
 {
@@ -105,7 +139,6 @@ void MxEgro(double **Up, double **p0p, int dim)
       exit(EXIT_SUCCESS);
     }
   }
-
 }
 
 double PrintProbFull(double *line, int dim, double time, int lmins)
@@ -121,9 +154,9 @@ double PrintProbFull(double *line, int dim, double time, int lmins)
       ptFULL[E[reorganize[i]].ag] += line[i];
     }
   }
-  // do the printing:
+
+  // sum first
   double check = 0.0;
-  printf("%e ", time);
   for (int i=0; i<lmins; i++) {
     if(ptFULL[i] < -0.01) {
       fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, ptFULL[i]);
@@ -134,17 +167,19 @@ double PrintProbFull(double *line, int dim, double time, int lmins)
     check += fabs(ptFULL[i]);
   }
 
+  // check for overall propability
+  if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
+    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, check, (opt.num_err == 'R'?"rescaling":"exiting") );
+    if (opt.num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
+  }
+
+  // print:
+  printf("%e ", time);
   for (int i=0; i<lmins; i++) {
     if (opt.num_err == 'R') printf("%e ", fabs(ptFULL[i])/check);
     else printf("%e ", fabs(ptFULL[i]));
   }
   printf("\n");
-
-  // check for overall propability
-  if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
-    fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
-    if (opt.num_err == 'H') exit(EXIT_FAILURE);
-  }
 
   return check;
 }
@@ -152,8 +187,8 @@ double PrintProbFull(double *line, int dim, double time, int lmins)
 double PrintProbNR(double *line, int dim, double time)
 {
   double check = 0.0;
-  printf("%e ", time);
 
+  // summ first
   for (int i=0; i<dim; i++) {
     if(line[i] < -0.01) {
       fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, line[i]);
@@ -164,6 +199,14 @@ double PrintProbNR(double *line, int dim, double time)
     check += fabs(line[i]);
   }
 
+  // check for overall propability
+  if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
+    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, check, (opt.num_err == 'R'?"rescaling":"exiting") );
+    if (opt.num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
+  }
+
+  // print
+  printf("%e ", time);
   for (int i=0; i<dim; i++) {
     if (opt.num_err == 'R') printf("%e ", fabs(line[i])/check);
     else printf("%e ", fabs(line[i]));
@@ -171,20 +214,14 @@ double PrintProbNR(double *line, int dim, double time)
 
   printf("\n");
 
-  // check for overall propability
-  if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
-    fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
-    if (opt.num_err == 'H') exit(EXIT_FAILURE);
-  }
-
   return check;
 }
 
 double PrintProb(double *line, int dim, double time)
 {
   double check = 0.0;
-  printf("%e ", time);
 
+  // sum it up
   for (int i=0; i<dim; i++) {
     if (line[i] < -0.01) {
       fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, line[i]);
@@ -194,7 +231,14 @@ double PrintProb(double *line, int dim, double time)
     check += fabs(line[i]);
   }
 
+  // check for overall probability
+  if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
+    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, check, (opt.num_err == 'R' && check != 0.0?"rescaling":"exiting") );
+    if (opt.num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
+  }
 
+  // print finally:
+  printf("%e ", time);
   if (reorganize.size()==0) {
     for (int i=0; i<dim; i++) {
       /* map individual structure -> gradient basins */
@@ -215,12 +259,6 @@ double PrintProb(double *line, int dim, double time)
     }
   }
   printf("\n");
-
-  // check for overall probability
-  if ( ((check-1) < -0.05) || ((check-1) > 0.05) ) {
-    fprintf(stderr, "overall probability at time %e is %e != 1. ! exiting\n", time,check );
-    if (opt.num_err == 'H') exit(EXIT_FAILURE);
-  }
 
   return check;
 }
@@ -260,6 +298,7 @@ void MxRescale(double *U, int dim, double desired_rate)
 
   MxRescaleH(U, dim, factor);
 }
+
 void MxRescaleH(double *U, int dim, double hard_rescale)
 {
 
@@ -278,11 +317,28 @@ void MxRescaleH(double *U, int dim, double hard_rescale)
     double tmp = 0.00;
     // calculate column sum
     for(int j = 0; j < dim; j++)  tmp += U[dim*j+i];
-    U[dim*i+i] = -tmp+1.0;   // make U a stochastic matrix U = Q+I ??
+    U[dim*i+i] = -tmp+(opt.useplusI?1.0:0.0);   // make U a stochastic matrix U = Q+I ??
   }
 }
 
+void MxTimes(double *U, int dim, double times)
+{
+  // multiply!
+  for (int i=0; i<dim; i++) {
+    for (int j=0; j<dim; j++) {
+      if (i!=j) U[i*dim+j] *= times;
+    }
+  }
 
+  // fix the diagonal:
+  for (int i = 0; i < dim; i++) U[dim*i+i] = 0;
+  for (int i = 0; i < dim; i++) {
+    double tmp = 0.00;
+    // calculate column sum
+    for(int j = 0; j < dim; j++)  tmp += U[dim*j+i];
+    U[dim*i+i] = -tmp+(opt.useplusI?1.0:0.0);   // make U a stochastic matrix U = Q+I ??
+  }
+}
 
 /*#include <iostream>
 #include <Eigen/Eigenvalues>

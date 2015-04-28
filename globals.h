@@ -13,7 +13,7 @@
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
 
-#define TZERO 0.1
+#define TZERO 0.0001
 
 //typedef enum { false = 0, true = 1 } bool;
 
@@ -53,6 +53,7 @@ typedef struct {         /* command-line options */
   double minimal_rate;   // rescale to minimal rate?
   double hard_rescale;   // hard rescale rates?
   char *equil_file;      // file for equilibrium distribution
+  double times;          // multiply the rates matrix?
 } treekin_options;
 
 treekin_options opt;

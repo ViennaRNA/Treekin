@@ -73,6 +73,9 @@ main (int argc, char **argv)
   if (opt.hard_rescale != 1.0) MxRescaleH(U, dim, opt.hard_rescale);
   else if (opt.minimal_rate > 0.0) MxRescale(U, dim, opt.minimal_rate);
 
+  // multiply if times was set:
+  if (opt.times != 1.0) MxTimes(U, dim, opt.times);
+
   // create initial probability vector
   MxStartVec(&p0);
 

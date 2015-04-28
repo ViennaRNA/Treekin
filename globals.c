@@ -214,6 +214,13 @@ set_parameters(void)
     }
   }
 
+  if (args_info.times_given) {
+    if( (opt.times = args_info.times_arg) <= 0. ) {
+      fprintf(stderr, "Value of --times must be > 0.\n");
+      exit (EXIT_FAILURE);
+    }
+  }
+
   if (args_info.nstates_given) {
     if( (opt.n = args_info.nstates_arg) <= 1 ) {
       fprintf(stderr, "Value of --nstates must be >= 1\n");
@@ -288,6 +295,7 @@ ini_globs(void)
   opt.minimal_rate    =          0.0;
   opt.hard_rescale    =          1.0;
   opt.equil_file      =          NULL;
+  opt.times           =          1.0;
 }
 
 /*==============================*/
