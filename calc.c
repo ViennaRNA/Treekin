@@ -519,18 +519,18 @@ MxIterate (double *p0, double *p8, double *S)
     opt.t0 = TZERO;
   }
 
-  int underflow[dim];
-  for (i=0; i<dim; i++) underflow[i] = 0;
+  double underflow[dim];
+  for (i=0; i<dim; i++) underflow[i] = 0.0;
 
   // iterate
   for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
     for (i = 0; i < dim; i++) {
       errno = 0;
       exptL[dim*i+i] = exp(time/opt.times*evals[i]);
-      if ((errno == ERANGE || isnan(exptL[dim*i+i])) && !underflow[i]) {
-        fprintf(stderr, "WARNING: underflow occured on %dth state at time %g -- exp(%g * %g) = %g\n", i+1, time/opt.times, time/opt.times, evals[i], exptL[dim*i+i]);
+      if ((errno == ERANGE || isnan(exptL[dim*i+i])) && underflow[i]==0.0) {
+        //if (opt.warnings) fprintf(stderr, "WARNING: underflow occured on %dth state at time %g -- exp(%g * %g) = %g\n", i+1, time/opt.times, time/opt.times, evals[i], exptL[dim*i+i]);
                 //         the overall probability can start to decrease if this state is still populated!!!\n         p_%d(%g) = %g, so it seems this %s\n", i+1, time/opt.times, time/opt.times, evals[i], exptL[dim*i+i], i+1, time/opt.times, pt[i], pt[i]>0.1?"is DEFINITELLY BAD":(pt[i]>0.001?"is POTENTIALLY BAD":"SHOULD BE OK"));
-        underflow[i] = 1;
+        underflow[i] = time/opt.times;
         //exit(EXIT_FAILURE);
       }
     }
@@ -564,6 +564,15 @@ MxIterate (double *p0, double *p8, double *S)
     fflush(stdout);
     if (reached) break;
   }
+
+  // print underflow:
+  if (opt.warnings) {
+    for (int i=0; i<dim; i++) {
+      if (underflow[i] > 0.0) fprintf(stderr, "underflow %5d at time %12g", i+1, underflow[i]);
+    }
+  }
+
+
   if (time < opt.t8) {
     if (opt.method=='F') PrintProbFull(pt, dim, opt.t8, lmins);
     else                 PrintProb(pt, dim, opt.t8);

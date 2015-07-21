@@ -240,6 +240,7 @@ set_parameters(void)
   if (args_info.umatrix_given) opt.dumpU = 1;
   if (args_info.mathematicamatrix_given) opt.dumpMathematica = 1;
   if (args_info.bin_given) opt.binrates = 1;
+  if (args_info.warnings_flag) opt.warnings = 1;
   if (args_info.exponent_given) opt.matexp = 1;
   if (args_info.fpt_given) {
     opt.fpt = 1;
@@ -296,6 +297,7 @@ ini_globs(void)
   opt.hard_rescale    =          1.0;
   opt.equil_file      =          NULL;
   opt.times           =          1.0;
+  opt.warnings        =          0;
 }
 
 /*==============================*/

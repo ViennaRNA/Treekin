@@ -54,6 +54,7 @@ typedef struct {         /* command-line options */
   double hard_rescale;   // hard rescale rates?
   char *equil_file;      // file for equilibrium distribution
   double times;          // multiply the rates matrix?
+  int warnings;          // all warnings on?
 } treekin_options;
 
 treekin_options opt;

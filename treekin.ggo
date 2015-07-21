@@ -40,4 +40,5 @@ option "minimal-rate"       - "Rescale all rates to be higher than the minimal r
 option "hard-rescale"       - "Rescale all rates by a hard exponent (usually 0.0<HR<1.0). Formula: \"rate -> rate^(hard-rescale)\". Overrides --minimal-rate argument." double no
 option "equil-file"         - "Write equilibrium distribution into a file." string no
 option "times"              - "Multiply rates with a constant number." double no
+option "warnings"           - "Turn all the warnings about underflow on." flag off
 
