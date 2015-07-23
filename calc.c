@@ -567,7 +567,7 @@ MxIterate (double *p0, double *p8, double *S)
 
   // print underflow:
   if (opt.warnings) {
-    for (int i=0; i<dim; i++) {
+    for (i=0; i<dim; i++) {
       if (underflow[i] > 0.0) fprintf(stderr, "underflow %5d at time %12g", i+1, underflow[i]);
     }
   }
