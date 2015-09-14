@@ -347,8 +347,9 @@ void VisualizeRates(char *filename, double *R, BarData *Data, int dim)
   }
 
   char syst[200];
+	int ref;
   sprintf(syst, "dot -Tps < %s > %s.eps", fname, filename);
-  system(syst);
+  ref = system(syst);
 }
 
 
