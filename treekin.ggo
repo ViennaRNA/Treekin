@@ -3,19 +3,19 @@ package "treekin" # don't use package if you're using automake
 purpose "Calculate a macrostate dynamics of biopolymers"
 
 # Version of your program
-version "0.3.1"   # don't use version if you're using automake
+version "0.4"   # don't use version if you're using automake
 
 # command line options passed to gengetopt
 args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-opts"
 
 # Options
 option "absorb"             a "Make a state absorbing" typestr="state" int no
-option "method"             m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI ==> use rates from barriers" values="A","F","I" default="I" no
+option "method"             m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI ==> use input as a rate matrix" values="A","F","I" default="I" no
 option "num-err"            - "Method how to deal wih numerical errors in probability:\nI ==> Ignore\nH ==> Halt the program\nR ==> Rescale the probability" values="I","H","R" default="H" no
 option "t0"                 - "Start time" typestr="time" default="0.1" double no
 option "t8"                 - "Stop time" typestr="time" default="1E12" double no
 option "Temp"               T "Temperature in Celsius" default="37.0" double no
-option "nstates"            n "Read only <int> states (assume quasi-stationary distribution (derivation of others is = 0))" int no
+option "nstates"            n "Read only first <int> states (assume quasi-stationary distribution (derivation of others is = 0))" int no
 option "p0"                 - "Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1)\n(example: \"--p0 2=1.0\" - state 2 has initial population 100 percent)" string no multiple
 option "tinc"               - "Time scaling factor (for log time-scale)" default="1.02" double no
 option "degeneracy"         d "Consider degeneracy in transition rates" flag off
@@ -27,15 +27,15 @@ option "fpt"                t "Calculate first passage times\n\"all\" - calculat
 option "recover"            r "Recover from pre-calculated Eigenvalues and Eigenvectors" flag off
 option "wrecover"           w "Write recovery file containing Eigenvalues and Eigenvectors" flag off
 option "info"               - "Show settings" flag off
-option "ratesfile"          f "Name of the textfile containing the (barriers) rate matrix\n(NOTE: the rate matrix must have been print out with '%10.4g' per entry otherwise treekin will calculate crap)" string no
+option "ratesfile"          f "Name of the textfile containing the (barriers) rate matrix\n(NOTE: the rate matrix must have been print out with '%10.4g' per entry otherwise treekin will calculate crap)\nIn case of -m I option (default), this is read from the standard input." string no
 option "verbose"            v "Verbose output" flag off
-option "quiet"              q "Be silent" flag off
+option "quiet"              q "Be silent (do not print out the output)" flag off
 option "fptfile"            - "File where to write first passage times (meaningfull only with -t option)" string no
-option "visualize"          - "Filename where to print visualization of rate graph (without file subscript, two files will be generated: .dot and .eps with text and visual representation of graph)" string no
+option "visualize"          - "Filename where to print a visualization of rate graph (without file subscript, two files will be generated: .dot and .eps with text and visual representation of graph)" string no
 option "just-shorten"       - "Do not diagonalize and iterate, just shorten input (meaningfull only with -n X option or -fpt option or --visualize option)" flag off
 option "max-decrease"       - "Maximal decrease in dimension in one step" default="1000000" int no
 option "feps"               - "Machine precision used by LAPACK routines (and matrix aritmetic) -- if set to negative number, the lapack suggested value is used (2*DLAMCH(\"S\") )" default="1E-15" double no
-option "useplusI"           - "Use old treekin computation where we add identity matrix to transition matrix. Maybe sometimes more/less precise? Dunno... in normal case it should not affect results." flag off
+option "useplusI"           - "Use old treekin computation where we add identity matrix to transition matrix. Sometimes less precise (maybe sometimes also more precise), in normal case it should not affect results at all." flag off
 option "minimal-rate"       - "Rescale all rates to be higher than the minimal rate using formula  \"rate -> rate^(ln(desired_minimal_rate)/ln(minimal_rate))\", where desired_minimal_rate is from input, minimal_rate is the lowest from all rates in rate matrix." double no
 option "hard-rescale"       - "Rescale all rates by a hard exponent (usually 0.0<HR<1.0). Formula: \"rate -> rate^(hard-rescale)\". Overrides --minimal-rate argument." double no
 option "equil-file"         - "Write equilibrium distribution into a file." string no

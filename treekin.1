@@ -9,77 +9,166 @@
 .LP 
 \fBtreekin\fR computes a reduced dynamics of biopolymer folding by means of numeric integration of a Markov process that generally operates at the level of macrostates, i.e. basins of attraction of the underlying energy landscape.
 .br 
-\fBtreekin\fR expects a .bar file via stdin, and optionally a rates file in the current working directory. Both the .bar file and the rates file (default name is \fIrates.out\fR) can be obtained from \fBbarriers\fR.
+\fBtreekin\fR expects a .bar file via stdin, and optionally a rates file in the current working directory. Both the .bar file and the rates file (default name is \fIrates.out\fR) can be obtained from \fBbarriers\fR. In case of -m I option (default) the program needs just the rate file provided as standard input.
 .SH "OPTIONS"
 .LP 
 .TP 
-\fB\-a, \-\-absorb i\fR
-Make a state \fIi\fR absorbing (default: none)
-.TP 
-\fB\-m, \-\-method m\fR
-Select method to build transition matrix. Possible values for \fIm\fR are:
-.br 
-A ==> Arrhenius\-like macrostate kinetics (this is the default)
-.br 
-F ==> Full process kinetics (consider all states from subopt)
-.br 
-I ==> Apply microscrates from barriers (requires a rates file)
-.TP 
-\fB     \-\-p0 s=x\fR
-Set the start population probability of state \fIs\fR to \fIx\fR. This option can be given multiple times. Please note that the individual population probabilities given here \fImust\fR sum up to 1.
-.TP 
-\fB     \-\-t0 time\fR
-Set simulation start time in internal units (default: 0.1)
-.TP 
-\fB     \-\-t8 time\fR
-Set simulation stop time in internal units (default: 1e+09)
-.TP 
-\fB     \-\-tinc increment\fR
-Time scaling factor for logarithmic time scale (default: 1.02)
-.TP 
-\fB\-T,  \-\-Temp temp\fR
-Set the simulation temperature in Celsius to \fItemp\fR (default: 37.0)
-.TP 
-\fB     \-\-info\fR
-Show all settings (default: off)
-.TP 
-\fB\-f, \-\-ratesfile file\fR
-Name of the text file containing the rates matrix as computed by \fBbarriers\fR. Individual rates in this file are expected in '%10.4g' format.
-.TP 
-\fB\-h \-\-help\fR
-Output help information and exit.
-.TP 
-\fB\-V \-\-version\fR
-Output version information and exit.
-.SH "EXPERIMENTAL OPTIONS"
-.LP 
-.TP 
-\fB\-b, \-\-bin\fR
-Read binary input  (default: off)
-.TP 
-\fB\-d, \-\-degeneracy\fR
-Consider degeracy in transition rates  (default: off)
-.TP 
-\fB\-e, \-\-exponent\fR
-Solve the underlying differential equations by computing matrix exponentionals directly, hence no diagonalization is performed in this case. Please note that this option is only applicable to small matrices. (default: off)
-.TP 
-\fB    \-\-fpt\fR
-Compute first passage times  (default: off)
-.TP 
-\fB\-n, \-\-nstates num\fR
-Read \fInum\fR states (default: read all states)
-.TP 
-\fB\-r, \-\-recover\fR
-Recover from pre\-calculated Eigenvalues and Eigenvectors (default: off)
-.TP 
-\fB\-w \-\-wrecover\fR
-Write recovery file containing Eigenvalues and Eigenvectors (default: off)
-.TP 
-\fB\-u, \-\-umatrix\fR
-Dump transition matrix U to a binary file mx.bin (default: off)
-.TP 
-\fB\-x, \-\-mathematicamatrix\fR
-Dump transition matrix U to Mathematica\-readable file mxMat.txt  (default: off)
+\fB\-h\fR, \fB\-\-help\fR
+Print help and exit
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version and exit
+.TP
+\fB\-a\fR, \fB\-\-absorb\fR=\fIstate\fR
+Make a state absorbing
+.TP
+\fB\-m\fR, \fB\-\-method\fR=\fISTRING\fR
+Select method to build transition matrix:
+A ==> Arrhenius\-like kinetics
+F ==> Full process kinetics (whole subopt)
+I ==> use input as a rate matrix  (possible
+values="A", "F", "I" default=`I')
+.TP
+\fB\-\-num\-err\fR=\fISTRING\fR
+Method how to deal wih numerical errors in
+probability:
+I ==> Ignore
+H ==> Halt the program
+R ==> Rescale the probability  (possible
+values="I", "H", "R" default=`H')
+.TP
+\fB\-\-t0\fR=\fItime\fR
+Start time  (default=`0.1')
+.TP
+\fB\-\-t8\fR=\fItime\fR
+Stop time  (default=`1E12')
+.TP
+\fB\-T\fR, \fB\-\-Temp\fR=\fIDOUBLE\fR
+Temperature in Celsius  (default=`37.0')
+.TP
+\fB\-n\fR, \fB\-\-nstates\fR=\fIINT\fR
+Read only first <int> states (assume
+quasi\-stationary distribution (derivation of
+others is = 0))
+.TP
+\fB\-\-p0\fR=\fISTRING\fR
+Set initial population of state <int> to <double>
+Can be given multiple times
+(NOTE: sum of <double> must equal 1)
+(example: "\-\-p0 2=1.0" \- state 2 has initial
+population 100 percent)
+.TP
+\fB\-\-tinc\fR=\fIDOUBLE\fR
+Time scaling factor (for log time\-scale)
+(default=`1.02')
+.TP
+\fB\-d\fR, \fB\-\-degeneracy\fR
+Consider degeneracy in transition rates
+(default=off)
+.TP
+\fB\-e\fR, \fB\-\-exponent\fR
+Use matrix\-expontent routines, NO diagonalization
+(default=off)
+.TP
+\fB\-u\fR, \fB\-\-umatrix\fR
+Dump transition matrix U to a file mx.txt (and to
+binary mx.bin \- not fixed yet)  (default=off)
+.TP
+\fB\-x\fR, \fB\-\-mathematicamatrix\fR
+Dump transition matrix U to Mathematica\-readable
+file mxMat.txt  (default=off)
+.TP
+\fB\-b\fR, \fB\-\-bin\fR
+Assume binary rates input  (default=off)
+.TP
+\fB\-t\fR, \fB\-\-fpt\fR=\fISTRING\fR
+Calculate first passage times
+"all" \- calculate all fpt's(slow)
+<num> \- calculate fpt's to state <num> from all
+states
+.TP
+\fB\-r\fR, \fB\-\-recover\fR
+Recover from pre\-calculated Eigenvalues and
+Eigenvectors  (default=off)
+.TP
+\fB\-w\fR, \fB\-\-wrecover\fR
+Write recovery file containing Eigenvalues and
+Eigenvectors  (default=off)
+.TP
+\fB\-\-info\fR
+Show settings  (default=off)
+.TP
+\fB\-f\fR, \fB\-\-ratesfile\fR=\fISTRING\fR
+Name of the textfile containing the (barriers)
+rate matrix
+(NOTE: the rate matrix must have been print out
+with '%10.4g' per entry otherwise treekin will
+calculate crap)
+In case of \fB\-m\fR I option (default), this is read
+from the standard input.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Verbose output  (default=off)
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Be silent (do not print out the output)
+(default=off)
+.TP
+\fB\-\-fptfile\fR=\fISTRING\fR
+File where to write first passage times
+(meaningfull only with \fB\-t\fR option)
+.TP
+\fB\-\-visualize\fR=\fISTRING\fR
+Filename where to print a visualization of rate
+graph (without file subscript, two files will be
+generated: .dot and .eps with text and visual
+representation of graph)
+.TP
+\fB\-\-just\-shorten\fR
+Do not diagonalize and iterate, just shorten input
+(meaningfull only with \fB\-n\fR X option or \fB\-fpt\fR
+option or \fB\-\-visualize\fR option)  (default=off)
+.TP
+\fB\-\-max\-decrease\fR=\fIINT\fR
+Maximal decrease in dimension in one step
+(default=`1000000')
+.TP
+\fB\-\-feps\fR=\fIDOUBLE\fR
+Machine precision used by LAPACK routines (and
+matrix aritmetic) \fB\-\-\fR if set to negative number,
+the lapack suggested value is used
+(2*DLAMCH("S") )  (default=`1E\-15')
+.TP
+\fB\-\-useplusI\fR
+Use old treekin computation where we add identity
+matrix to transition matrix. Sometimes less
+precise (maybe sometimes also more precise), in
+normal case it should not affect results at all.
+(default=off)
+.TP
+\fB\-\-minimal\-rate\fR=\fIDOUBLE\fR
+Rescale all rates to be higher than the minimal
+rate using formula  "rate \->
+rate^(ln(desired_minimal_rate)/ln(minimal_rate))",
+where desired_minimal_rate is from input,
+minimal_rate is the lowest from all rates in
+rate matrix.
+.TP
+\fB\-\-hard\-rescale\fR=\fIDOUBLE\fR
+Rescale all rates by a hard exponent (usually
+0.0<HR<1.0). Formula: "rate \->
+rate^(hard\-rescale)". Overrides \fB\-\-minimal\-rate\fR
+argument.
+.TP
+\fB\-\-equil\-file\fR=\fISTRING\fR
+Write equilibrium distribution into a file.
+.TP
+\fB\-\-times\fR=\fIDOUBLE\fR
+Multiply rates with a constant number.
+.TP
+\fB\-\-warnings\fR
+Turn all the warnings about underflow on.
+(default=off)
 .SH "EXAMPLES"
 .LP 
 Typically, computation of a reduced dynamics based on the analysis of folding landscapes requires two steps: Elucidation of the landscape (topology) and \- based on that \- calculation of the reduced dynamics.
@@ -90,7 +179,7 @@ barriers \-\-saddle \-\-bsize \-\-rates < foo.sub > foo.bar
 .LP 
 In a second step, \fBtreekin\fR is called with options to calculate the macrostate dynamics on the previously generated landscape by means of applying microscopic transition rates (option \-m I):
 .LP 
-treekin \-\-p0 2=1 \-m I < foo.bar
+treekin \-\-p0 2=1 < rates.out
 .LP 
 In this example, the simulation starts with 100% of the initial population in macrostate 2, i.e. the second lowest minimum in the barrier tree (option \-\-p0 2=1).  The transition matrix is computed from a set of microscopic rates, read from a rates file (as computed by \fBbarriers\fR).
 
@@ -113,7 +202,7 @@ BarMap: RNA folding on dynamic energy landscapes
 RNA: 2010 16: 1308\-1316 (2010)
 .SH "AUTHORS"
 .LP 
-Michael T. Wolfinger, Ivo Hofacker, Christoph Flamm, Andreas Svrcek\-Sailer, Peter Stadler.
+Michael T. Wolfinger, Marcel Kucharik, Ivo Hofacker, Christoph Flamm, Andreas Svrcek\-Sailer, Peter Stadler.
 .br 
 Send comments to <ivo@tbi.univie.ac.at>
 .SH "SEE ALSO"

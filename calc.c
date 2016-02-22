@@ -567,7 +567,7 @@ MxIterate (double *p0, double *p8, double *S)
 
   // print underflow:
   if (opt.warnings) {
-    for (int i=0; i<dim; i++) {
+    for (i=0; i<dim; i++) {
       if (underflow[i] > 0.0) fprintf(stderr, "underflow %5d at time %12g", i+1, underflow[i]);
     }
   }
@@ -1151,6 +1151,7 @@ MxBinRead(double **Mx, char what[], char T)
   FILE *BININ=NULL;
   char *wosis=NULL, *binfile=NULL, *suffix="bin";
   double *data=NULL;
+	int ref;
   //size_t info;
 
   wosis=what;
@@ -1180,15 +1181,15 @@ MxBinRead(double **Mx, char what[], char T)
     exit(EXIT_FAILURE);
   }
   /* read dimension from file */
-  fread(&dimension,sizeof(int),1,BININ);
+  ref = fread(&dimension,sizeof(int),1,BININ);
   switch(T) { /* read data */
   case 'm':
     data = (double *)calloc(dimension*dimension, sizeof(double));
-    fread((void*)data, sizeof(double), dimension*dimension,BININ);
+    ref = fread((void*)data, sizeof(double), dimension*dimension,BININ);
     break;
   case 'v':
     data = (double *)calloc(dimension, sizeof(double));
-    fread(data, sizeof(double), dimension,BININ);
+    ref = fread(data, sizeof(double), dimension,BININ);
     break;
   default:
     fprintf(stderr, "ERROR MxBinRead(): no handler for type %c\n",T);
@@ -1893,10 +1894,11 @@ void MxOneShorten(double **shorten, int fulldim)
 int MxReadBinRates(FILE *rate_file, double **rate_mx, int nstates, int max)
 {
   int dimension = 0;
+	int ref;
   /* read dimension from file */
-  fread(&dimension,sizeof(int),1,rate_file);
+  ref = fread(&dimension,sizeof(int),1,rate_file);
   double *data = (double *)calloc(dimension*dimension, sizeof(double));
-  fread((void*)data, sizeof(double), dimension*dimension,rate_file);
+  ref = fread((void*)data, sizeof(double), dimension*dimension,rate_file);
 
   *rate_mx = data;
   fclose(rate_file);
