@@ -4,11 +4,7 @@ dnl
 dnl Bug reports are sent to mtw@tbi.univie.ac.at
 dnl ---------------------------------------------------------------------------
 
-if test -f "VERSION.txt"; then
-   m4_define(TREEKIN_VERSION,
-       m4_esyscmd(cat VERSION.txt  | sed 's/\-.*$//' | tr -d '\n\r'))
-fi
-AC_INIT([Treekin],TREEKIN_VERSION, [mtw@tbi.univie.ac.at], [Treekin])
+AC_INIT([Treekin], 0.4.0, [mtw@tbi.univie.ac.at], [Treekin], [http://www.tbi.univie.ac.at/RNA/Treekin])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(calc.c)
 AC_CONFIG_HEADERS(config.h)
@@ -123,6 +119,7 @@ dnl Output
 dnl ---------------------------------------------------------------------------
 
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([packaging/treekin.spec packaging/PKGBUILD])
 
 AC_OUTPUT
 

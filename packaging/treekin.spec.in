@@ -1,0 +1,58 @@
+# treekin.spec
+#
+# Copyright (c) 2003-2016 Michael Wolfinger, Marcel Kucharik, Ivo Hofacker  mtw@tbi.univie.ac.at
+#
+##%if 0%{?suse_version} || 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version}
+%{!?_pkgdocdir: %global _pkgdocdir %%{_docdir}/%{name}}
+##%else
+##%{!?_pkgdocdir: %global _pkgdocdir %{buildroot}%{_docdir}/%{name}-%{version}}
+##%endif
+
+Name:           treekin
+Version:        @PACKAGE_VERSION@
+Release:        1%{?dist}
+Summary:        Efficient computation of RNA folding dynamics
+
+Vendor:         Ivo Hofacker, TBI - University of Vienna
+Packager:       Ronny Lorenz <ronny@tbi.univie.ac.at>
+
+Group:          Applications/Engineering
+License:        Free for non commercial use.
+URL:            @PACKAGE_URL@
+Source0:        http://www.tbi.univie.ac.at/RNA/packages/source/Treekin-%{version}.tar.gz
+BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+
+BuildRequires:  autoconf
+BuildRequires:  automake
+BuildRequires:  rpm-devel
+
+BuildRequires:  libstdc++-devel
+BuildRequires:  gcc gcc-c++ glibc-devel info lapack-devel blas-devel
+
+Requires:       libstdc++ glibc blas lapack
+
+%description
+The program treekin computes folding dynamics on coarse grained version of an energy landscape,
+where all conformations belonging to the same local minimum have been contracted into a single
+macro-state.
+
+%prep
+%setup -n Treekin-%{version} -q
+
+%build
+%configure --docdir=%{_pkgdocdir}
+make %{?_smp_mflags}
+
+
+%install
+rm -rf $RPM_BUILD_ROOT
+
+%{__make} install DESTDIR=$RPM_BUILD_ROOT
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-,root,root,-)
+%{_bindir}/*
+%{_mandir}/man1/treekin.1.gz
