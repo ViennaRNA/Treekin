@@ -59,6 +59,20 @@ AC_PATH_PROG([MAKE],[make],[make])
 AC_PATH_PROG([AR],[ar],[ar])
 
 dnl ---------------------------------------------------------------------------
+dnl Checks for gengetopt
+dnl ---------------------------------------------------------------------------
+AC_DEFUN([AX_TREEKIN_GENGETOPT],[
+	AC_CHECK_PROG(GENGETOPT_CHECK,gengetopt,yes,no)
+	AS_IF([ test "$GENGETOPT_CHECK" != "yes"],[
+		AC_MSG_ERROR(getgetopt not found)
+	])
+])
+
+AX_TREEKIN_GENGETOPT()
+
+
+
+dnl ---------------------------------------------------------------------------
 dnl Checks for libraries.
 dnl ---------------------------------------------------------------------------
 
