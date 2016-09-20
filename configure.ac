@@ -78,10 +78,17 @@ dnl ---------------------------------------------------------------------------
 
 AC_LANG(C)
 #AC_CHECK_LIB(gfortran, exp)
-AC_CHECK_LIB(blas,ddot_)		
-AC_CHECK_LIB(lapack,dgeevx_)
-AC_CHECK_LIB(m, isnan)
-AC_CHECK_LIB(arpack,dseupd_)
+dnl AC_SEARCH_LIBS([ddot_],[blas],[],[
+dnl		AC_MSG_ERROR([unable to find the ddot_() function in lblas])
+dnl		])
+AC_CHECK_LIB(blas,ddot_,[],[
+	AC_MSG_ERROR([unable to find the ddot_() function in lblas. Is blas installed?])
+])				
+AC_CHECK_LIB(lapack,dgeevx_,[],[
+	AC_MSG_ERROR([unable to find the dgeevx_() function in lblas. Is lapack installed?])
+])
+dnl AC_CHECK_LIB(m, isnan)
+dnl AC_CHECK_LIB(arpack,dseupd_)
 
 dnl ---------------------------------------------------------------------------
 dnl Checks for header files.
