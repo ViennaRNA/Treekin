@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2012-01-14 19:04:10 mtw>          =*/
+/*=   Last changed Time-stamp: <2017-05-19 19:39:30 ivo>          =*/
 /*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
@@ -305,7 +305,7 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     /* correct for numerical errors */
     long double err = 0.0;  // acumulated error
     for (i = 0; i < dim; i++) {
-      for (j = 0; j < dim; j++) {
+      for (j = i; j < dim; j++) {
         long double err_inc = fabs((U[dim*i+j]+U[dim*j+i])/2 - U[dim*i+j]);
         /*if (isnan(err_inc)) {
           fprintf(stderr, "%d %d\n", i,j);
@@ -316,6 +316,7 @@ MxDiagonalize ( double *U, double **_S, double *P8)
           //exit(-1);
         }
         U[dim*i+j] = (U[dim*i+j]+U[dim*j+i])/2;
+	//U[dim*i+j] = sqrt(U[dim*i+j]*U[dim*j+i]);
         U[dim*j+i] = U[dim*i+j];
       }
     }
@@ -362,6 +363,13 @@ MxDiagonalize ( double *U, double **_S, double *P8)
 
   //for (i=0; i< 10; i++) fprintf(stderr, "%30.20g\n", evals[i]);
 
+  if (!opt.quiet) {
+    if (abs(evals[0] - ((opt.useplusI)?1:0)) > 10*opt.FEPS) {
+      fprintf(stderr, "WARNING largest eigenvalue is %g, see evals.txt and evecs.txt\n", evals[0]);
+      MxASCIIWriteV(evals, "evals.txt");
+      MxASCIIWrite(evecs, "evecs.txt");
+    }
+  }
   // fix evals[0] to be 1.0
   if (opt.useplusI) evals[0] = 1.0;
   else evals[0] = 0.0;
