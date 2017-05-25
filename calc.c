@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-05-25 18:01:24 ivo>          =*/
+/*=   Last changed Time-stamp: <2017-05-25 19:06:58 ivo>          =*/
 /*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
@@ -527,12 +527,12 @@ MxIterate (double *p0, double *p8, double *S)
     opt.t0 = TZERO;
   }
 
-  double underflow[dim];
+  double underflow[dim], tt;
   for (i=0; i<dim; i++) underflow[i] = 0.0;
 
   // iterate
-  for (time = opt.t0; time < opt.t8*opt.tinc; time *= opt.tinc) {
-    if (time>opt.t8) time=opt.t8;
+  for (tt = opt.t0; tt < opt.t8*opt.tinc; tt *= opt.tinc) {
+    time = (tt<opt.t8)?tt:opt.t8;
     for (i = 0; i < dim; i++) {
       errno = 0;
       exptL[dim*i+i] = exp(time/opt.times*evals[i]);
@@ -1256,7 +1256,7 @@ void
 MxExponent(double *p0, double *p8, double *U)
 {
   int i,j, pdiff_counter = 0;
-  double x, time, *Uexp, *Umerk, *pt, *pdiff, check = 0.;
+  double x, tt, time, *Uexp, *Umerk, *pt, *pdiff, check = 0.;
 
   Umerk  = (double *) MxNew (dim*dim*sizeof(double));
   Uexp   = (double *) MxNew (dim*dim*sizeof(double));
@@ -1267,8 +1267,8 @@ MxExponent(double *p0, double *p8, double *U)
 
   for (i=0; i<dim; i++) U[(dim+1)*i] -= 1;
   print_settings();
-  for (time = opt.t0; time < opt.t8*opt.tinc; time *= opt.tinc) {
-    if (time>opt.t8) time=opt.t8;
+  for (tt = opt.t0; tt < opt.t8*opt.tinc; tt *= opt.tinc) {
+    time = (tt<opt.t8)? tt:opt.t8;
     memcpy(U, Umerk, dim*dim*sizeof(double));
     for (i=0; i<dim*dim; i++) U[i]*=time;
     padexp(U,Uexp,dim,30);
