@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-05-25 19:06:58 ivo>          =*/
+/*=   Last changed Time-stamp: <2017-05-25 19:08:53 ivo>          =*/
 /*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
@@ -1255,7 +1255,7 @@ MxASCIIWriteV(double *Mx, char *asciifile)
 void
 MxExponent(double *p0, double *p8, double *U)
 {
-  int i,j, pdiff_counter = 0;
+  int i,j, pdiff_counter, count = 0;
   double x, tt, time, *Uexp, *Umerk, *pt, *pdiff, check = 0.;
 
   Umerk  = (double *) MxNew (dim*dim*sizeof(double));
@@ -1264,6 +1264,13 @@ MxExponent(double *p0, double *p8, double *U)
   pdiff  = (double *) MxNew (dim*sizeof(double));
 
   memcpy(Umerk, U, dim*dim*sizeof(double));
+
+  /* solve fundamental equation */
+  if (opt.t0 == 0.0) {
+    if (opt.method=='F')  PrintProbFull(p0, dim, 0.0, lmins);
+    else                  PrintProb(p0, dim, 0.0);
+    opt.t0 = TZERO;
+  }
 
   for (i=0; i<dim; i++) U[(dim+1)*i] -= 1;
   print_settings();
@@ -1287,7 +1294,7 @@ MxExponent(double *p0, double *p8, double *U)
     pdiff_counter = 0.;
     /* end check convergence */
     check = 0.;
-    printf(" %e ", time);  /* print p(t) to stdout */
+    printf("%e ", time);  /* print p(t) to stdout */
     for (i = 0; i < dim; i++) {
       if(pt[i] < -0.00001) {
         fprintf(stderr, "prob of lmin %i has become negative!\n", i+1);
@@ -1297,6 +1304,8 @@ MxExponent(double *p0, double *p8, double *U)
       check += fabs(pt[i]);
     }
     printf("\n");
+
+    count++;  /* # of iterations */
 
     if ( ((check-1) < -0.01) || ((check-1) > 0.01) ) {
       fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, check, (opt.num_err == 'R'?"rescaling":"exiting") );
@@ -1308,6 +1317,7 @@ MxExponent(double *p0, double *p8, double *U)
     memset(U, 0, dim*dim*sizeof(double));
 
   }
+  printf("# of iterations: %d\n", count);
   free(Uexp);
   free(pt);
 }
