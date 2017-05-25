@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-05-19 19:39:30 ivo>          =*/
+/*=   Last changed Time-stamp: <2017-05-25 18:01:24 ivo>          =*/
 /*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
@@ -531,7 +531,8 @@ MxIterate (double *p0, double *p8, double *S)
   for (i=0; i<dim; i++) underflow[i] = 0.0;
 
   // iterate
-  for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
+  for (time = opt.t0; time < opt.t8*opt.tinc; time *= opt.tinc) {
+    if (time>opt.t8) time=opt.t8;
     for (i = 0; i < dim; i++) {
       errno = 0;
       exptL[dim*i+i] = exp(time/opt.times*evals[i]);
@@ -1266,7 +1267,8 @@ MxExponent(double *p0, double *p8, double *U)
 
   for (i=0; i<dim; i++) U[(dim+1)*i] -= 1;
   print_settings();
-  for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
+  for (time = opt.t0; time < opt.t8*opt.tinc; time *= opt.tinc) {
+    if (time>opt.t8) time=opt.t8;
     memcpy(U, Umerk, dim*dim*sizeof(double));
     for (i=0; i<dim*dim; i++) U[i]*=time;
     padexp(U,Uexp,dim,30);
