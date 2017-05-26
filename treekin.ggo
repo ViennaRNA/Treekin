@@ -3,7 +3,7 @@ package "treekin" # don't use package if you're using automake
 purpose "Calculate a macrostate dynamics of biopolymers"
 
 # Version of your program
-version "0.4"   # don't use version if you're using automake
+version "0.4.1"   # don't use version if you're using automake
 
 # command line options passed to gengetopt
 args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-opts"
