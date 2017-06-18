@@ -127,7 +127,7 @@ set_parameters(void)
     double poptmp = 0., probtmp = 0., *pinitmp=NULL;
     pinitmp = (double *)calloc(2*args_info.p0_given+1, sizeof(double));
     *pinitmp = 1;
-    for (i=0; i<args_info.p0_given; i++,j+=2) {
+    for (i=0; i<args_info.p0_given; i++) {
       if (sscanf(args_info.p0_arg[i], "%d=%lg",&lmintmp, &poptmp) == 0)
         exit(EXIT_FAILURE);
       if(lmintmp <1) {
@@ -138,6 +138,7 @@ set_parameters(void)
         *(pinitmp + j)     = (double) lmintmp;
         *(pinitmp + j + 1) = poptmp;
         *pinitmp += 2;
+        j+=2;
       }
     }
 
