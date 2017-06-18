@@ -15,8 +15,10 @@ EXTRA_DIST = treekin.ggo treekin_cmdline.c treekin_cmdline.h
 
 globals.c:  treekin_cmdline.h
 
+if MAKE_CMDLINE_PARSER
 treekin_cmdline.h treekin_cmdline.c:  treekin.ggo
-	gengetopt -i treekin.ggo
+	@GENGETOPT@ -i treekin.ggo
+endif
 
 
 

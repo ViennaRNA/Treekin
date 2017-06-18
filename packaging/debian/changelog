@@ -1,3 +1,9 @@
+treekin (0.4.1-1) UNRELEASED; urgency=low
+
+  * Bump to upstream release 0.4.1
+
+ -- Ronny Lorenz <ronny@tbi.univie.ac.at>  Wed, 07 Jun 2017 10:20:00 +0200
+
 treekin (0.4.0-1) UNRELEASED; urgency=low
 
   * Bump to upstream release 0.4

@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2012-01-14 19:04:10 mtw>          =*/
+/*=   Last changed Time-stamp: <2017-06-02 16:53:08 ivo>          =*/
 /*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
@@ -44,6 +44,7 @@ static void    MxSortEig(double *evals, double *evecs);
 static void    MxEVLapackSym(double *U);
 static void    MxEVLapackNonSym(double *U);
 static void    MxFixevecs(double *, double *);
+static void    MxFixevecsAbsorb(double *, double *);
 static void    MxDiagHelper(double *P8);
 
 void MxFPrintD(double *mx, char *name, int dim1, int dim2, FILE *out);
@@ -299,13 +300,13 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     if (opt.want_verbose) MxPrint (sqrPI_, "sqrPI_", 'm');
     memset(U,0,dim*dim*sizeof(double));
     mmul(U, tmpMx, sqrPI_, dim);
-    if (opt.want_verbose) MxPrint (U, "U = _sqrPI*U*sqrPI_ (force symmetrized U - uncorrected)", 'm');
+    if (opt.want_verbose) MxPrint (U, "U = _sqrPI*U*sqrPI_ (this should be symmetric, but still uncorrected)", 'm');
     free(tmpMx);
 
-    /* correct for numerical errors */
+    /* correct for numerical errors -- ensure U is symmetirc */
     long double err = 0.0;  // acumulated error
     for (i = 0; i < dim; i++) {
-      for (j = 0; j < dim; j++) {
+      for (j = i; j < dim; j++) {
         long double err_inc = fabs((U[dim*i+j]+U[dim*j+i])/2 - U[dim*i+j]);
         /*if (isnan(err_inc)) {
           fprintf(stderr, "%d %d\n", i,j);
@@ -316,6 +317,7 @@ MxDiagonalize ( double *U, double **_S, double *P8)
           //exit(-1);
         }
         U[dim*i+j] = (U[dim*i+j]+U[dim*j+i])/2;
+	//U[dim*i+j] = sqrt(U[dim*i+j]*U[dim*j+i]);
         U[dim*j+i] = U[dim*i+j];
       }
     }
@@ -362,7 +364,14 @@ MxDiagonalize ( double *U, double **_S, double *P8)
 
   //for (i=0; i< 10; i++) fprintf(stderr, "%30.20g\n", evals[i]);
 
-  // fix evals[0] to be 1.0
+  if (!opt.quiet) {
+    if (abs(evals[0] - ((opt.useplusI)?1:0)) > 10*opt.FEPS) {
+      fprintf(stderr, "WARNING largest eigenvalue is %g, see evals.txt and evecs.txt\n", evals[0]);
+      MxASCIIWriteV(evals, "evals.txt");
+      MxASCIIWrite(evecs, "evecs.txt");
+    }
+  }
+  // fix evals[0] to be 0 (or 1.0)
   if (opt.useplusI) evals[0] = 1.0;
   else evals[0] = 0.0;
 
@@ -383,15 +392,35 @@ MxDiagonalize ( double *U, double **_S, double *P8)
   //for (i=0; i< 10; i++) fprintf(stderr, "%30.20g\n", evals[i]);
 
   if(opt.absrb)
-    MxFixevecs(evecs,evals);
+    MxFixevecsAbsorb(evecs,evals);
+  //  else
+  //  MxFixevecs(evecs,evals); /* so far it's not helping ... */
+  
   *_S=evecs;
   if(opt.wrecover) {
     MxBinWrite(evals, "evals", 'v');
     MxBinWrite(evecs, "evecs", 'm');
     MxASCIIWriteV(evals, "evals.txt");
     MxASCIIWrite(evecs, "evecs.txt");
+    if (opt.want_verbose) {
+      double *CL, *tmpMx;
+      int i,j;
+      CL        = (double *) MxNew (dim*dim*sizeof(double));
+      mmul (CL, sqrPI_, evecs, dim);
+      MxASCIIWrite(CL, "evecR.txt");
+      fprintf(stderr, "Sums of EVs of rate matrix R\n");
+      for (i=0; i<dim; i++) {
+	double sum, sum2, sum3;
+	sum=sum2=sum3=0.;
+	for (j=0; j<dim; j++) {
+	  sum += CL[dim*j+i];
+	}
+	fprintf(stderr, "%15.8g  ", i, sum);
+      }
+      fprintf(stderr, "\n");
+    free(CL);
+    }
   }
-
   // compensate for the +I matrix
   if (opt.useplusI) for(i = 0; i < dim; i++) evals[i] -= 1.0;  /* compensate 4 translation of matrix U */
 }
@@ -479,11 +508,26 @@ MxIterate (double *p0, double *p8, double *S)
     mmul (CL, sqrPI_, S, dim);
     mmul (CR, St, _sqrPI, dim);
     vmul (tmpVec, CR, p0, dim);
+
+    // test CL*CR = I
+    if (opt.want_verbose) {
+      double *testMx, *tvec;
+      testMx      = (double *) MxNew (dim*dim*sizeof(double));
+      tvec    = (double *) MxNew (dim*sizeof(double));
+      mmul(testMx,CL,CR,dim);
+      MxPrint(testMx, "CL*CR should be I", 'm');
+      free(testMx);
+      MxPrint(tmpVec, "CR*p0 should start with 1", 'v');
+      vmul(tvec, _sqrPI, p0, dim);
+      vmul(tmpVec2, St, tvec, dim);
+      MxPrint(tmpVec2, "CR*p0 should start with 1", 'v');
+      MxPrint(CL, "CL", 'm');
+      free(tvec);
+    }
     free(St);
     free(CR);
 
     //MxPrint(S, "S", 'm');
-    //MxPrint(CL, "CL", 'm');
     //MxPrint(_sqrPI, "sqrPI", 'm');
     //MxPrint(CR, "CR", 'm');
     //MxPrint(tmpVec, "tmpVec", 'v');
@@ -519,11 +563,12 @@ MxIterate (double *p0, double *p8, double *S)
     opt.t0 = TZERO;
   }
 
-  double underflow[dim];
+  double underflow[dim], tt;
   for (i=0; i<dim; i++) underflow[i] = 0.0;
 
   // iterate
-  for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
+  for (tt = opt.t0; tt < opt.t8*opt.tinc; tt *= opt.tinc) {
+    time = (tt<opt.t8)?tt:opt.t8;
     for (i = 0; i < dim; i++) {
       errno = 0;
       exptL[dim*i+i] = exp(time/opt.times*evals[i]);
@@ -967,7 +1012,7 @@ norm2(double *mx)
 
 /*==*/
 static void
-MxFixevecs(double *evecs, double *evals)
+MxFixevecsAbsorb(double *evecs, double *evals)
 /* evecs: eigenvectors columns, dimension N   */
 /* since the sum over each non-absorbing      */
 /* column must vanish, replace the            */
@@ -1062,6 +1107,89 @@ MxFixevecs(double *evecs, double *evals)
   }
   fflush(stderr);
 }
+
+static void
+MxFixevecs(double *evecs, double *evals)
+/* Component sum of eigenvectors of M has to be zero, except for largest eigenvalue 
+   Strategy to enforce this property: 
+   transform evecs (eigenvectors of the symmertic Matrix U)
+   back into space of the Rate Matrix M. With S the Matrix of eigenvectors,
+   we compute
+       
+       V = sqrPI_ * S 
+
+       V_0 should be the equilibrium vector, i.e.
+       V[0,j]>0 and   Sum_j V[0,j] =1
+
+       foreach V_i, i>0, compute d = Sum_j V[i,j]
+       and V_i = V_i - d*V_0
+
+   Now transform the vectors back into the space of the symmetric matrix U
+
+       S = _sqrPI * V 
+*/       
+{
+  int i,j;
+  double *V, sum, sum0;
+
+  V = (double *) MxNew (dim*dim*sizeof(double));
+  mmul (V, sqrPI_, evecs, dim);
+
+  if (opt.want_verbose)
+    MxPrint(V, "Eigenvectors of rate matrix M, before Fixevecs", 'm');
+  
+  fprintf(stderr, "Sums of EVs of rate matrix R before fixing\n");
+  for (i=0; i<dim; i++) {
+    double sum;
+    sum=0.;
+    for (j=0; j<dim; j++) {
+      sum += V[dim*j+i];
+    }
+    fprintf(stderr, "%15.8g   ", i, sum);
+  }
+  fprintf(stderr, "\n");
+      
+  sum0=0.; i=0;
+  for (j=0; j<dim; j++) {
+    //    if (V[dim*j+i]<0) {
+    //  if (!opt.quiet)
+    //	fprintf(stderr, "correcting negative equilib probability for state p[%d]=%g\n",j,V[dim*j+i]);
+    //      V[dim*j+i]=0;
+    //}
+    sum0 += V[dim*j+i];
+  }
+  // for (j=0; j<dim; j++)
+  //   V[dim*j+i] /= sum;
+
+  for (i=1; i<dim; i++) {
+    sum=0.;
+    for (j=0; j<dim; j++)
+      sum += V[dim*j+i];
+    for (j=0; j<dim; j++)
+      V[dim*j+i] -= sum /sum0 * V[dim*j+0];
+  }
+
+  fprintf(stderr, "Sums of EVs of rate matrix R after fixing\n");
+  for (i=0; i<dim; i++) {
+    double sum;
+    sum=0.;
+    for (j=0; j<dim; j++) {
+      sum += V[dim*j+i];
+    }
+    fprintf(stderr, "%15.8g   ", i, sum);
+  }
+  fprintf(stderr, "\n");   
+
+  mmul(evecs, _sqrPI, V , dim);
+
+  norm2(evecs);
+  
+  if (opt.want_verbose)
+    MxPrint(evecs, "Eigenvectors of symmetric matrix U, after Fixevecs", 'm');
+
+  free(V); 
+}
+  
 
 /*==*/
 /* sort evecs,evals */
@@ -1246,8 +1374,8 @@ MxASCIIWriteV(double *Mx, char *asciifile)
 void
 MxExponent(double *p0, double *p8, double *U)
 {
-  int i,j, pdiff_counter = 0;
-  double x, time, *Uexp, *Umerk, *pt, *pdiff, check = 0.;
+  int i,j, pdiff_counter, count = 0;
+  double x, tt, time, *Uexp, *Umerk, *pt, *pdiff, check = 0.;
 
   Umerk  = (double *) MxNew (dim*dim*sizeof(double));
   Uexp   = (double *) MxNew (dim*dim*sizeof(double));
@@ -1256,9 +1384,17 @@ MxExponent(double *p0, double *p8, double *U)
 
   memcpy(Umerk, U, dim*dim*sizeof(double));
 
+  /* solve fundamental equation */
+  if (opt.t0 == 0.0) {
+    if (opt.method=='F')  PrintProbFull(p0, dim, 0.0, lmins);
+    else                  PrintProb(p0, dim, 0.0);
+    opt.t0 = TZERO;
+  }
+
   for (i=0; i<dim; i++) U[(dim+1)*i] -= 1;
   print_settings();
-  for (time = opt.t0; time <= opt.t8; time *= opt.tinc) {
+  for (tt = opt.t0; tt < opt.t8*opt.tinc; tt *= opt.tinc) {
+    time = (tt<opt.t8)? tt:opt.t8;
     memcpy(U, Umerk, dim*dim*sizeof(double));
     for (i=0; i<dim*dim; i++) U[i]*=time;
     padexp(U,Uexp,dim,30);
@@ -1277,7 +1413,7 @@ MxExponent(double *p0, double *p8, double *U)
     pdiff_counter = 0.;
     /* end check convergence */
     check = 0.;
-    printf(" %e ", time);  /* print p(t) to stdout */
+    printf("%e ", time);  /* print p(t) to stdout */
     for (i = 0; i < dim; i++) {
       if(pt[i] < -0.00001) {
         fprintf(stderr, "prob of lmin %i has become negative!\n", i+1);
@@ -1287,6 +1423,8 @@ MxExponent(double *p0, double *p8, double *U)
       check += fabs(pt[i]);
     }
     printf("\n");
+
+    count++;  /* # of iterations */
 
     if ( ((check-1) < -0.01) || ((check-1) > 0.01) ) {
       fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, check, (opt.num_err == 'R'?"rescaling":"exiting") );
@@ -1298,6 +1436,7 @@ MxExponent(double *p0, double *p8, double *U)
     memset(U, 0, dim*dim*sizeof(double));
 
   }
+  printf("# of iterations: %d\n", count);
   free(Uexp);
   free(pt);
 }
@@ -1567,6 +1706,11 @@ MxEVLapackSym(double *U) {
                       double *abstol,int *m,double *w,double *z,int *ldz,
                       double *work,int *lwork,int *iwork,int *ifail,int *info);
 
+  extern void dsyevr_(char *jobz, char *range, char *uplo, int *n, double* a, int *lda, double *vl,
+		     double *vu, int *il, int *iu,
+		     double *abstol, int* m, double* w, double* z,
+		     int *ldz, int* isuppz, double *work,int *lwork,int *iwork,int *liwork,int *info );
+  
   double abstol;
   abstol = opt.FEPS;
 
@@ -1574,18 +1718,28 @@ MxEVLapackSym(double *U) {
 
 
   double *work=NULL, vl, vu;   // unused or inputs
-  int il, iu, m, lwork, *iwork=NULL, *ifail=NULL, nfo;  // unused or inputs
-  lwork = dim*(dim+6);
+  int il, iu, m, lwork, liwork, *iwork=NULL, *ifail=NULL, *isuppz=NULL, nfo;  // unused or inputs
+  lwork = dim*(dim+26);
+  liwork = 10*dim;
   work   = (double *) malloc (lwork * sizeof(double));
-  iwork  =    (int *) malloc (5*(dim) * sizeof(int));
+  iwork  =    (int *) malloc (liwork * sizeof(int));
   ifail  =    (int *) malloc (dim * sizeof(int));
+  isuppz =    (int *) malloc (2*dim * sizeof(int));
+  
 
   //if (!opt.useplusI) for (il=0; il<dim; il++) U[il*dim+il]-=1.0;
 
   // works only with: dim, U, evals, evecs
+#if 1
   dsyevx_("V", "A", "U",&dim, U, &dim, &vl, &vu, &il, &iu,
           &abstol, &m, evals, evecs, &dim, work, &lwork, iwork,
           ifail, &nfo);
+#else
+  dsyevr_("V", "A", "U",&dim, U, &dim, &vl, &vu, &il, &iu,
+          &abstol, &m, evals, evecs, &dim, isuppz, work, &lwork, iwork,
+          &liwork, &nfo);
+#endif
+  
   //dsyev_("V","U",&dim, S, &dim, evals, work, &lwork, &nfo);
 
   //MxPrint(evecs, "Eigenvectors (bad)", 'm');
@@ -1606,6 +1760,7 @@ MxEVLapackSym(double *U) {
   free(work);
   free(iwork);
   free(ifail);
+  free (isuppz);
 
   // transpose output
   trnm(evecs, dim);
@@ -1738,14 +1893,14 @@ void MxEqDistrFromLocalBalance ( double *U, double **p8 )
     MxPrint(res, "p8 (local balance)", 'v');
 
     /* make it unit vector */
-    long double qsum=0.0;
-    for (i=0; i<dim; i++) {
-      qsum += res[i]*res[i];
-    }
-    qsum = sqrtl(qsum);
-    for (i=0; i<dim; i++) {
-      res[i] /= qsum;
-    }
+    /* long double qsum=0.0; */
+    /* for (i=0; i<dim; i++) { */
+    /*   qsum += res[i]*res[i]; */
+    /* } */
+    /* qsum = sqrtl(qsum); */
+    /* for (i=0; i<dim; i++) { */
+    /*   res[i] /= qsum; */
+    /* } */
 }
 
 int MxShorten(double **shorten, int nstates, int my_dim, int max) {

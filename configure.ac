@@ -4,7 +4,7 @@ dnl
 dnl Bug reports are sent to mtw@tbi.univie.ac.at
 dnl ---------------------------------------------------------------------------
 
-AC_INIT([Treekin], 0.4.0, [mtw@tbi.univie.ac.at], [Treekin], [http://www.tbi.univie.ac.at/RNA/Treekin])
+AC_INIT([Treekin], 0.4.1, [mtw@tbi.univie.ac.at], [Treekin], [http://www.tbi.univie.ac.at/RNA/Treekin])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(calc.c)
 AC_CONFIG_HEADERS(config.h)
@@ -62,13 +62,18 @@ dnl ---------------------------------------------------------------------------
 dnl Checks for gengetopt
 dnl ---------------------------------------------------------------------------
 AC_DEFUN([AX_TREEKIN_GENGETOPT],[
-	AC_CHECK_PROG(GENGETOPT_CHECK,gengetopt,yes,no)
-	AS_IF([ test "$GENGETOPT_CHECK" != "yes"],[
-		AC_MSG_ERROR(getgetopt not found)
-	])
+  AC_PATH_PROG([GENGETOPT],[gengetopt],[],[])
+  # if gengetopt is unavailable, check whether commandline parser sources are present
+  AS_IF([ test "x$GENGETOPT" = "x"],[
+    create_commandline_parser="no"
+    AS_IF([ ! test -f treekin_cmdline.c ], [
+      AC_MSG_ERROR(gengetopt not found)
+    ])
+  ])
+  AM_CONDITIONAL(MAKE_CMDLINE_PARSER, test "x$create_commandline_parser" != "xno")
 ])
 
-AX_TREEKIN_GENGETOPT()
+AX_TREEKIN_GENGETOPT
 
 
 
