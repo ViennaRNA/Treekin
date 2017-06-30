@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-06-02 16:53:08 ivo>          =*/
+/*=   Last changed Time-stamp: <2017-06-30 16:33:25 mtw>          =*/
 /*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
@@ -152,8 +152,10 @@ MxEqDistr ( BarData *Data, double **p8 )
     (*p8)[dim-1] = 1.0; /* last entry is the 'new' absorbing state */
   }
   else {
-    for(i = 0; i < dim; i++) Z += exp(-((double)Data[i].energy/_kT));
-    for(i = 0; i < dim; i++) (*p8)[i] = exp(-((double) Data[i].energy/_kT));
+    double mfe;
+    mfe =  Data[0].energy;
+    for(i = 0; i < dim; i++) Z += exp(-((Data[i].energy - mfe)/_kT));
+    for(i = 0; i < dim; i++) (*p8)[i] = exp(-((Data[i].energy - mfe)/_kT));
   }
 
   /* now normalize the new p8 */
@@ -1370,6 +1372,98 @@ MxASCIIWriteV(double *Mx, char *asciifile)
   fclose(ASCIIOUT);
 }
 
+
+/*==*/
+#if 0
+void
+MxExpokit(double *p0, double *p8, double *U)
+{
+  int i,j, pdiff_counter, count = 0;
+  double x, tt, time, *Uexp, *Umerk, *pt, *pdiff, check = 0.;
+  double *ia, *ja, double *A, int Asize, ii;
+
+  extern void dmexpv_(int * n, int *m, double *t, double *v, double *w, double *tol, double *anorm,
+		      double *wsp, int *lwsp, double *iwsp, int *liwsp, extern void matvec(), int *itrace, int *iflag );
+
+  /* sparse matrix */
+  ii=0;
+  for (int i=0; i<dim; i++) {
+    for (int j=0; j<dim; j++) {
+      if (U[dim*i+j] > 0) {
+	ia[ii]= i;  ja[ii]= j;
+	A[ii] = U[dim*i+j];
+	ii++;
+      }
+    }
+  }
+  Asize = ii;
+      
+  Umerk  = (double *) MxNew (dim*dim*sizeof(double));
+  Uexp   = (double *) MxNew (dim*dim*sizeof(double));
+  pt     = (double *) MxNew (dim*sizeof(double));
+  pdiff  = (double *) MxNew (dim*sizeof(double));
+
+  memcpy(Umerk, U, dim*dim*sizeof(double));
+
+  /* solve fundamental equation */
+  if (opt.t0 == 0.0) {
+    if (opt.method=='F')  PrintProbFull(p0, dim, 0.0, lmins);
+    else                  PrintProb(p0, dim, 0.0);
+    opt.t0 = TZERO;
+  }
+
+  for (tt = opt.t0; tt < opt.t8*opt.tinc; tt *= opt.tinc) {
+    time = (tt<opt.t8)? tt:opt.t8;
+
+    dmexpv( &n, &m, &tt, v, w, &tol, &anorm,
+	    wsp, &lwsp, iwsp, &liwsp, dgcrsv_, &itrace, &iflag );
+
+    memcpy(U, Umerk, dim*dim*sizeof(double));
+    for (i=0; i<dim*dim; i++) U[i]*=time;
+    padexp(U,Uexp,dim,30);
+    x = 0.;
+    for(j=0; j<dim*dim; j++) x+=Uexp[j];
+    for(j=0; j<dim*dim; j++) Uexp[j]*=(double)dim/x;
+    vmul(pt, Uexp, p0, dim);
+    /* check convergence */
+    for(i=0; i<dim; i++) {
+      pdiff[i] = p8[i] - pt[i];
+      if (fabs(pdiff[i]) >= 0.0001)
+        pdiff_counter++;
+    }
+    if (pdiff_counter < 1)
+      break;
+    pdiff_counter = 0.;
+    /* end check convergence */
+    check = 0.;
+    printf("%e ", time);  /* print p(t) to stdout */
+    for (i = 0; i < dim; i++) {
+      if(pt[i] < -0.00001) {
+        fprintf(stderr, "prob of lmin %i has become negative!\n", i+1);
+        exit(EXIT_FAILURE);
+      }
+      printf("%e ", fabs(pt[i]));
+      check += fabs(pt[i]);
+    }
+    printf("\n");
+
+    count++;  /* # of iterations */
+
+    if ( ((check-1) < -0.01) || ((check-1) > 0.01) ) {
+      fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, check, (opt.num_err == 'R'?"rescaling":"exiting") );
+      if (opt.num_err == 'H') exit(EXIT_FAILURE);
+    }
+    memset(pt,   0, dim*sizeof(double));
+    memset(pdiff, 0, dim*sizeof(double));
+    memset(Uexp, 0, dim*dim*sizeof(double));
+    memset(U, 0, dim*dim*sizeof(double));
+
+  }
+  printf("# of iterations: %d\n", count);
+  free(Uexp);
+  free(pt);
+}
+#endif
 /*==*/
 void
 MxExponent(double *p0, double *p8, double *U)
