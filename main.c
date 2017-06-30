@@ -2,7 +2,7 @@
 /*=   main.c                                                      =*/
 /*=   main file for treekin                                       =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-27 13:09:09 mtw>          =*/
+/*=   Last changed Time-stamp: <2016-07-25 12:22:59 mtw>          =*/
 /*=   $Id: main.c,v 1.24 2006/11/27 13:47:57 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
@@ -30,7 +30,7 @@ main (int argc, char **argv)
   clock_t clck1 = clock();
 
   BarData *Data=NULL;
-  /*  U - matrix (Q+I)^T, where Q is infetisimal generator (^T - transposed)
+  /*  U - matrix (Q+I)^T, where Q is infinitesimal generator (^T - transposed)
       S - eigenvectors of U
       p0 - distribution in the begining
       p8 - stable (end) distribution
@@ -58,38 +58,36 @@ main (int argc, char **argv)
     case 'A': dim = ParseBarfile (opt.INFILE, &Data); break;
   }
 
-  // initialise matrices, dont forget to release 'em
+  /* matrix initialization */
   MxInit (dim);
 
-  // visualize the graph:
-  if (opt.vis_file) {
-    VisualizeRates(opt.vis_file, R, Data, dim);
-  }
+  /* graph visuailzation */
+  if (opt.vis_file) VisualizeRates(opt.vis_file, R, Data, dim);
 
-  // here we create the "almighty" rate matrix U which is actually only matrix needed for whole program
+  /* create rate matrix U which is used throughout the program */
   U  = MxBar2Matrix(Data, R);
 
-  // rescale if minimal_rate has been set:
+  /* rescale in case minimal_rate has been set */
   if (opt.hard_rescale != 1.0) MxRescaleH(U, dim, opt.hard_rescale);
   else if (opt.minimal_rate > 0.0) MxRescale(U, dim, opt.minimal_rate);
 
-  // multiply if times was set:
+  /* multiply in case times was set */
   if (opt.times != 1.0) MxTimes(U, dim, opt.times);
 
-  // create initial probability vector
+  /* create initial population probability vector */
   MxStartVec(&p0);
 
-  // check for ergodicity + adjust to that
+  /* check for ergodicity and adjust accordingly */
   MxEgro(&U, &p0, dim);
   if (opt.want_verbose) MxPrint(U, "Ergodic U", 'm');
 
-  // allocate space for other matrices
+  /* allocate space for other matrices */
   MxGetSpace(&p8);
 
   if (!opt.quiet) fprintf(stderr, "Time to initialize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
   clck1 = clock();
 
-  // calculate equilibrium distribution
+  /* compute equilibrium distribution */
   if(opt.method == 'F')
     MxEqDistrFULL (E, p8);
   else {
@@ -98,7 +96,7 @@ main (int argc, char **argv)
     MxEqDistrFromLinSys(U, &p8);
   }
 
-  // write the equilibrium if we should
+  /* dump equilibrium */
   if (opt.equil_file) {
     FILE *equil = fopen(opt.equil_file, "w");
     if (equil) {
@@ -107,9 +105,9 @@ main (int argc, char **argv)
     }
   }
 
-  // first passage times computation
+  /* compute first passage times */
   if(opt.fpt) {
-    // output file?
+    /* output file? */
     FILE *fpt = stderr;
     if (opt.fpt_file!=NULL) {
       fpt = fopen(opt.fpt_file, "w");
@@ -118,10 +116,10 @@ main (int argc, char **argv)
         fpt = stderr;
       }
     }
-    // all or only one state?
-    if ((opt.fpt_num == -1) || opt.absrb) { // all ftp's
+    /* all or just one state? */
+    if ((opt.fpt_num == -1) || opt.absrb) { /* all FPTs */
       MxFPT(U, p8, fpt);
-    } else {                                // only to state opt.ftp_num
+    } else {                                /* just to state opt.ftp_num */
       double *res = MxFPTOneState(U, opt.fpt_num-1);  // starting from 0
       if (res != NULL) {
         if (fpt==stderr) fprintf(fpt, "First passage times to state number %d:\n", opt.fpt_num);
@@ -137,11 +135,10 @@ main (int argc, char **argv)
     clck1 = clock();
   }
 
-  //TestExpokit(U, dim, p0, opt.t0, opt.t8, opt.tinc);
-
+  /* TestExpokit(U, dim, p0, opt.t0, opt.t8, opt.tinc);*/
 
   if (!opt.just_sh) {
-    // diagonalization + iteration
+    /* diagonalization + iteration */
     if(opt.matexp) MxExponent(p0,p8,U);
     else {
       if(opt.rrecover) /* read pre-calculated eigenv{alues,ectors} */
@@ -159,7 +156,7 @@ main (int argc, char **argv)
     }
   }
 
-  // clean up the memory
+  /* memory cleanup */
   MxMemoryCleanUp();
   if (opt.pini != NULL) free(opt.pini);
   free(U);
