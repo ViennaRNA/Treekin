@@ -22,4 +22,7 @@ int *MxErgoEigen(double *U, int dim);
 
 //void TestEigen(double *R, int dim, double **evals, double **evecs);
 
+//void printmat_mpf(int N, int M, mpf_class * A, int LDA);
+void MxEV_Mpack_Sym(const double *U, int dim, double *evals, double *evecs, int precision);
+
 #endif

@@ -41,4 +41,5 @@ option "hard-rescale"       - "Rescale all rates by a hard exponent (usually 0.0
 option "equil-file"         - "Write equilibrium distribution into a file." string no
 option "times"              - "Multiply rates with a constant number." double no
 option "warnings"           - "Turn all the warnings about underflow on." flag off
+option "mpack-precision"    c "Number of bits for the eigenvalue method of the mpack library. A value > 64 is recommended, otherwise the standard lapack method would be faster." int no
 

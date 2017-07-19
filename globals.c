@@ -266,6 +266,10 @@ set_parameters(void)
     if (!opt.quiet) fprintf(stderr, "WARNING: both options -w and -r were given\n");
     if (!opt.quiet) fprintf(stderr, "         disabling -w now, since they are mutually exclusive !\n");
   }
+
+  if(args_info.mpack_precision_given){
+    opt.mpackMethod_Bits = args_info.mpack_precision_arg;
+  }
 }
 
 /*==============================*/

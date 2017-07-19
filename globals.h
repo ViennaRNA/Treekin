@@ -54,6 +54,7 @@ typedef struct {         /* command-line options */
   double hard_rescale;   // hard rescale rates?
   char *equil_file;      // file for equilibrium distribution
   double times;          // multiply the rates matrix?
+  int mpackMethod_Bits;  // use mpack library for eigenvalue computation with the given number of bits
   int warnings;          // all warnings on?
 } treekin_options;
 

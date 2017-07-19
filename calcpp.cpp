@@ -6,6 +6,11 @@
 #include <set>
 #include <queue>
 
+#ifdef WITH_MPACK
+    #include <mpack/mblas_gmp.h>
+    #include <mpack/mlapack_gmp.h>
+#endif
+
 extern "C" {
   #include "calc.h"
   //#include "expokit_wrappers.h"
@@ -26,6 +31,9 @@ extern "C" void MxRescale(double *U, int dim, double desired_rate);
 extern "C" void MxRescaleH(double *U, int dim, double hard_rescale);
 extern "C" void MxTimes(double *U, int dim, double times);
 extern "C" int *MxErgoEigen(double *U, int dim);
+
+//extern "C" void printmat_mpf(int N, int M, mpf_class * A, int LDA);
+extern "C" void MxEV_Mpack_Sym(const double *U, int dim, double *evals, double *evecs, int precision);
 
 vector<int> reorganize; // reorganize array (so if LM 0 1 3 were reachable and 2 not, reorganize will contain r[0]=0 r[1]=1 r[2]=3), so r[x] = old position of x
 int last_dim;
@@ -262,6 +270,62 @@ double PrintProb(double *line, int dim, double time)
 
   return check;
 }
+
+/**
+ * Takes a symmetric matrix U as input and computes the eigenvalues and eigenvectors by using the MPACK library.
+ * @param U - INPUT - the symmetric matrix
+ * @param dim - INPUT - the number of rows or columns
+ * @param evals - OUTPUT - the eigenvalues
+ * @param evecs - OUTPUT - the eigenvectors
+ * @param precision - INPUT - the precision is the number of bits for the values of the matrix
+ */
+void
+MxEV_Mpack_Sym(const double *U, int dim, double *evals, double *evecs, int precision){
+#ifdef WITH_MPACK
+  mpackint n = dim;
+  mpackint lwork, info;
+
+ //initialization of GMP
+  int default_prec = precision;
+  mpf_set_default_prec(default_prec);
+
+  mpf_class *A = new mpf_class[n * n];
+  mpf_class *w = new mpf_class[n];
+    //setting A matrix
+  for(int i =0; i < n; i++){
+    for(int j=0; j < n; j++){
+      A[i+j*n]=U[i+j*n];
+    }
+  }
+
+  //work space query
+  lwork = -1;
+  mpf_class *work = new mpf_class[1];
+
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+  lwork = (int) mpf_get_d(work[0].get_mpf_t());
+  delete[]work;
+  work = new mpf_class[std::max((mpackint) 1, lwork)];
+  //inverse matrix
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+
+  //copy eigenvalues
+  for(int i= 0; i < n; i++){
+    evals[i] = mpf_get_d(w[i].get_mpf_t());
+  }
+  //copy evecs
+  for(int i =0; i < n; i++){
+      for(int j=0; j < n; j++){
+        evecs[j+i*n]=mpf_get_d(A[i+j*n].get_mpf_t()); //reverse order
+      }
+    }
+
+  delete[]work;
+  delete[]w;
+  delete[]A;
+#endif
+}
+
 
 int ConvergenceReached(double *p8, double *pt, int dim, int full) {
 

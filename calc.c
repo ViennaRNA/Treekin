@@ -335,7 +335,16 @@ MxDiagonalize ( double *U, double **_S, double *P8)
   if(opt.absrb) {
     MxEVLapackNonSym(U);
   } else {
-    MxEVLapackSym(U);
+#ifdef WITH_MPACK
+    if(opt.mpackMethod_Bits){
+      MxEV_Mpack_Sym(U, dim,evals,evecs, opt.mpackMethod_Bits);
+    }
+    else
+#endif
+    {
+      //default standard lapack
+      MxEVLapackSym(U);
+    }
   }
 
   MxSortEig(evals, evecs);

@@ -113,6 +113,76 @@ dnl AC_SUBST(GLIB_LIBS)
 AC_CHECK_HEADERS(math.h)
 
 dnl ---------------------------------------------------------------------------
+dnl Check for mlapack
+dnl ---------------------------------------------------------------------------
+
+DEPENDENCYNOTFOUND=0;
+
+AC_ARG_ENABLE(MPACK,
+    AC_HELP_STRING(
+    	[--disable-MPACK],
+	    [disable support for MPACK models (default=enabled)]
+	),
+[enable_mpack=$enableval],
+[enable_mpack=yes]
+)
+
+AM_CONDITIONAL(with_MPACK, 
+	[test "$enable_mpack" = "yes"])
+	
+if test "$enable_mpack" = "yes"; then
+	CXXFLAGS+=" -lmlapack_gmp -lmblas_gmp -lgmp -fopenmp $LIBS"
+	CPPFLAGS="-DWITH_MPACK $CPPFLAGS"
+fi
+
+# MPACK package library path support, if not installed in usual directories
+AC_ARG_WITH(MPACK,
+	AC_HELP_STRING(
+	    [--with-MPACK=PREFIX],
+	    [alternative prefix path to MPACK library]
+	  ),
+	  MPACKPATHSET=1,
+	  MPACKPATHSET=0
+)
+if test  $MPACKPATHSET = 1 ; then
+		CXXFLAGS="-I$with_MPACK/include $CXXFLAGS"
+		#CPPFLAGS="-I$with_MPACK/include $CPPFLAGS"
+		#CFLAGS="-I$with_MPACK/include $CFLAGS"
+		LDFLAGS="-L$with_MPACK/lib $LDFLAGS"
+fi
+
+if test "$enable_mpack" = "yes"; then
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADERS([mpack/mpack_config.h],
+  [
+		MPACKNOTFOUND=0;
+  ],
+  [
+	    MPACKNOTFOUND=1;
+  ])
+AC_LANG_POP
+fi
+
+# error output if MPACK not found
+if test "$MPACKNOTFOUND" = "1"; then
+	AC_MSG_NOTICE()
+	AC_MSG_NOTICE(the MPACK library is required for building Treekin.)
+	AC_MSG_NOTICE(it can be obtained from https://sourceforge.net/projects/mplapack/files/latest/download?source=files.)
+	AC_MSG_NOTICE()
+ 	if test "$MPACKPATHSET" = "1"; then
+		AC_MSG_NOTICE(cant find MPACK library in given path '$with_MPACK'.)
+ 	else
+		AC_MSG_NOTICE(if MPACK is installed elsewhere use --with-MPACK=PREFIX.)
+ 	fi
+ 	DEPENDENCYNOTFOUND=1;
+fi
+# error ABORT if on of the libraries was not found
+if test "$DEPENDENCYNOTFOUND" = "1"; then
+	AC_MSG_NOTICE()
+	AC_MSG_ERROR(library not found! Try './configure --help'.)
+fi
+
+dnl ---------------------------------------------------------------------------
 dnl Checks for typedefs, structures, and compiler characteristics.
 dnl ---------------------------------------------------------------------------
 
