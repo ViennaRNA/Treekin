@@ -131,7 +131,7 @@ AM_CONDITIONAL(with_MPACK,
 	[test "$enable_mpack" = "yes"])
 	
 if test "$enable_mpack" = "yes"; then
-	CXXFLAGS+=" -lmlapack_gmp -lmblas_gmp -lgmp -fopenmp $LIBS"
+	CXXFLAGS+=" -lmlapack_gmp -lmblas_gmp -lgmp -lmlapack_qd -lmblas_qd -lqd -lmlapack_mpfr -lmblas_mpfr -lmpfr -lmpfrcxx -lmlapack___float128 -lmblas___float128 -lquadmath -fopenmp -lmpc -lmblas_double -lmlapack_double $LIBS"
 	CPPFLAGS="-DWITH_MPACK $CPPFLAGS"
 fi
 
@@ -167,7 +167,7 @@ fi
 if test "$MPACKNOTFOUND" = "1"; then
 	AC_MSG_NOTICE()
 	AC_MSG_NOTICE(the MPACK library is required for building Treekin.)
-	AC_MSG_NOTICE(it can be obtained from https://sourceforge.net/projects/mplapack/files/latest/download?source=files.)
+	AC_MSG_NOTICE(it can be obtained from https://github.com/nakatamaho/mpack/archive/master.zip.)
 	AC_MSG_NOTICE()
  	if test "$MPACKPATHSET" = "1"; then
 		AC_MSG_NOTICE(cant find MPACK library in given path '$with_MPACK'.)

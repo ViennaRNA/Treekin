@@ -336,10 +336,27 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     MxEVLapackNonSym(U);
   } else {
 #ifdef WITH_MPACK
-    if(opt.mpackMethod_Bits){
-      MxEV_Mpack_Sym(U, dim,evals,evecs, opt.mpackMethod_Bits);
+    int precision = opt.mpackMethod_Bits;
+    switch(opt.mpackMethod) {
+      case MPACK_GMP:
+        MxEV_Mpack_Sym_gmp(U, dim,evals,evecs, opt.mpackMethod_Bits);
+        break;
+      case MPACK_QD:
+        MxEV_Mpack_Sym_qd(U, dim,evals,evecs);
+        break;
+      case MPACK_DD:
+        //MxEV_Mpack_Sym_dd(U, dim,evals,evecs);
+        break;
+      case MPACK_MPFR:
+        MxEV_Mpack_Sym_mpfr(U, dim,evals,evecs, opt.mpackMethod_Bits);
+        break;
+      case MPACK_FLOAT128:
+        MxEV_Mpack_Sym_float128(U, dim,evals,evecs);
+        break;
+      default:
+        MxEVLapackSym(U);
+        break;
     }
-    else
 #endif
     {
       //default standard lapack

@@ -17,6 +17,8 @@
 
 //typedef enum { false = 0, true = 1 } bool;
 
+typedef enum {MPACK_GMP = 2, MPACK_MPFR = 4, MPACK_DD = 8, MPACK_QD = 16, MPACK_FLOAT128 = 32 } MPackMethod;
+
 typedef struct {         /* command-line options */
   char *basename;        /* base name of processed file */
   int absrb;             /* make one lmin absorbing */
@@ -55,6 +57,7 @@ typedef struct {         /* command-line options */
   char *equil_file;      // file for equilibrium distribution
   double times;          // multiply the rates matrix?
   int mpackMethod_Bits;  // use mpack library for eigenvalue computation with the given number of bits
+  int mpackMethod;       // MPackMethod (compromise between precision and speed)
   int warnings;          // all warnings on?
 } treekin_options;
 

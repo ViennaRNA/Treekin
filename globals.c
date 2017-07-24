@@ -270,6 +270,23 @@ set_parameters(void)
   if(args_info.mpack_precision_given){
     opt.mpackMethod_Bits = args_info.mpack_precision_arg;
   }
+  if(args_info.mpack_method_given){
+    if (strcmp(args_info.mpack_method_arg, "QD") == 0) {
+      opt.mpackMethod = MPACK_QD;
+    }
+    if (strcmp(args_info.mpack_method_arg, "DD") == 0) {
+      opt.mpackMethod = MPACK_DD;
+    }
+    if (strcmp(args_info.mpack_method_arg, "GMP") == 0) {
+      opt.mpackMethod = MPACK_GMP;
+    }
+    if (strcmp(args_info.mpack_method_arg, "MPFR") == 0) {
+      opt.mpackMethod = MPACK_MPFR;
+    }
+    if (strcmp(args_info.mpack_method_arg, "FLOAT128") == 0) {
+      opt.mpackMethod = MPACK_FLOAT128;
+    }
+  }
 }
 
 /*==============================*/

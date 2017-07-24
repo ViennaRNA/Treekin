@@ -9,6 +9,17 @@
 #ifdef WITH_MPACK
     #include <mpack/mblas_gmp.h>
     #include <mpack/mlapack_gmp.h>
+    #include <mpack/mblas_qd.h>
+    #include <mpack/mlapack_qd.h>
+    //#include <mpack/mblas_dd.h>
+    //#include <mpack/mlapack_dd.h>
+    #include <mpack/mblas_mpfr.h>
+    #include <mpack/mlapack_mpfr.h>
+    #include <mpack/mblas___float128.h>
+    #include <mpack/mlapack___float128.h>
+    //#include <qd/qd_real.h>
+    //#include <qd/qd_inline.h>
+    //#include <qd/dd_real.h>
 #endif
 
 extern "C" {
@@ -33,7 +44,12 @@ extern "C" void MxTimes(double *U, int dim, double times);
 extern "C" int *MxErgoEigen(double *U, int dim);
 
 //extern "C" void printmat_mpf(int N, int M, mpf_class * A, int LDA);
-extern "C" void MxEV_Mpack_Sym(const double *U, int dim, double *evals, double *evecs, int precision);
+extern "C" void MxEV_Mpack_Sym_gmp(const double *U, int dim, double *evals, double *evecs, int precision);
+extern "C" void MxEV_Mpack_Sym_qd(const double *U, int dim, double *evals, double *evecs);
+//extern "C" void MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs);
+extern "C" void MxEV_Mpack_Sym_mpfr(const double *U, int dim, double *evals, double *evecs, int precision);
+extern "C" void MxEV_Mpack_Sym_float128(const double *U, int dim, double *evals, double *evecs);
+
 
 vector<int> reorganize; // reorganize array (so if LM 0 1 3 were reachable and 2 not, reorganize will contain r[0]=0 r[1]=1 r[2]=3), so r[x] = old position of x
 int last_dim;
@@ -280,7 +296,7 @@ double PrintProb(double *line, int dim, double time)
  * @param precision - INPUT - the precision is the number of bits for the values of the matrix
  */
 void
-MxEV_Mpack_Sym(const double *U, int dim, double *evals, double *evecs, int precision){
+MxEV_Mpack_Sym_gmp(const double *U, int dim, double *evals, double *evecs, int precision){
 #ifdef WITH_MPACK
   mpackint n = dim;
   mpackint lwork, info;
@@ -317,6 +333,182 @@ MxEV_Mpack_Sym(const double *U, int dim, double *evals, double *evecs, int preci
   for(int i =0; i < n; i++){
       for(int j=0; j < n; j++){
         evecs[j+i*n]=mpf_get_d(A[i+j*n].get_mpf_t()); //reverse order
+      }
+    }
+
+  delete[]work;
+  delete[]w;
+  delete[]A;
+#endif
+}
+
+void
+MxEV_Mpack_Sym_qd(const double *U, int dim, double *evals, double *evecs){
+#ifdef WITH_MPACK
+  mpackint n = dim;
+  mpackint lwork, info;
+
+  qd_real *A = new qd_real[n * n];
+  qd_real *w = new qd_real[n];
+    //setting A matrix
+  for(int i =0; i < n; i++){
+    for(int j=0; j < n; j++){
+      A[i+j*n]=U[i+j*n];
+    }
+  }
+
+  //work space query
+  lwork = -1;
+  qd_real *work = new qd_real[1];
+
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+  lwork = (int) (work[0].x[0]);
+  delete[]work;
+  work = new qd_real[std::max((mpackint) 1, lwork)];
+  //inverse matrix
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+
+  //copy eigenvalues
+  for(int i= 0; i < n; i++){
+    evals[i] = w[i].x[0];
+  }
+  //copy evecs
+  for(int i =0; i < n; i++){
+      for(int j=0; j < n; j++){
+        evecs[j+i*n]=A[i+j*n].x[0]; //reverse order
+      }
+    }
+
+  delete[]work;
+  delete[]w;
+  delete[]A;
+#endif
+}
+
+/*
+void
+MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs){
+#ifdef WITH_MPACK
+  mpackint n = dim;
+  mpackint lwork, info;
+
+  dd_real *A = new dd_real[n * n];
+  dd_real *w = new dd_real[n];
+    //setting A matrix
+  for(int i =0; i < n; i++){
+    for(int j=0; j < n; j++){
+      A[i+j*n]=U[i+j*n];
+    }
+  }
+
+  //work space query
+  lwork = -1;
+  dd_real *work = new dd_real[1];
+
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+  lwork = (int) (work[0].x[0]);
+  delete[]work;
+  work = new dd_real[std::max((mpackint) 1, lwork)];
+  //inverse matrix
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+
+  //copy eigenvalues
+  for(int i= 0; i < n; i++){
+    evals[i] = w[i].x[0];
+  }
+  //copy evecs
+  for(int i =0; i < n; i++){
+      for(int j=0; j < n; j++){
+        evecs[j+i*n]=A[i+j*n].x[0]; //reverse order
+      }
+    }
+
+  delete[]work;
+  delete[]w;
+  delete[]A;
+#endif
+}
+*/
+
+void
+MxEV_Mpack_Sym_mpfr(const double *U, int dim, double *evals, double *evecs, int precision){
+#ifdef WITH_MPACK
+  mpackint n = dim;
+  mpackint lwork, info;
+
+  mpreal::set_default_prec(precision);
+
+  mpreal *A = new mpreal[n * n];
+  mpreal *w = new mpreal[n];
+    //setting A matrix
+  for(int i =0; i < n; i++){
+    for(int j=0; j < n; j++){
+      A[i+j*n]=U[i+j*n];
+    }
+  }
+
+  //work space query
+  lwork = -1;
+  mpreal *work = new mpreal[1];
+
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+  lwork = (int) ((double)(work[0]));
+  delete[]work;
+  work = new mpreal[std::max((mpackint) 1, lwork)];
+  //inverse matrix
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+
+  //copy eigenvalues
+  for(int i= 0; i < n; i++){
+    evals[i] = (double)w[i];
+  }
+  //copy evecs
+  for(int i =0; i < n; i++){
+      for(int j=0; j < n; j++){
+        evecs[j+i*n]=(double)A[i+j*n]; //reverse order
+      }
+    }
+
+  delete[]work;
+  delete[]w;
+  delete[]A;
+#endif
+}
+
+void
+MxEV_Mpack_Sym_float128(const double *U, int dim, double *evals, double *evecs){
+#ifdef WITH_MPACK
+  mpackint n = dim;
+  mpackint lwork, info;
+
+  __float128 *A = new __float128[n * n];
+  __float128 *w = new __float128[n];
+    //setting A matrix
+  for(int i =0; i < n; i++){
+    for(int j=0; j < n; j++){
+      A[i+j*n]=U[i+j*n];
+    }
+  }
+
+  //work space query
+  lwork = -1;
+  __float128 *work = new __float128[1];
+
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+  lwork = (int) (work[0]);
+  delete[]work;
+  work = new __float128[std::max((mpackint) 1, lwork)];
+  //inverse matrix
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+
+  //copy eigenvalues
+  for(int i= 0; i < n; i++){
+    evals[i] = w[i];
+  }
+  //copy evecs
+  for(int i =0; i < n; i++){
+      for(int j=0; j < n; j++){
+        evecs[j+i*n]=A[i+j*n]; //reverse order
       }
     }
 
@@ -371,7 +563,7 @@ void MxRescaleH(double *U, int dim, double hard_rescale)
   // rescale!
   for (int i=0; i<dim; i++) {
     for (int j=0; j<dim; j++) {
-      if (i!=j) U[i*dim+j] = pow(U[i*dim+j], factor);
+      if (i!=j) U[i*dim+j] = std::pow(U[i*dim+j], factor);
     }
   }
 
