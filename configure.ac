@@ -146,21 +146,28 @@ AC_ARG_WITH(MPACK,
 )
 if test  $MPACKPATHSET = 1 ; then
 		CXXFLAGS="-I$with_MPACK/include $CXXFLAGS"
-		#CPPFLAGS="-I$with_MPACK/include $CPPFLAGS"
-		#CFLAGS="-I$with_MPACK/include $CFLAGS"
 		LDFLAGS="-L$with_MPACK/lib $LDFLAGS"
 fi
 
 if test "$enable_mpack" = "yes"; then
-AC_LANG_PUSH([C++])
-AC_CHECK_HEADERS([mpack/mpack_config.h],
-  [
-		MPACKNOTFOUND=0;
-  ],
-  [
-	    MPACKNOTFOUND=1;
-  ])
-AC_LANG_POP
+  if test  $MPACKPATHSET = 1 ; then
+		AC_LANG_PUSH([C++])
+		AC_CHECK_HEADERS([mpack/mpack_config.h],
+		  [
+				MPACKNOTFOUND=0;
+		  ],
+		  [
+			    MPACKNOTFOUND=1;
+		  ])
+		AC_LANG_POP
+  else
+		PKG_CHECK_MODULES([mpack], [mpack >= 0.8], 
+		[
+		  MPACKNOTFOUND=0;
+		  CXXFLAGS="$mpack_CFLAGS $CXXFLAGS"
+		  LDFLAGS="$mpack_LIBS $LDFLAGS"
+		], [MPACKNOTFOUND=1;])
+  fi
 fi
 
 # error output if MPACK not found
