@@ -2,7 +2,7 @@
 /*=   main.c                                                      =*/
 /*=   main file for treekin                                       =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-27 13:09:09 mtw>          =*/
+/*=   Last changed Time-stamp: <2017-07-27 18:40:23 ivo>          =*/
 /*=   $Id: main.c,v 1.24 2006/11/27 13:47:57 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
@@ -93,9 +93,11 @@ main (int argc, char **argv)
   if(opt.method == 'F')
     MxEqDistrFULL (E, p8);
   else {
-    //MxEqDistr (Data, &p8);  /* FIX THIS */
-    //MxEqDistrFromLocalBalance(U, &p8);
-    MxEqDistrFromLinSys(U, &p8);
+    if (opt.method == 'A')  
+      MxEqDistr (Data, &p8);  /* FIX THIS */
+    else 
+      MxEqDistrFromDetailedBalance(U, &p8);
+    //MxEqDistrFromLinSys(U, &p8);
   }
 
   // write the equilibrium if we should
