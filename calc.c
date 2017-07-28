@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-06-02 16:53:08 ivo>          =*/
+/*=   Last changed Time-stamp: <2017-07-28 13:17:52 ivo>          =*/
 /*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
@@ -152,8 +152,8 @@ MxEqDistr ( BarData *Data, double **p8 )
     (*p8)[dim-1] = 1.0; /* last entry is the 'new' absorbing state */
   }
   else {
-    for(i = 0; i < dim; i++) Z += exp(-((double)Data[i].energy/_kT));
-    for(i = 0; i < dim; i++) (*p8)[i] = exp(-((double) Data[i].energy/_kT));
+    for(i = 0; i < dim; i++) Z += exp(-((Data[i].energy-Data[0].energy)/_kT));
+    for(i = 0; i < dim; i++) (*p8)[i] = exp(-((Data[i].energy-Data[0].energy)/_kT));
   }
 
   /* now normalize the new p8 */
@@ -1861,8 +1861,84 @@ MxEVLapackNonSym(double *origU)
   free(iwork);
 }
 
+
+void MxEqDistrFromDetailedBalance ( double *U, double **p8 )
+{
+  // DO NOT USE. This routine does not work!
+    double *res = *p8;
+    int *done;
+    int count = 1;  // num of solved states
+    int i=0;
+    int j=1;
+    int k;
+
+    done = (int *) calloc(dim, sizeof(int));
+    
+    for(k=1; k<dim; k++) {
+      res[k] = 0.0;
+    }
+    res[0] = 1.0;
+
+    // while there are unsolved states
+    while (count != dim) {
+      for (j=1; j<dim; j++) {
+	if (res[j]>0) continue;
+	if (U[dim*i+j]>0.0) {
+	  if (U[dim*j+i]==0.0) {
+	    fprintf(stderr, "Local balance is unsatisfiable at U[%d][%d]=%f\n", i, j, U[dim*i+j]);
+	    exit(EXIT_FAILURE);
+	  }
+	  // local balance
+	  long double tmp = U[dim*j+i];
+	  tmp *= res[i];
+	  tmp /= U[dim*i+j];
+	  res[j] = tmp;
+	  count ++;
+	  if (res[j]>1 || res[j]<=0) {
+	    fprintf(stderr, "Weird eqilibrium pop for state %d", j);
+	    MxPrint(res, "p8 (local balance)", 'v');
+	  }
+	}
+      }
+      done[i] = 1;
+      for (i=1; i<dim; i++) {
+	if ((!done[i]) && (res[i]>0)) break;
+      }
+    
+      if (i==dim && count<dim) {
+	fprintf(stderr, "non-ergodic chain\n");
+	MxPrint(res, "p8 (local balance)", 'v');
+	exit(EXIT_FAILURE);
+      }
+    }
+
+    free(done);
+
+    /* now make the vector stochastic (sum = 1.0) */
+    long double sum=0.0;
+    for (i=0; i<dim; i++) {
+      sum += res[i];
+    }
+    for (i=0; i<dim; i++) {
+      res[i] /= sum;
+    }
+
+    MxPrint(res, "p8 (detailed balance)", 'v');
+
+    /* make it unit vector */
+    /* long double qsum=0.0; */
+    /* for (i=0; i<dim; i++) { */
+    /*   qsum += res[i]*res[i]; */
+    /* } */
+    /* qsum = sqrtl(qsum); */
+    /* for (i=0; i<dim; i++) { */
+    /*   res[i] /= qsum; */
+    /* } */
+}
+
 void MxEqDistrFromLocalBalance ( double *U, double **p8 )
 {
+  // DO NOT USE. This routine does not work! 
     double *res = *p8;
     int count = 1;  // num of solved states
     int i=0;
@@ -1879,6 +1955,7 @@ void MxEqDistrFromLocalBalance ( double *U, double **p8 )
       if (U[dim*i+j]!=0.0 && res[i]!=0.0 && res[j]==0.0) {
         if (U[dim*j+i]==0.0) {
           fprintf(stderr, "Local balance is unsatisfiable at U[%d][%d]=%f\n", i, j, U[dim*i+j]);
+	  exit(EXIT_FAILURE);
           return ;
         }
         // local balance
@@ -1894,6 +1971,8 @@ void MxEqDistrFromLocalBalance ( double *U, double **p8 )
         i++;
         if (i==dim && count != dim) {
           fprintf(stderr, "non-ergodic chain\n");
+	  MxPrint(res, "p8 (local balance)", 'v');
+	  exit(EXIT_FAILURE);
           return ;
         }
       }
