@@ -286,6 +286,12 @@ set_parameters(void)
     if (strcmp(args_info.mpack_method_arg, "FLOAT128") == 0) {
       opt.mpackMethod = MPACK_FLOAT128;
     }
+    if (strcmp(args_info.mpack_method_arg, "LD") == 0) {
+      opt.mpackMethod = MPACK_LD;
+    }
+    if (strcmp(args_info.mpack_method_arg, "DOUBLE") == 0) {
+      opt.mpackMethod = MPACK_DOUBLE;
+    }
   }
 }
 

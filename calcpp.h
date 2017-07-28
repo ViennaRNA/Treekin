@@ -25,8 +25,10 @@ int *MxErgoEigen(double *U, int dim);
 //void printmat_mpf(int N, int M, mpf_class * A, int LDA);
 void MxEV_Mpack_Sym_gmp(const double *U, int dim, double *evals, double *evecs, int precision);
 void MxEV_Mpack_Sym_qd(const double *U, int dim, double *evals, double *evecs);
-//void MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs);
+void MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs);
 void MxEV_Mpack_Sym_mpfr(const double *U, int dim, double *evals, double *evecs, int precision);
 void MxEV_Mpack_Sym_float128(const double *U, int dim, double *evals, double *evecs);
+void MxEV_Mpack_Sym_longdouble(const double *U, int dim, double *evals, double *evecs);
+void MxEV_Mpack_Sym_double(const double *U, int dim, double *evals, double *evecs);
 
 #endif

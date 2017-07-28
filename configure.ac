@@ -131,7 +131,14 @@ AM_CONDITIONAL(with_MPACK,
 	[test "$enable_mpack" = "yes"])
 	
 if test "$enable_mpack" = "yes"; then
-	CXXFLAGS+=" -lmlapack_gmp -lmblas_gmp -lgmp -lmlapack_qd -lmblas_qd -lqd -lmlapack_mpfr -lmblas_mpfr -lmpfr -lmpfrcxx -lmlapack___float128 -lmblas___float128 -lquadmath -fopenmp -lmpc -lmblas_double -lmlapack_double $LIBS"
+	CXXFLAGS+=" -lmlapack_gmp -lmblas_gmp -lgmp \
+	            -lmlapack_qd -lmblas_qd -lqd \
+	            -lmlapack_mpfr -lmblas_mpfr -lmpfr -lmpfrcxx \
+	            -lmlapack___float128 -lmblas___float128 -lquadmath \
+	            -lmlapack_longdouble -lmblas_longdouble \
+	            -lmblas_double -lmlapack_double \
+	            -lmblas_dd -lmlapack_dd \
+	            -lmpc -fopenmp $LIBS"
 	CPPFLAGS="-DWITH_MPACK $CPPFLAGS"
 fi
 

@@ -349,6 +349,15 @@ MxDiagonalize ( double *U, double **_S, double *P8)
       case MPACK_FLOAT128:
         MxEV_Mpack_Sym_float128(U, dim,evals,evecs);
         break;
+      case MPACK_LD:
+        MxEV_Mpack_Sym_longdouble(U, dim,evals,evecs);
+        break;
+      case MPACK_DD:
+        MxEV_Mpack_Sym_dd(U, dim,evals,evecs);
+        break;
+      case MPACK_DOUBLE:
+        MxEV_Mpack_Sym_double(U, dim,evals,evecs);
+        break;
       default:
         //default standard lapack
         MxEVLapackSym(U);

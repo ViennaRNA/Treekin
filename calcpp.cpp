@@ -11,15 +11,16 @@
     #include <mpack/mlapack_gmp.h>
     #include <mpack/mblas_qd.h>
     #include <mpack/mlapack_qd.h>
-    //#include <mpack/mblas_dd.h>
-    //#include <mpack/mlapack_dd.h>
+    #include <mpack/mblas_dd.h>
+    #include <mpack/mlapack_dd.h>
     #include <mpack/mblas_mpfr.h>
     #include <mpack/mlapack_mpfr.h>
     #include <mpack/mblas___float128.h>
     #include <mpack/mlapack___float128.h>
-    //#include <qd/qd_real.h>
-    //#include <qd/qd_inline.h>
-    //#include <qd/dd_real.h>
+    #include <mpack/mblas_double.h>
+    #include <mpack/mlapack_double.h>
+    #include <mpack/mblas_longdouble.h>
+    #include <mpack/mlapack_longdouble.h>
 #endif
 
 extern "C" {
@@ -46,9 +47,11 @@ extern "C" int *MxErgoEigen(double *U, int dim);
 //extern "C" void printmat_mpf(int N, int M, mpf_class * A, int LDA);
 extern "C" void MxEV_Mpack_Sym_gmp(const double *U, int dim, double *evals, double *evecs, int precision);
 extern "C" void MxEV_Mpack_Sym_qd(const double *U, int dim, double *evals, double *evecs);
-//extern "C" void MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs);
+extern "C" void MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs);
 extern "C" void MxEV_Mpack_Sym_mpfr(const double *U, int dim, double *evals, double *evecs, int precision);
 extern "C" void MxEV_Mpack_Sym_float128(const double *U, int dim, double *evals, double *evecs);
+extern "C" void MxEV_Mpack_Sym_longdouble(const double *U, int dim, double *evals, double *evecs);
+extern "C" void MxEV_Mpack_Sym_double(const double *U, int dim, double *evals, double *evecs);
 
 
 vector<int> reorganize; // reorganize array (so if LM 0 1 3 were reachable and 2 not, reorganize will contain r[0]=0 r[1]=1 r[2]=3), so r[x] = old position of x
@@ -385,7 +388,7 @@ MxEV_Mpack_Sym_qd(const double *U, int dim, double *evals, double *evecs){
 #endif
 }
 
-/*
+
 void
 MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs){
 #ifdef WITH_MPACK
@@ -428,7 +431,7 @@ MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs){
   delete[]A;
 #endif
 }
-*/
+
 
 void
 MxEV_Mpack_Sym_mpfr(const double *U, int dim, double *evals, double *evecs, int precision){
@@ -498,6 +501,92 @@ MxEV_Mpack_Sym_float128(const double *U, int dim, double *evals, double *evecs){
   lwork = (int) (work[0]);
   delete[]work;
   work = new __float128[std::max((mpackint) 1, lwork)];
+  //inverse matrix
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+
+  //copy eigenvalues
+  for(int i= 0; i < n; i++){
+    evals[i] = w[i];
+  }
+  //copy evecs
+  for(int i =0; i < n; i++){
+      for(int j=0; j < n; j++){
+        evecs[j+i*n]=A[i+j*n]; //reverse order
+      }
+    }
+
+  delete[]work;
+  delete[]w;
+  delete[]A;
+#endif
+}
+
+void
+MxEV_Mpack_Sym_longdouble(const double *U, int dim, double *evals, double *evecs){
+#ifdef WITH_MPACK
+  mpackint n = dim;
+  mpackint lwork, info;
+
+  long double *A = new long double[n * n];
+  long double *w = new long double[n];
+    //setting A matrix
+  for(int i =0; i < n; i++){
+    for(int j=0; j < n; j++){
+      A[i+j*n]=U[i+j*n];
+    }
+  }
+
+  //work space query
+  lwork = -1;
+  long double *work = new long double[1];
+
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+  lwork = (int) (work[0]);
+  delete[]work;
+  work = new long double[std::max((mpackint) 1, lwork)];
+  //inverse matrix
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+
+  //copy eigenvalues
+  for(int i= 0; i < n; i++){
+    evals[i] = w[i];
+  }
+  //copy evecs
+  for(int i =0; i < n; i++){
+      for(int j=0; j < n; j++){
+        evecs[j+i*n]=A[i+j*n]; //reverse order
+      }
+    }
+
+  delete[]work;
+  delete[]w;
+  delete[]A;
+#endif
+}
+
+void
+MxEV_Mpack_Sym_double(const double *U, int dim, double *evals, double *evecs){
+#ifdef WITH_MPACK
+  mpackint n = dim;
+  mpackint lwork, info;
+
+  double *A = new double[n * n];
+  double *w = new double[n];
+    //setting A matrix
+  for(int i =0; i < n; i++){
+    for(int j=0; j < n; j++){
+      A[i+j*n]=U[i+j*n];
+    }
+  }
+
+  //work space query
+  lwork = -1;
+  double *work = new double[1];
+
+  Rsyev("V", "U", n, A, n, w, work, lwork, &info);
+  lwork = (int) (work[0]);
+  delete[]work;
+  work = new double[std::max((mpackint) 1, lwork)];
   //inverse matrix
   Rsyev("V", "U", n, A, n, w, work, lwork, &info);
 

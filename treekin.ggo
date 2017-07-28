@@ -42,5 +42,5 @@ option "equil-file"         - "Write equilibrium distribution into a file." stri
 option "times"              - "Multiply rates with a constant number." double no
 option "warnings"           - "Turn all the warnings about underflow on." flag off
 option "mpack-precision"    c "Number of bits for the eigenvalue method of the mpack library. A value > 64 is recommended, otherwise the standard lapack method would be faster." int no
-option "mpack-method"       - "The mpack precision method. \"QD\", \"GMP\", \"MPFR\", \"FLOAT128\". You have to set mpack-precision if \"GMP\", \"MPFR\" is selected!" string no
+option "mpack-method"       - "The mpack precision method. \"LD\", \"QD\", \"DD\", \"DOUBLE\", \"GMP\", \"MPFR\", \"FLOAT128\". You have to set mpack-precision if \"GMP\", \"MPFR\" is selected! \"LD\" is the standard long double with 80 bit." string no
 

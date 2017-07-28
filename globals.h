@@ -17,7 +17,7 @@
 
 //typedef enum { false = 0, true = 1 } bool;
 
-typedef enum {MPACK_GMP = 2, MPACK_MPFR = 4, MPACK_DD = 8, MPACK_QD = 16, MPACK_FLOAT128 = 32 } MPackMethod;
+typedef enum {MPACK_GMP = 2, MPACK_MPFR = 4, MPACK_DD = 8, MPACK_QD = 16, MPACK_FLOAT128 = 32, MPACK_LD = 64, MPACK_DOUBLE = 128 } MPackMethod;
 
 typedef struct {         /* command-line options */
   char *basename;        /* base name of processed file */
