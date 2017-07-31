@@ -135,12 +135,13 @@ if test "$enable_mpack" = "yes"; then
 	            -lmlapack_qd -lmblas_qd -lqd \
 	            -lmlapack_mpfr -lmblas_mpfr -lmpfr -lmpfrcxx \
 	            -lmlapack___float128 -lmblas___float128 -lquadmath \
-	            -lmlapack_longdouble -lmblas_longdouble \
+                    -lmlapack_longdouble -lmblas_longdouble \
 	            -lmblas_double -lmlapack_double \
-	            -lmblas_dd -lmlapack_dd \
 	            -lmpc -fopenmp $LIBS"
 	CPPFLAGS="-DWITH_MPACK $CPPFLAGS"
 fi
+#                    -lmblas_dd -lmlapack_dd \
+
 
 # MPACK package library path support, if not installed in usual directories
 AC_ARG_WITH(MPACK,

@@ -11,8 +11,8 @@
     #include <mpack/mlapack_gmp.h>
     #include <mpack/mblas_qd.h>
     #include <mpack/mlapack_qd.h>
-    #include <mpack/mblas_dd.h>
-    #include <mpack/mlapack_dd.h>
+//    #include <mpack/mblas_dd.h>
+//    #include <mpack/mlapack_dd.h>
     #include <mpack/mblas_mpfr.h>
     #include <mpack/mlapack_mpfr.h>
     #include <mpack/mblas___float128.h>
@@ -391,6 +391,7 @@ MxEV_Mpack_Sym_qd(const double *U, int dim, double *evals, double *evecs){
 
 void
 MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs){
+/*
 #ifdef WITH_MPACK
   mpackint n = dim;
   mpackint lwork, info;
@@ -430,6 +431,7 @@ MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs){
   delete[]w;
   delete[]A;
 #endif
+*/
 }
 
 
