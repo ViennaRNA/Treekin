@@ -7,20 +7,34 @@
 #include <queue>
 
 #ifdef WITH_MPACK
-    #include <mpack/mblas_gmp.h>
-    #include <mpack/mlapack_gmp.h>
-    #include <mpack/mblas_qd.h>
-    #include <mpack/mlapack_qd.h>
-//    #include <mpack/mblas_dd.h>
-//    #include <mpack/mlapack_dd.h>
-    #include <mpack/mblas_mpfr.h>
-    #include <mpack/mlapack_mpfr.h>
-    #include <mpack/mblas___float128.h>
-    #include <mpack/mlapack___float128.h>
-    #include <mpack/mblas_double.h>
-    #include <mpack/mlapack_double.h>
-    #include <mpack/mblas_longdouble.h>
-    #include <mpack/mlapack_longdouble.h>
+  #ifdef WITH_MPACK_GMP
+      #include <mpack/mblas_gmp.h>
+      #include <mpack/mlapack_gmp.h>
+  #endif
+  #ifdef WITH_MPACK_QD
+      #include <mpack/mblas_qd.h>
+      #include <mpack/mlapack_qd.h>
+  #endif
+  #ifdef WITH_MPACK_DD
+      #include <mpack/mblas_dd.h>
+      #include <mpack/mlapack_dd.h>
+  #endif
+  #ifdef WITH_MPACK_MPFR
+      #include <mpack/mblas_mpfr.h>
+      #include <mpack/mlapack_mpfr.h>
+  #endif
+  #ifdef WITH_MPACK___FLOAT128
+      #include <mpack/mblas___float128.h>
+      #include <mpack/mlapack___float128.h>
+  #endif
+  #ifdef WITH_MPACK_DOUBLE
+      #include <mpack/mblas_double.h>
+      #include <mpack/mlapack_double.h>
+  #endif
+  #ifdef WITH_MPACK_LD
+      #include <mpack/mblas_longdouble.h>
+      #include <mpack/mlapack_longdouble.h>
+  #endif
 #endif
 
 extern "C" {
@@ -300,7 +314,7 @@ double PrintProb(double *line, int dim, double time)
  */
 void
 MxEV_Mpack_Sym_gmp(const double *U, int dim, double *evals, double *evecs, int precision){
-#ifdef WITH_MPACK
+#ifdef WITH_MPACK_GMP
   mpackint n = dim;
   mpackint lwork, info;
 
@@ -347,7 +361,7 @@ MxEV_Mpack_Sym_gmp(const double *U, int dim, double *evals, double *evecs, int p
 
 void
 MxEV_Mpack_Sym_qd(const double *U, int dim, double *evals, double *evecs){
-#ifdef WITH_MPACK
+#ifdef WITH_MPACK_QD
   mpackint n = dim;
   mpackint lwork, info;
 
@@ -391,8 +405,7 @@ MxEV_Mpack_Sym_qd(const double *U, int dim, double *evals, double *evecs){
 
 void
 MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs){
-/*
-#ifdef WITH_MPACK
+#ifdef WITH_MPACK_DD
   mpackint n = dim;
   mpackint lwork, info;
 
@@ -431,13 +444,12 @@ MxEV_Mpack_Sym_dd(const double *U, int dim, double *evals, double *evecs){
   delete[]w;
   delete[]A;
 #endif
-*/
 }
 
 
 void
 MxEV_Mpack_Sym_mpfr(const double *U, int dim, double *evals, double *evecs, int precision){
-#ifdef WITH_MPACK
+#ifdef WITH_MPACK_MPFR
   mpackint n = dim;
   mpackint lwork, info;
 
@@ -482,7 +494,7 @@ MxEV_Mpack_Sym_mpfr(const double *U, int dim, double *evals, double *evecs, int 
 
 void
 MxEV_Mpack_Sym_float128(const double *U, int dim, double *evals, double *evecs){
-#ifdef WITH_MPACK
+#ifdef WITH_MPACK___FLOAT128
   mpackint n = dim;
   mpackint lwork, info;
 
@@ -525,7 +537,7 @@ MxEV_Mpack_Sym_float128(const double *U, int dim, double *evals, double *evecs){
 
 void
 MxEV_Mpack_Sym_longdouble(const double *U, int dim, double *evals, double *evecs){
-#ifdef WITH_MPACK
+#ifdef WITH_MPACK_LD
   mpackint n = dim;
   mpackint lwork, info;
 
@@ -568,7 +580,7 @@ MxEV_Mpack_Sym_longdouble(const double *U, int dim, double *evals, double *evecs
 
 void
 MxEV_Mpack_Sym_double(const double *U, int dim, double *evals, double *evecs){
-#ifdef WITH_MPACK
+#ifdef WITH_MPACK_DOUBLE
   mpackint n = dim;
   mpackint lwork, info;
 

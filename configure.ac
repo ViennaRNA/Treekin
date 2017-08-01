@@ -130,19 +130,6 @@ AC_ARG_ENABLE(MPACK,
 AM_CONDITIONAL(with_MPACK, 
 	[test "$enable_mpack" = "yes"])
 	
-if test "$enable_mpack" = "yes"; then
-	CXXFLAGS+=" -lmlapack_gmp -lmblas_gmp -lgmp \
-	            -lmlapack_qd -lmblas_qd -lqd \
-	            -lmlapack_mpfr -lmblas_mpfr -lmpfr -lmpfrcxx \
-	            -lmlapack___float128 -lmblas___float128 -lquadmath \
-                    -lmlapack_longdouble -lmblas_longdouble \
-	            -lmblas_double -lmlapack_double \
-	            -lmpc -fopenmp $LIBS"
-	CPPFLAGS="-DWITH_MPACK $CPPFLAGS"
-fi
-#                    -lmblas_dd -lmlapack_dd \
-
-
 # MPACK package library path support, if not installed in usual directories
 AC_ARG_WITH(MPACK,
 	AC_HELP_STRING(
@@ -159,7 +146,7 @@ fi
 
 if test "$enable_mpack" = "yes"; then
   if test  $MPACKPATHSET = 1 ; then
-		AC_LANG_PUSH([C++])
+        AC_LANG_PUSH([C++])
 		AC_CHECK_HEADERS([mpack/mpack_config.h],
 		  [
 				MPACKNOTFOUND=0;
@@ -176,6 +163,54 @@ if test "$enable_mpack" = "yes"; then
 		  LDFLAGS="$mpack_LIBS $LDFLAGS"
 		], [MPACKNOTFOUND=1;])
   fi
+  echo $CXXFLAGS
+  echo $LDFLAGS
+  
+  ppFlags=" "
+  #test which libraries of the mpack package are installed and set the flags.
+  AC_LANG_PUSH([C++])
+  AC_CHECK_HEADER(mpack/mlapack_qd.h, [ppFlags="-DWITH_MPACK_QD $ppFlags" ],[],
+  [#if HAVE_MPACK_MPACK_CONFIG_H
+   #include <mpack/mpack_config.h>
+   #endif
+   ])
+  AC_CHECK_HEADER(mpack/mlapack_dd.h, [ppFlags="-DWITH_MPACK_DD $ppFlags" ],[],
+  [#if HAVE_MPACK_MPACK_CONFIG_H
+   #include <mpack/mpack_config.h>
+   #endif
+   ])
+  AC_CHECK_HEADER(mpack/mlapack_double.h, [ppFlags="-DWITH_MPACK_DOUBLE $ppFlags" ],[],
+  [#if HAVE_MPACK_MPACK_CONFIG_H
+   #include <mpack/mpack_config.h>
+   #endif
+   ])
+  AC_CHECK_HEADER(mpack/mlapack_longdouble.h, [ppFlags="-DWITH_MPACK_LD $ppFlags" ],[],
+  [#if HAVE_MPACK_MPACK_CONFIG_H
+   #include <mpack/mpack_config.h>
+   #endif
+   ])
+  AC_CHECK_HEADER(mpack/mlapack___float128.h, [ppFlags="-DWITH_MPACK___FLOAT128 $ppFlags" ],[],
+  [#if HAVE_MPACK_MPACK_CONFIG_H
+   #include <mpack/mpack_config.h>
+   #endif
+   ])
+  AC_CHECK_HEADER(mpack/mlapack_mpfr.h, [ppFlags="-DWITH_MPACK_MPFR $ppFlags" ],[],
+  [#if HAVE_MPACK_MPACK_CONFIG_H
+   #include <mpack/mpack_config.h>
+   #endif
+   ])
+  AC_CHECK_HEADER(mpack/mlapack_gmp.h, [ppFlags="-DWITH_MPACK_GMP $ppFlags" ],[],
+  [#if HAVE_MPACK_MPACK_CONFIG_H
+   #include <mpack/mpack_config.h>
+   #endif
+   ])
+  AC_LANG_POP
+  
+  CPPFLAGS=$CPPFLAGS$ppFlags
+fi
+
+if test "$enable_mpack" = "yes"; then
+	CPPFLAGS="-DWITH_MPACK $CPPFLAGS"
 fi
 
 # error output if MPACK not found

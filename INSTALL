@@ -139,6 +139,30 @@ find the X include and library files automatically, but if it doesn't,
 you can use the `configure' options `--x-includes=DIR' and
 `--x-libraries=DIR' to specify their locations.
 
+Linking to MPACK for high precision computations
+================================================
+
+At first you should download and install MPACK. It can be obtained from:
+
+ https://github.com/nakatamaho/mpack/
+
+Configure should automatically detect the lapack location according to
+the pkg-config file of MPACK. An alternative is to set the prefix path
+with `--with-MPACK=/prefix/`. In both cases you have to add the paths for
+the include and lib files of the dependencies that you already used in
+order to compile MPACK (qd, mpfr, mpc, gmp):
+
+ ./configure --prefix=/home/mescalin/entzian/install/treekinDev/  
+ CXXFLAGS="-I/pathTo/qd/include -I/pathTo/mpfr/include -I/pathTo/mpc/include 
+ -I/pathTo/gmp/include" LDFLAGS="-L/pathTo/qd/lib -L/pathTo/mpfr/lib 
+ -L/pathTo/mpc/lib -L/pathTo/gmp/lib" LIBS="-lmpc -lgmp -lgmpxx -lmpfr -lqd"
+
+After the installation, the LD_LIBRARY_PATH has to be set for shared libraries:
+
+ LD_LIBRARY_PATH="${LD_LIBRARY_PATH}":/home/mescalin/entzian/install/mpack/lib/
+ LD_LIBRARY_PATH="${LD_LIBRARY_PATH}":/home/mescalin/entzian/install/qd/lib/
+
+
 Specifying the System Type
 ==========================
 

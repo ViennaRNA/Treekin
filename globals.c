@@ -271,26 +271,123 @@ set_parameters(void)
     opt.mpackMethod_Bits = args_info.mpack_precision_arg;
   }
   if(args_info.mpack_method_given){
+
+#ifdef WITH_MPACK_QD
+int is_QD_available(){
+  return 1;
+}
+#else
+int is_QD_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_DD
+int is_DD_available(){
+  return 1;
+}
+#else
+int is_DD_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_GMP
+int is_GMP_available(){
+  return 1;
+}
+#else
+int is_GMP_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_MPFR
+int is_MPFR_available(){
+  return 1;
+}
+#else
+int is_MPFR_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK___FLOAT128
+int is___FLOAT128_available(){
+  return 1;
+}
+#else
+int is___FLOAT128_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_LD
+int is_LD_available(){
+  return 1;
+}
+#else
+int is_LD_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_DOUBLE
+int is_DOUBLE_available(){
+  return 1;
+}
+#else
+int is_DOUBLE_available(){
+  return 0;
+}
+#endif
+
     if (strcmp(args_info.mpack_method_arg, "QD") == 0) {
+      if(!is_QD_available()){
+        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        exit (EXIT_FAILURE);
+      }
       opt.mpackMethod = MPACK_QD;
     }
-    if (strcmp(args_info.mpack_method_arg, "DD") == 0) {
+    else if (strcmp(args_info.mpack_method_arg, "DD") == 0) {
+      if(!is_DD_available()){
+        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        exit (EXIT_FAILURE);
+      }
       opt.mpackMethod = MPACK_DD;
     }
-    if (strcmp(args_info.mpack_method_arg, "GMP") == 0) {
+    else if (strcmp(args_info.mpack_method_arg, "GMP") == 0) {
+      if(!is_GMP_available()){
+        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        exit (EXIT_FAILURE);
+      }
       opt.mpackMethod = MPACK_GMP;
     }
-    if (strcmp(args_info.mpack_method_arg, "MPFR") == 0) {
+    else if (strcmp(args_info.mpack_method_arg, "MPFR") == 0) {
+      if(!is_MPFR_available()){
+        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        exit (EXIT_FAILURE);
+      }
       opt.mpackMethod = MPACK_MPFR;
     }
-    if (strcmp(args_info.mpack_method_arg, "FLOAT128") == 0) {
+    else if (strcmp(args_info.mpack_method_arg, "FLOAT128") == 0) {
+      if(!is___FLOAT128_available()){
+        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        exit (EXIT_FAILURE);
+      }
       opt.mpackMethod = MPACK_FLOAT128;
     }
-    if (strcmp(args_info.mpack_method_arg, "LD") == 0) {
+    else if (strcmp(args_info.mpack_method_arg, "LD") == 0) {
+      if(!is_LD_available()){
+        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        exit (EXIT_FAILURE);
+      }
       opt.mpackMethod = MPACK_LD;
     }
-    if (strcmp(args_info.mpack_method_arg, "DOUBLE") == 0) {
+    else if (strcmp(args_info.mpack_method_arg, "DOUBLE") == 0) {
+      if(!is_DOUBLE_available()){
+        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        exit (EXIT_FAILURE);
+      }
       opt.mpackMethod = MPACK_DOUBLE;
+    }
+    else {
+      fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+      exit (EXIT_FAILURE);
     }
   }
 }
