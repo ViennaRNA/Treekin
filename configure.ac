@@ -143,7 +143,7 @@ if test  $MPACKPATHSET = 1 ; then
 		CXXFLAGS="-I$with_MPACK/include $CXXFLAGS"
 		LDFLAGS="-L$with_MPACK/lib $LDFLAGS"
 fi
-
+mpack_LIBS=""
 if test "$enable_mpack" = "yes"; then
   if test  $MPACKPATHSET = 1 ; then
         AC_LANG_PUSH([C++])
@@ -160,11 +160,9 @@ if test "$enable_mpack" = "yes"; then
 		[
 		  MPACKNOTFOUND=0;
 		  CXXFLAGS="$mpack_CFLAGS $CXXFLAGS"
-		  LDFLAGS="$mpack_LIBS $LDFLAGS"
+		  # PKG_CHECK_MODULES sets mpack_LIBS automatically
 		], [MPACKNOTFOUND=1;])
   fi
-  echo $CXXFLAGS
-  echo $LDFLAGS
   
   ppFlags=" "
   #test which libraries of the mpack package are installed and set the flags.

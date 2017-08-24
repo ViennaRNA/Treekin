@@ -2,6 +2,8 @@ dist_man_MANS = treekin.1
 
 bin_PROGRAMS = treekin
 
+treekin_LDADD=$(mpack_LIBS)
+
 treekin_SOURCES = main.c\
                   globals.c globals.h \
                   calc.c  calc.h \
