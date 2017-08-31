@@ -144,6 +144,12 @@ if test  $MPACKPATHSET = 1 ; then
 		LDFLAGS="-L$with_MPACK/lib $LDFLAGS"
 fi
 mpack_LIBS=""
+
+NEED_LIB_QD=0
+NEED_LIB_GMP=0
+NEED_LIB_MPC=0
+NEED_LIB_MPFR=0
+
 if test "$enable_mpack" = "yes"; then
   if test  $MPACKPATHSET = 1 ; then
         AC_LANG_PUSH([C++])
@@ -167,12 +173,12 @@ if test "$enable_mpack" = "yes"; then
   ppFlags=" "
   #test which libraries of the mpack package are installed and set the flags.
   AC_LANG_PUSH([C++])
-  AC_CHECK_HEADER(mpack/mlapack_qd.h, [ppFlags="-DWITH_MPACK_QD $ppFlags" ],[],
+  AC_CHECK_HEADER(mpack/mlapack_qd.h, [ppFlags="-DWITH_MPACK_QD $ppFlags"; NEED_LIB_QD=1 ],[],
   [#if HAVE_MPACK_MPACK_CONFIG_H
    #include <mpack/mpack_config.h>
    #endif
    ])
-  AC_CHECK_HEADER(mpack/mlapack_dd.h, [ppFlags="-DWITH_MPACK_DD $ppFlags" ],[],
+  AC_CHECK_HEADER(mpack/mlapack_dd.h, [ppFlags="-DWITH_MPACK_DD $ppFlags"; NEED_LIB_QD=1 ],[],
   [#if HAVE_MPACK_MPACK_CONFIG_H
    #include <mpack/mpack_config.h>
    #endif
@@ -192,12 +198,12 @@ if test "$enable_mpack" = "yes"; then
    #include <mpack/mpack_config.h>
    #endif
    ])
-  AC_CHECK_HEADER(mpack/mlapack_mpfr.h, [ppFlags="-DWITH_MPACK_MPFR $ppFlags" ],[],
+  AC_CHECK_HEADER(mpack/mlapack_mpfr.h, [ppFlags="-DWITH_MPACK_MPFR $ppFlags"; NEED_LIB_MPFR=1; NEED_LIB_MPC=1 ],[],
   [#if HAVE_MPACK_MPACK_CONFIG_H
    #include <mpack/mpack_config.h>
    #endif
    ])
-  AC_CHECK_HEADER(mpack/mlapack_gmp.h, [ppFlags="-DWITH_MPACK_GMP $ppFlags" ],[],
+  AC_CHECK_HEADER(mpack/mlapack_gmp.h, [ppFlags="-DWITH_MPACK_GMP $ppFlags"; NEED_LIB_GMP=1 ],[],
   [#if HAVE_MPACK_MPACK_CONFIG_H
    #include <mpack/mpack_config.h>
    #endif
@@ -229,6 +235,64 @@ if test "$DEPENDENCYNOTFOUND" = "1"; then
 	AC_MSG_NOTICE()
 	AC_MSG_ERROR(library not found! Try './configure --help'.)
 fi
+
+
+# check for further dependencies of MPACK
+AC_LANG_PUSH([C++])
+if test "$NEED_LIB_GMP" = "1"; then
+    AC_CHECK_HEADER(gmp.h, HAVE_GMP_HEADER=yes,[],
+    [#if HAVE_SUPPRESS_COMPILER_WARNING_H
+     #include <SUPPRESS_COMPILER_WARNING.h>
+     #endif
+    ])
+    if test x$HAVE_GMP_HEADER = xyes; then
+        AC_CHECK_LIB(gmp, __gmpz_init, [mpack_LIBS="$mpack_LIBS -lgmpxx -lgmp"; HAVE_GMP=yes])
+    fi
+    if test x$HAVE_GMP != xyes; then
+        AC_MSG_RESULT([No GMP library with C++ wrapper found! You could try to set the CPPFLAGS=-I/path/to/gmp/include and LDFLAGS=-L/path/to/gmp/lib])
+    fi
+fi
+if test "$NEED_LIB_MPFR" = "1"; then
+    AC_CHECK_HEADER(mpfr.h, HAVE_MPFR_HEADER=yes,[],
+    [#if HAVE_SUPPRESS_COMPILER_WARNING_H
+     #include <SUPPRESS_COMPILER_WARNING.h>
+     #endif
+    ])
+    if test x$HAVE_MPFR_HEADER = xyes; then
+        AC_CHECK_LIB(mpfr, mpfr_init, [mpack_LIBS="$mpack_LIBS -lmpfr"; HAVE_MPFR=yes])
+    fi
+    if test x$HAVE_MPFR != xyes; then
+        AC_MSG_RESULT([No MPFR library found! You could try to set the CPPFLAGS=-I/path/to/mpfr/include and LDFLAGS=-L/path/to/mpfr/lib])
+    fi
+fi
+if test "$NEED_LIB_MPC" = "1"; then
+    AC_CHECK_HEADER(mpc.h, HAVE_MPC_HEADER=yes,[],
+    [#if HAVE_SUPPRESS_COMPILER_WARNING_H
+     #include <SUPPRESS_COMPILER_WARNING.h>
+     #endif
+    ])
+    if test x$HAVE_MPC_HEADER = xyes; then
+        AC_CHECK_LIB(mpc, mpc_init2, [mpack_LIBS="$mpack_LIBS -lmpc"; HAVE_MPC=yes])
+    fi
+    if test x$HAVE_MPC != xyes; then
+        AC_MSG_RESULT([No MPC library found! You could try to set the CPPFLAGS=-I/path/to/mpc/include and LDFLAGS=-L/path/to/mpc/lib])
+    fi
+fi
+if test "$NEED_LIB_QD" = "1"; then
+    AC_CHECK_HEADER(qd/qd_real.h, HAVE_QD_HEADER=yes,[],
+    [#if HAVE_SUPPRESS_COMPILER_WARNING_H
+     #include <SUPPRESS_COMPILER_WARNING.h>
+     #endif
+    ])
+    if test x$HAVE_QD_HEADER = xyes; then
+        AC_CHECK_LIB(qd, c_qd_sqrt, [mpack_LIBS="$mpack_LIBS -lqd"; HAVE_QD=yes])
+    fi
+    if test x$HAVE_QD != xyes; then
+        AC_MSG_RESULT([No QD library found! You could try to set the CPPFLAGS=-I/path/to/qd/include and LDFLAGS=-L/path/to/qd/lib])
+    fi
+fi
+AC_LANG_POP
+
 
 dnl ---------------------------------------------------------------------------
 dnl Checks for typedefs, structures, and compiler characteristics.
