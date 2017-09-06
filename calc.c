@@ -157,13 +157,15 @@ MxEqDistr ( BarData *Data, double **p8 )
   }
 
   /* now normalize the new p8 */
+  /*
   double sumsq=0.0;
   for (i=0; i<dim; i++)
     sumsq += SQ((*p8)[i]);
   if(sumsq > 0.0)
     sumsq=1./sqrtl(sumsq);
+  */
   for (i=0; i<dim; i++)
-    *(*p8+i)  *= sumsq;
+    *(*p8+i)  *= 1.0/Z; //sumsq;
 
   if(opt.want_verbose) MxPrint (*p8, "p8", 'v');
   return;
@@ -228,7 +230,7 @@ MxEqDistrFromLinSys( double *U, double **p8 )
     //DGESV computes the solution to a real system of linear equations A * X = B
     dgesv_(&n, &nrhs, A, &n, ipiv, B, &n, &nfo);
     if (nfo != 0) {
-      fprintf(stderr, "dgesv exited with value %d (Cannot compute the equilibrium distribution) - check if the rates have good dimension(if you, you have probably reached the numerical precision of treekin)\n", nfo);
+      fprintf(stderr, "dgesv exited with value %d (Cannot compute the equilibrium distribution) - check if the rates have good dimension(you have probably reached the numerical precision of treekin)\n", nfo);
       /// TODO switch to compute from detailed balance
       exit(EXIT_FAILURE);
     }
@@ -303,8 +305,8 @@ MxDiagonalize ( double *U, double **_S, double *P8)
     if (opt.want_verbose) MxPrint (U, "U = _sqrPI*U*sqrPI_ (this should be symmetric, but still uncorrected)", 'm');
     free(tmpMx);
 
-    /* correct for numerical errors -- ensure U is symmetirc */
-    long double err = 0.0;  // acumulated error
+    /* correct for numerical errors -- ensure U is symmetric */
+    long double err = 0.0;  // accumulated error
     for (i = 0; i < dim; i++) {
       for (j = i; j < dim; j++) {
         long double err_inc = fabs((U[dim*i+j]+U[dim*j+i])/2 - U[dim*i+j]);
@@ -458,11 +460,11 @@ MxDiagHelper(double *P8)
 {
   int i,j;
   for(i = 0; i < dim; i++)
-    for(j = 0; j < dim; j++)
-      if( i == j) {
-        sqrPI_[dim*i+j] = sqrt(P8[i]);          /* pos right */
-        _sqrPI[dim*i+j] = 1/(sqrPI_[dim*i+j]);  /* neg left */
-      }
+  {
+    j=i;
+    sqrPI_[dim*i+j] = sqrt(P8[i]);          /* pos right */
+    _sqrPI[dim*i+j] = 1/(sqrPI_[dim*i+j]);  /* neg left */
+  }
 }
 
 /*==*/
@@ -1873,7 +1875,6 @@ MxEVLapackNonSym(double *origU)
 
 void MxEqDistrFromDetailedBalance ( double *U, double **p8 )
 {
-  // DO NOT USE. This routine does not work!
     double *res = *p8;
     int *done;
     int count = 1;  // num of solved states
@@ -1933,70 +1934,6 @@ void MxEqDistrFromDetailedBalance ( double *U, double **p8 )
     }
 
     MxPrint(res, "p8 (detailed balance)", 'v');
-
-    /* make it unit vector */
-    /* long double qsum=0.0; */
-    /* for (i=0; i<dim; i++) { */
-    /*   qsum += res[i]*res[i]; */
-    /* } */
-    /* qsum = sqrtl(qsum); */
-    /* for (i=0; i<dim; i++) { */
-    /*   res[i] /= qsum; */
-    /* } */
-}
-
-void MxEqDistrFromLocalBalance ( double *U, double **p8 )
-{
-  // DO NOT USE. This routine does not work! 
-    double *res = *p8;
-    int count = 1;  // num of solved states
-    int i=0;
-    int j=1;
-    int k;
-
-    for(k=1; k<dim; k++) {
-      res[k] = 0.0;
-    }
-    res[0] = 1.0;
-
-    // while there are unsolved states
-    while (count != dim) {
-      if (U[dim*i+j]!=0.0 && res[i]!=0.0 && res[j]==0.0) {
-        if (U[dim*j+i]==0.0) {
-          fprintf(stderr, "Local balance is unsatisfiable at U[%d][%d]=%f\n", i, j, U[dim*i+j]);
-	  exit(EXIT_FAILURE);
-          return ;
-        }
-        // local balance
-        long double tmp = U[dim*j+i];
-        tmp *= res[i];
-        tmp /= U[dim*i+j];
-        res[j] = tmp;
-        count ++;
-      }
-      j++;
-      if (j==dim) {
-        j=0;
-        i++;
-        if (i==dim && count != dim) {
-          fprintf(stderr, "non-ergodic chain\n");
-	  MxPrint(res, "p8 (local balance)", 'v');
-	  exit(EXIT_FAILURE);
-          return ;
-        }
-      }
-    }
-
-    /* now make the vector stochastic (sum = 1.0) */
-    long double sum=0.0;
-    for (i=0; i<dim; i++) {
-      sum += res[i];
-    }
-    for (i=0; i<dim; i++) {
-      res[i] /= sum;
-    }
-
-    MxPrint(res, "p8 (local balance)", 'v');
 
     /* make it unit vector */
     /* long double qsum=0.0; */

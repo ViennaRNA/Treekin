@@ -31,7 +31,6 @@ void    MxExponent(double *p0, double *p8, double *U);
 
 void    MxFPT(double *U, double *p8, FILE *out);
 void    MxEqDistrFromLinSys(double *U, double **p8);
-void    MxEqDistrFromLocalBalance(double *U, double **p8);
 void    MxEqDistrFromDetailedBalance(double *U, double **p8);
 void    MxFPTSimple(double *U);
 double *MxFPTOneState(double *U, int state);

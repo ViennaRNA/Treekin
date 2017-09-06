@@ -94,7 +94,7 @@ main (int argc, char **argv)
     MxEqDistrFULL (E, p8);
   else {
     if (opt.method == 'A')  
-      MxEqDistr (Data, &p8);  /* FIX THIS */
+      MxEqDistr (Data, &p8);
     else 
       MxEqDistrFromDetailedBalance(U, &p8);
     //MxEqDistrFromLinSys(U, &p8);
