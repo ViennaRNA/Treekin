@@ -41,7 +41,7 @@ class Calc {
   char     Aname[30];
 
   Globals *_globalParameters;
-  treekin_options _opt;
+  treekin_options *_opt;
   int _lmins;
   SubInfo *_E;
   Mxccm mxccm;
@@ -122,10 +122,10 @@ public:
 template<typename T>
 Calc<T>::Calc(Globals *globalParameters, SubInfo *E, int d){
    _globalParameters = globalParameters;
-  _opt = globalParameters->opt;
+  _opt = &globalParameters->opt;
   _lmins = globalParameters->lmins;
   _E = E;
-  _kT = 0.00198717*(273.15 + _opt.T);
+  _kT = 0.00198717*(273.15 + _opt->T);
 
   evals = NULL;
   evecs = NULL;
@@ -133,7 +133,7 @@ Calc<T>::Calc(Globals *globalParameters, SubInfo *E, int d){
   sqrPI_ = NULL;   /* right constant array */
   D = NULL;
   dim = d;
-  solver = new Calccpp(&_opt,_E);
+  solver = new Calccpp(_opt,_E);
 }
 
 template<typename T>
@@ -205,18 +205,19 @@ int Calc<T>::MxEgro(T **Up, T **p0p, int dim)
     *Up = new T[dim*dim];
     std::copy_n(U, dim*dim, *Up);
     delete[] U;
+    U = *Up;
 
     // reorganize p0
     for (int i=0; i<(int)set_ergo.size(); i++) {
       p0[i]=p0[reorganize[i]];
     }
     //*p0p = (T*)realloc(p0, dim*sizeof(T));
-    T* tmp = *p0p;
     *p0p = new T[dim];
-    std::copy_n(tmp, dim, *p0p);
-    delete[] tmp;
+    std::copy_n(p0, dim, *p0p);
+    delete[] p0;
+    p0 = *p0p;
 
-    if (!_opt.quiet) fprintf(stderr, "WARNING: Matrix is non-ergodic! Decreasing dimension to %d.\n", dim);
+    if (!_opt->quiet) fprintf(stderr, "WARNING: Matrix is non-ergodic! Decreasing dimension to %d.\n", dim);
     //MxPrint(U, "Ergodic U", 'm');
 
     if (dim == 1) {
@@ -232,8 +233,8 @@ template<typename T>
 void Calc<T>::PrintDummy(T *line)
 {
   print_settings();
-  PrintProb(line, 1, _opt.t0);
-  PrintProb(line, 1, _opt.t8);
+  PrintProb(line, 1, _opt->t0);
+  PrintProb(line, 1, _opt->t8);
 }
 
 template<typename T>
@@ -256,8 +257,8 @@ T Calc<T>::PrintProbFull(T *line, int dim, double time, int lmins)
   for (int i=0; i<lmins; i++) {
     if(ptFULL[i] < -0.01) {
       fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, (double)ptFULL[i]);
-      if (_opt.num_err == 'H') exit(EXIT_FAILURE);
-      else if (_opt.num_err == 'R') ptFULL[i] = 0.0;
+      if (_opt->num_err == 'H') exit(EXIT_FAILURE);
+      else if (_opt->num_err == 'R') ptFULL[i] = 0.0;
     }
     /* map individual structure -> gradient basins */
     check += abs(ptFULL[i]);
@@ -265,14 +266,14 @@ T Calc<T>::PrintProbFull(T *line, int dim, double time, int lmins)
 
   // check for overall propability
   if ( ((check-1.) < -0.05) || ((check-1.) > 0.05) ) {
-    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, (double)check, (_opt.num_err == 'R'?"rescaling":"exiting") );
-    if (_opt.num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
+    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, (double)check, (_opt->num_err == 'R'?"rescaling":"exiting") );
+    if (_opt->num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
   }
 
   // print:
   printf("%e ", time);
   for (int i=0; i<lmins; i++) {
-    if (_opt.num_err == 'R') printf("%e ", (double)(T)(abs(ptFULL[i])/check));
+    if (_opt->num_err == 'R') printf("%e ", (double)(T)(abs(ptFULL[i])/check));
     else printf("%e ", (double)(T)abs(ptFULL[i]));
   }
   printf("\n");
@@ -289,8 +290,8 @@ T Calc<T>::PrintProbNR(T *line, int dim, double time)
   for (int i=0; i<dim; i++) {
     if(line[i] < -0.01) {
       fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, line[i]);
-      if (_opt.num_err == 'H') exit(EXIT_FAILURE);
-      else if (_opt.num_err == 'R') line[i] = 0.0;
+      if (_opt->num_err == 'H') exit(EXIT_FAILURE);
+      else if (_opt->num_err == 'R') line[i] = 0.0;
     }
     /* map individual structure -> gradient basins */
     check += abs(line[i]);
@@ -298,14 +299,14 @@ T Calc<T>::PrintProbNR(T *line, int dim, double time)
 
   // check for overall propability
   if ( ((check-1.) < -0.05) || ((check-1.) > 0.05) ) {
-    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, check, (_opt.num_err == 'R'?"rescaling":"exiting") );
-    if (_opt.num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
+    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, check, (_opt->num_err == 'R'?"rescaling":"exiting") );
+    if (_opt->num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
   }
 
   // print
   printf("%e ", time);
   for (int i=0; i<dim; i++) {
-    if (_opt.num_err == 'R') printf("%e ", abs(line[i])/check);
+    if (_opt->num_err == 'R') printf("%e ", abs(line[i])/check);
     else printf("%e ", abs(line[i]));
   }
 
@@ -323,16 +324,16 @@ T Calc<T>::PrintProb(T *line, int dim, double time)
   for (int i=0; i<dim; i++) {
     if (line[i] < -0.01) {
       fprintf(stderr, "prob of lmin %i at time %e has become negative: %e \n", i+1, time, (double)line[i]);
-      if (_opt.num_err == 'H') exit(EXIT_FAILURE);
-      else if (_opt.num_err == 'R') line[i] = 0.0;
+      if (_opt->num_err == 'H') exit(EXIT_FAILURE);
+      else if (_opt->num_err == 'R') line[i] = 0.0;
     }
     check += abs(line[i]);
   }
 
   // check for overall probability
   if ( ((check-1.) < -0.05) || ((check-1.) > 0.05) ) {
-    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, (double)check, (_opt.num_err == 'R' && (double)check != 0.0?"rescaling":"exiting") );
-    if (_opt.num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
+    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", time, (double)check, (_opt->num_err == 'R' && (double)check != 0.0?"rescaling":"exiting") );
+    if (_opt->num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
   }
 
   // print finally:
@@ -340,7 +341,7 @@ T Calc<T>::PrintProb(T *line, int dim, double time)
   if (reorganize.size()==0) {
     for (int i=0; i<dim; i++) {
       /* map individual structure -> gradient basins */
-      if (_opt.num_err == 'R') printf("%e ", (double)(T)(abs(line[i])/check));
+      if (_opt->num_err == 'R') printf("%e ", (double)(T)(abs(line[i])/check));
       else printf("%e ", (double)(T)abs(line[i]));
     }
   } else {
@@ -350,7 +351,7 @@ T Calc<T>::PrintProb(T *line, int dim, double time)
         printf("%e ", 0.0);
       } else {
 
-        if (_opt.num_err == 'R') printf("%e ", (double)(T)(abs(line[j])/check));
+        if (_opt->num_err == 'R') printf("%e ", (double)(T)(abs(line[j])/check));
         else printf("%e ", (double)(T)abs(line[j]));
         j++;
       }
@@ -401,8 +402,8 @@ T*
 Calc<T>::MxBar2Matrix ( BarData *Data, T *R)
 {
   T *U=NULL;
-  if(_opt.want_degenerate) MxDoDegeneracyStuff();
-  switch (_opt.method) {
+  if(_opt->want_degenerate) MxDoDegeneracyStuff();
+  switch (_opt->method) {
   case 'A':
     U = MxMethodeA(Data);
     break;
@@ -414,10 +415,10 @@ Calc<T>::MxBar2Matrix ( BarData *Data, T *R)
     break;
   default:
     fprintf (stderr,
-             "ERROR in MxBar2Matrix(): No handler 4 method %c\n", _opt.method);
+             "ERROR in MxBar2Matrix(): No handler 4 method %c\n", _opt->method);
     exit(EXIT_FAILURE);
   }
-  if (_opt.dumpU) {
+  if (_opt->dumpU) {
     MxASCIIWrite(U, "U.txt");
     MxBinWrite(U, "U", 'm');
   }
@@ -429,13 +430,18 @@ void
 Calc<T>::MxGetSpace (T **p8)
 {
   *p8   = new T[dim];
+  std::fill_n(*p8,dim,0.);
   evals = new T[dim];
+  std::fill_n(evals,dim,0.);
   evecs = new T[dim*dim];
+  std::fill_n(evecs,dim,0.);
   assert(evals!=NULL);assert(evecs!=NULL);assert(p8!=NULL);
 
-if(!_opt.absrb) {
+if(!_opt->absrb) {
     _sqrPI = new T[dim*dim];
+    std::fill_n(_sqrPI,dim*dim,0.);
     sqrPI_ = new T[dim*dim];
+    std::fill_n(sqrPI_,dim*dim,0.);
   }
 }
 
@@ -446,17 +452,17 @@ Calc<T>::MxStartVec (T **p0)
 {
   int i;
   T *pzero = new T[dim];
-
-  if (_opt.pini) {
-    for (i = 1; i < (int) *_opt.pini; i+=2)
-      pzero[(int)_opt.pini[i]-1] = (T)_opt.pini[i+1];
+  std::fill_n(pzero,dim,0.0);
+  if (_opt->pini) {
+    for (i = 1; i < (int) *_opt->pini; i+=2)
+      pzero[(int)_opt->pini[i]-1] = (T)_opt->pini[i+1];
     /* -1 because our lmins start with 1, not with 0 (as Data does ) */
   } else {
     // all into first state...
     pzero[0]=1.0;
   }
 
-  if (_opt.want_verbose) MxPrint (pzero, "p0", 'v');
+  if (_opt->want_verbose) MxPrint (pzero, "p0", 'v');
   *p0=pzero;
 }
 
@@ -469,7 +475,7 @@ Calc<T>::MxEqDistr ( BarData *Data, T **p8 )
   int i;
   T Z = 0.;
 
-  if(_opt.absrb) {
+  if(_opt->absrb) {
     for(i = 0; i < dim; i++)
       (*p8)[i] = 0.;
     (*p8)[dim-1] = 1.0; /* last entry is the 'new' absorbing state */
@@ -483,7 +489,7 @@ Calc<T>::MxEqDistr ( BarData *Data, T **p8 )
   for (i=0; i<dim; i++)
     *(*p8+i)  *= 1.0/Z; //sumsq;
 
-  if(_opt.want_verbose) MxPrint (*p8, "p8", 'v');
+  if(_opt->want_verbose) MxPrint (*p8, "p8", 'v');
   return;
 }
 
@@ -495,10 +501,10 @@ Calc<T>::MxEqDistrFULL (SubInfo *E, T *p8 )
   int i;
   T Z = 0.;
 
-  if(_opt.absrb) {
+  if(_opt->absrb) {
     for(i = 0; i < dim; i++)
       p8[i] = 0.;
-    p8[_opt.absrb-1] = 1.;
+    p8[_opt->absrb-1] = 1.;
   }
   else {
     for(i = 0; i < dim; i++) Z += exp(-E[i].energy/_kT);
@@ -506,7 +512,7 @@ Calc<T>::MxEqDistrFULL (SubInfo *E, T *p8 )
   }
 
 
-  if(_opt.want_verbose) MxPrint (p8, "p8", 'v');
+  if(_opt->want_verbose) MxPrint (p8, "p8", 'v');
   return;
 }
 
@@ -517,7 +523,7 @@ Calc<T>::MxEqDistrFromLinSys( T *U, T **p8 )
   int i,j,n, nrhs, nfo, *ipiv=NULL;
   T *A=NULL, *B=NULL;
 
-  if(_opt.absrb) {
+  if(_opt->absrb) {
     for(i = 0; i < dim; i++)
       *(*p8+i) = 0.;
     *(*p8+(dim-1)) = 1.0; /* last entry is the 'new' absorbing state */
@@ -529,18 +535,18 @@ Calc<T>::MxEqDistrFromLinSys( T *U, T **p8 )
     ipiv = (int *)malloc(n*sizeof(int));
     nrhs=1;
 
-    if (_opt.want_verbose) MxPrint(U, "U", 'm' );
+    if (_opt->want_verbose) MxPrint(U, "U", 'm' );
 
     for(i=1; i<=n; i++) /* all except first row */
       for(j=1; j<=n; j++)
-        A[n*(i-1)+(j-1)]=U[dim*i+j] - (i==j && _opt.useplusI ? 1.0 : 0.0);  //U-I=Q
+        A[n*(i-1)+(j-1)]=U[dim*i+j] - (i==j && _opt->useplusI ? 1.0 : 0.0);  //U-I=Q
     for(n=0,i=1; i<dim; i++,n++)
       B[n]=-U[dim*i];
     dim=n;
     mxccm.trnm(A,n);
 
-    if (_opt.want_verbose) MxPrint(A, "A in MxEqDistrFromLinSys", 'm' );
-    if (_opt.want_verbose) MxPrint(B, "B in MxEqDistrFromLinSys", 'v' );
+    if (_opt->want_verbose) MxPrint(A, "A in MxEqDistrFromLinSys", 'm' );
+    if (_opt->want_verbose) MxPrint(B, "B in MxEqDistrFromLinSys", 'v' );
 
     //DGESV computes the solution to a real system of linear equations A * X = B
     solver->Mx_Dgesv(&n, &nrhs, A, &n, ipiv, B, &n, &nfo);
@@ -550,12 +556,12 @@ Calc<T>::MxEqDistrFromLinSys( T *U, T **p8 )
       /// TODO switch to compute from detailed balance
       exit(EXIT_FAILURE);
     }
-    if (_opt.want_verbose) MxPrint(B, "X in MxEqDistrFromLinSys", 'v' );
+    if (_opt->want_verbose) MxPrint(B, "X in MxEqDistrFromLinSys", 'v' );
     dim=n+1;
     *p8[0]=1.;
     for(i=1; i<dim; i++) *(*p8+i)=B[i-1];
 
-    if (_opt.want_verbose) MxPrint(*p8, "p8 in MxEqDistrFromLinSys before norm", 'v' );
+    if (_opt->want_verbose) MxPrint(*p8, "p8 in MxEqDistrFromLinSys before norm", 'v' );
 
     // now check if all are > 0.0
     for (i=dim-1; i!=0; i--) {
@@ -583,7 +589,7 @@ Calc<T>::MxEqDistrFromLinSys( T *U, T **p8 )
     delete[] B;
     free(ipiv);
   }
-  if(_opt.want_verbose)
+  if(_opt->want_verbose)
     MxPrint(*p8, "p8", 'v' );
 }
 
@@ -595,21 +601,21 @@ Calc<T>::MxDiagonalize ( T *U, T **_S, T *P8)
   int i,j;
   T *tmpMx=NULL;
 
-  if(_opt.dumpMathematica == 1)  MxKotzOutMathematica(U);
-  if(!_opt.absrb) {
-    if (_opt.want_verbose) MxPrint (U, "input U", 'm');
+  if(_opt->dumpMathematica == 1)  MxKotzOutMathematica(U);
+  if(!_opt->absrb) {
+    if (_opt->want_verbose) MxPrint (U, "input U", 'm');
 
     tmpMx = new T[dim*dim];
-    //if (_opt.want_verbose) MxPrint (P8, "P8", 'v');
+    //if (_opt->want_verbose) MxPrint (P8, "P8", 'v');
     MxDiagHelper(P8);
     mxccm.mmul(tmpMx, _sqrPI, U, dim);
-    if (_opt.want_verbose) MxPrint (_sqrPI, "_sqrPI", 'm');
-    if (_opt.want_verbose) MxPrint (tmpMx, "tmpMx = _sqrPI*U", 'm');
-    if (_opt.want_verbose) MxPrint (sqrPI_, "sqrPI_", 'm');
+    if (_opt->want_verbose) MxPrint (_sqrPI, "_sqrPI", 'm');
+    if (_opt->want_verbose) MxPrint (tmpMx, "tmpMx = _sqrPI*U", 'm');
+    if (_opt->want_verbose) MxPrint (sqrPI_, "sqrPI_", 'm');
     //memset(U,0,dim*dim*sizeof(T));
     fill_n(U,dim*dim,0);
     mxccm.mmul(U, tmpMx, sqrPI_, dim);
-    if (_opt.want_verbose) MxPrint (U, "U = _sqrPI*U*sqrPI_ (this should be symmetric, but still uncorrected)", 'm');
+    if (_opt->want_verbose) MxPrint (U, "U = _sqrPI*U*sqrPI_ (this should be symmetric, but still uncorrected)", 'm');
     delete[] tmpMx;
 
     /* correct for numerical errors -- ensure U is symmetric */
@@ -635,20 +641,20 @@ Calc<T>::MxDiagonalize ( T *U, T **_S, T *P8)
       fprintf(stderr, "Rates are not good -- check your rates (maybe the equilibrium was not computed correctly? rerun with --equil-file or -v set)!!!... (%Lf)\n", (long double)err);
       exit(-1);
     }
-    if (!_opt.quiet) fprintf(stderr, "Corrected numerical error: %e (%e per number)\n", (double)err, (double)(T)(err/(T)(dim*dim)));
+    if (!_opt->quiet) fprintf(stderr, "Corrected numerical error: %e (%e per number)\n", (double)err, (double)(T)(err/(T)(dim*dim)));
 
 
-    if (_opt.want_verbose) MxPrint (U, "force symmetrized U", 'm');
+    if (_opt->want_verbose) MxPrint (U, "force symmetrized U", 'm');
   }
 
     // get eigenv*
-  if(_opt.absrb) {
+  if(_opt->absrb) {
     MxEVLapackNonSym(U);
   } else {
-    switch(_opt.mpackMethod) {
+    switch(_opt->mpackMethod) {
 #if defined(WITH_MPACK_GMP)
       case MPACK_GMP:
-        solver->MxEV_Mpack_Sym_gmp((const mpf_class *)U, dim,(mpf_class *)evals,(mpf_class *)evecs, _opt.mpackMethod_Bits);
+        solver->MxEV_Mpack_Sym_gmp((const mpf_class *)U, dim,(mpf_class *)evals,(mpf_class *)evecs, _opt->mpackMethod_Bits);
         break;
 #endif
 #if defined(WITH_MPACK_QD)
@@ -658,7 +664,7 @@ Calc<T>::MxDiagonalize ( T *U, T **_S, T *P8)
 #endif
 #if defined(WITH_MPACK_MPFR)
       case MPACK_MPFR:
-        solver->MxEV_Mpack_Sym_mpfr((const mpfr::mpreal *)U, dim,(mpfr::mpreal *)evals,(mpfr::mpreal *)evecs, _opt.mpackMethod_Bits);
+        solver->MxEV_Mpack_Sym_mpfr((const mpfr::mpreal *)U, dim,(mpfr::mpreal *)evals,(mpfr::mpreal *)evecs, _opt->mpackMethod_Bits);
         break;
 #endif
 #if defined(WITH_MPACK___FLOAT128)
@@ -690,7 +696,7 @@ Calc<T>::MxDiagonalize ( T *U, T **_S, T *P8)
 
   MxSortEig(evals, evecs);
 
-  if (_opt.want_verbose) {
+  if (_opt->want_verbose) {
     MxPrint(evecs, "Eigenvectors of U (LAPACK)", 'm');
     MxPrint(evals, "Eigenvalues of U (LAPACK)", 'v');
   }
@@ -706,38 +712,38 @@ Calc<T>::MxDiagonalize ( T *U, T **_S, T *P8)
     //exit(EXIT_FAILURE);
   }
 
-  if (!_opt.quiet) {
-    if ((T)abs(evals[0] - ((_opt.useplusI)?1.:0.)) > (T)10*_opt.FEPS) {
+  if (!_opt->quiet) {
+    if ((T)abs(evals[0] - ((_opt->useplusI)?1.:0.)) > (T)10*_opt->FEPS) {
       fprintf(stderr, "WARNING largest eigenvalue is %g, see evals.txt and evecs.txt\n", (double)evals[0]);
       MxASCIIWriteV(evals, "evals.txt");
       MxASCIIWrite(evecs, "evecs.txt");
     }
   }
   // fix evals[0] to be 0 (or 1.0)
-  if (_opt.useplusI) evals[0] = 1.0;
+  if (_opt->useplusI) evals[0] = 1.0;
   else evals[0] = 0.0;
 
   // check if we have only one eval = 0 / eval = 1
   i = 0;
-  if (_opt.useplusI) while (evals[i] >= 1.0) evals[i++] = 1.0;
+  if (_opt->useplusI) while (evals[i] >= 1.0) evals[i++] = 1.0;
   else              while (evals[i] >= 0.0) evals[i++] = 0.0;
 
   if (i > 1) {
-    fprintf(stderr, "WARNING: There are multiple evals=%d.0 (%4d) (multiple population traps -- maybe we compute crap)\n", _opt.useplusI?1:0, i);
+    fprintf(stderr, "WARNING: There are multiple evals=%d.0 (%4d) (multiple population traps -- maybe we compute crap)\n", _opt->useplusI?1:0, i);
   }
 
-  if(_opt.absrb)
+  if(_opt->absrb)
     MxFixevecsAbsorb(evecs,evals);
   //  else
   //  MxFixevecs(evecs,evals); /* so far it's not helping ... */
 
   *_S=evecs;
-  if(_opt.wrecover) {
+  if(_opt->wrecover) {
     MxBinWrite(evals, "evals", 'v');
     MxBinWrite(evecs, "evecs", 'm');
     MxASCIIWriteV(evals, "evals.txt");
     MxASCIIWrite(evecs, "evecs.txt");
-    if (_opt.want_verbose) {
+    if (_opt->want_verbose) {
       T *CL; //, *tmpMx; ?
       int i,j;
       CL        = new T[dim*dim];
@@ -757,7 +763,7 @@ Calc<T>::MxDiagonalize ( T *U, T **_S, T *P8)
     }
   }
   // compensate for the +I matrix
-  if (_opt.useplusI) for(i = 0; i < dim; i++) evals[i] -= 1.0;  /* compensate 4 translation of matrix U */
+  if (_opt->useplusI) for(i = 0; i < dim; i++) evals[i] -= 1.0;  /* compensate 4 translation of matrix U */
 }
 
 /*==*/
@@ -792,7 +798,7 @@ Calc<T>::MxRecover (T **_S, T *P8)
     exit(EXIT_FAILURE);
   }
   *_S=evecs;
-  if(_opt.want_verbose) {
+  if(_opt->want_verbose) {
     MxPrint(evals, "MxRecover: Eigenvalues", 'v');
     MxPrint(evecs, "MxRecover: Eigenvectors", 'm');
   }
@@ -849,17 +855,26 @@ Calc<T>::MxIterate (T *p0, T *p8, T *S)
   T *p8FULL = NULL;  /* equ dist 4 gradient basins, full process */
 
   tmpVec    = new T[dim];
+  std::fill_n(tmpVec,dim,0.);
   tmpVec2   = new T[dim];
+  std::fill_n(tmpVec2,dim,0.);
   pt        = new T[dim];
-  exptL     = new T[dim*dim];
-  if(_opt.method=='F') {
-    ptFULL    = new T[_lmins+1];
-    p8FULL    = new T[_lmins+1];
-    pdiff     = new T[_lmins+1];
+  std::fill_n(pt,dim,0.);
+  size_t dimSquared = dim*dim;
+  exptL     = new T[dimSquared];
+  std::fill_n(exptL,dimSquared,0.);
+  if(_opt->method=='F') {
+    size_t fullSize = _lmins+1;
+    ptFULL    = new T[fullSize];
+    std::fill_n(ptFULL,fullSize,0.);
+    p8FULL    = new T[fullSize];
+    std::fill_n(p8FULL,fullSize,0.);
+    pdiff     = new T[fullSize];
+    std::fill_n(pdiff,fullSize,0.);
   }
   else pdiff   = new T[dim];
 
-  if(! _opt.absrb) { /* NON-absorbing case */
+  if(! _opt->absrb) { /* NON-absorbing case */
     CL        = new T[dim*dim];
     CR        = new T[dim*dim];
     St        = new T[dim*dim];
@@ -870,7 +885,7 @@ Calc<T>::MxIterate (T *p0, T *p8, T *S)
     mxccm.vmul (tmpVec, CR, p0, dim);
 
     // test CL*CR = I
-    if (_opt.want_verbose) {
+    if (_opt->want_verbose) {
       T *testMx, *tvec;
       testMx      = new T[dim*dim];
       tvec    = new T[dim];
@@ -891,18 +906,18 @@ Calc<T>::MxIterate (T *p0, T *p8, T *S)
   else { /* absorbing case */
     T *S_inv = new T[dim*dim];
     mxccm.mcopy(S_inv, S, dim*dim);
-    mxccm.minv(S_inv,dim, _opt.FEPS);
-    if(_opt.want_verbose) MxPrint(evals, "evals in MxIterate", 'v');
+    mxccm.minv(S_inv,dim, _opt->FEPS);
+    if(_opt->want_verbose) MxPrint(evals, "evals in MxIterate", 'v');
     mxccm.vmul (tmpVec, S_inv, p0, dim);
     delete[] S_inv;
   }
-  if(_opt.method=='F') { /* calculate equilibrium distribution once */
+  if(_opt->method=='F') { /* calculate equilibrium distribution once */
     for (i = 0; i < dim; i++)   p8FULL[_E[i].ag] += p8[i];
     for (i = 0; i < _lmins; i++) check += abs(p8FULL[i]);
     if ( ((check-1.) < -0.1) || ((check-1.) > 0.1) ) {
       fprintf(stderr, "overall equilibrium probability is %e != 1. !\n", (double)check);
-      if (_opt.num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
-      else if (_opt.num_err == 'R') {
+      if (_opt->num_err == 'H' || check == 0.0) exit(EXIT_FAILURE);
+      else if (_opt->num_err == 'R') {
         for (i=0; i<dim; i++) p8[i] /= check;
         check = 1.0;
       }
@@ -912,42 +927,42 @@ Calc<T>::MxIterate (T *p0, T *p8, T *S)
 
   /* solve fundamental equation */
   print_settings();
-  if (_opt.t0 == 0.0) {
-    if (_opt.method=='F')  PrintProbFull(p0, dim, 0.0, _lmins);
+  if (_opt->t0 == 0.0) {
+    if (_opt->method=='F')  PrintProbFull(p0, dim, 0.0, _lmins);
     else                  PrintProb(p0, dim, 0.0);
-    _opt.t0 = _globalParameters->TZERO;
+    _opt->t0 = _globalParameters->TZERO;
   }
 
   T underflow[dim], tt;
   for (i=0; i<dim; i++) underflow[i] = 0.0;
 
   // iterate
-  for (tt = _opt.t0; tt < _opt.t8*_opt.tinc; tt *= _opt.tinc) {
-    time = (tt<_opt.t8)?tt:(T)_opt.t8;
+  for (tt = _opt->t0; tt < _opt->t8*_opt->tinc; tt *= _opt->tinc) {
+    time = (tt<_opt->t8)?tt:(T)_opt->t8;
     for (i = 0; i < dim; i++) {
       errno = 0;
-      exptL[dim*i+i] = (T)exp(time/_opt.times*evals[i]);
+      exptL[dim*i+i] = (T)exp(time/_opt->times*evals[i]);
       if ((errno == ERANGE || std::isnan((double)exptL[dim*i+i])
 ) && underflow[i]==0.0) {
-        //if (_opt.warnings) fprintf(stderr, "WARNING: underflow occured on %dth state at time %g -- exp(%g * %g) = %g\n", i+1, time/_opt.times, time/_opt.times, evals[i], exptL[dim*i+i]);
-                //         the overall probability can start to decrease if this state is still populated!!!\n         p_%d(%g) = %g, so it seems this %s\n", i+1, time/_opt.times, time/_opt.times, evals[i], exptL[dim*i+i], i+1, time/_opt.times, pt[i], pt[i]>0.1?"is DEFINITELLY BAD":(pt[i]>0.001?"is POTENTIALLY BAD":"SHOULD BE OK"));
-        underflow[i] = (T)(time/_opt.times);
+        //if (_opt->warnings) fprintf(stderr, "WARNING: underflow occured on %dth state at time %g -- exp(%g * %g) = %g\n", i+1, time/_opt->times, time/_opt->times, evals[i], exptL[dim*i+i]);
+                //         the overall probability can start to decrease if this state is still populated!!!\n         p_%d(%g) = %g, so it seems this %s\n", i+1, time/_opt->times, time/_opt->times, evals[i], exptL[dim*i+i], i+1, time/_opt->times, pt[i], pt[i]>0.1?"is DEFINITELLY BAD":(pt[i]>0.001?"is POTENTIALLY BAD":"SHOULD BE OK"));
+        underflow[i] = (T)(time/_opt->times);
         //exit(EXIT_FAILURE);
       }
     }
     mxccm.vmul(tmpVec2, exptL, tmpVec, dim);
-    if(!_opt.absrb)  mxccm.vmul(pt, CL, tmpVec2, dim);
+    if(!_opt->absrb)  mxccm.vmul(pt, CL, tmpVec2, dim);
     else            mxccm.vmul(pt, S, tmpVec2, dim);
 
     /*if (count%100 == 0) {
-      fprintf(stderr, "Time: %g\n", time/_opt.times);
+      fprintf(stderr, "Time: %g\n", time/_opt->times);
       MxPrint(tmpVec2, "tmpVec2", 'v');
       MxPrint(pt, "pt", 'v');
     }*/
 
     count++;  /* # of iterations */
 
-    if(_opt.method=='F') {
+    if(_opt->method=='F') {
       //memset(ptFULL, 0, (_lmins+1)*sizeof(T)); //replaced by c++ style.
       fill_n(ptFULL, _lmins+1, 0);
       for (i = 0; i < dim; i++) {
@@ -956,34 +971,34 @@ Calc<T>::MxIterate (T *p0, T *p8, T *S)
     }
 
     // print probabilities with respect to corrected ergodicity
-    if (_opt.method=='F') check = PrintProbFull(pt, dim, time, _lmins);
+    if (_opt->method=='F') check = PrintProbFull(pt, dim, time, _lmins);
     else                 check = PrintProb(pt, dim, time);
 
     //PrintProbNR(p8FULL, lmins, -1);
     int reached;
-    if (_opt.method=='F') reached = ConvergenceReached(p8FULL, ptFULL, _lmins, 1);
+    if (_opt->method=='F') reached = ConvergenceReached(p8FULL, ptFULL, _lmins, 1);
     else                 reached = ConvergenceReached(p8, pt, dim, 0);
     fflush(stdout);
     if (reached) break;
   }
 
   // print underflow:
-  if (_opt.warnings) {
+  if (_opt->warnings) {
     for (i=0; i<dim; i++) {
       if (underflow[i] > 0.0) fprintf(stderr, "underflow %5d at time %12g", i+1, (double)underflow[i]);
     }
   }
 
 
-  if (time < _opt.t8) {
-    if (_opt.method=='F') PrintProbFull(pt, dim, _opt.t8, _lmins);
-    else                 PrintProb(pt, dim, _opt.t8);
+  if (time < _opt->t8) {
+    if (_opt->method=='F') PrintProbFull(pt, dim, _opt->t8, _lmins);
+    else                 PrintProb(pt, dim, _opt->t8);
   }
   printf("# of iterations: %d\n", count);
 
   /*** end solve fundamental equation ***/
 
-  if(_opt.method=='F') {
+  if(_opt->method=='F') {
     delete[] ptFULL;
     delete[] p8FULL;
     delete[] _E;
@@ -1038,14 +1053,14 @@ Calc<T>::MxMethodeA (BarData *Data)
     }
   }
 
-  if(_opt.absrb) { /*==== absorbing  states ====*/
+  if(_opt->absrb) { /*==== absorbing  states ====*/
     dim++;
     fprintf(stderr, "dim increased to %i\n", dim);
     tmpU = new T[dim*dim]; //(T *) MxNew(dim*dim*sizeof(T));
-    real_abs = _opt.absrb; /* the original absorbing lmin */
+    real_abs = _opt->absrb; /* the original absorbing lmin */
     real_abs--;
-    _opt.absrb = dim; /* the 'new' abs state = last row/column of rate matrix */
-    fprintf(stderr, "new absorbing lmin is: %i\n", _opt.absrb);
+    _opt->absrb = dim; /* the 'new' abs state = last row/column of rate matrix */
+    fprintf(stderr, "new absorbing lmin is: %i\n", _opt->absrb);
     Zabs = (T)(exp((-Data[real_abs].energy)/_kT));
     abs_rate = (T)(exp((-Data[real_abs].energy)/_kT)/Zabs);
 
@@ -1059,7 +1074,7 @@ Calc<T>::MxMethodeA (BarData *Data)
     tmpU[dim*(dim-1)+real_abs] = abs_rate;
     delete[] U; //free(U);
     U = tmpU;
-    if(_opt.want_verbose) MxPrint(U, "aufgeblasene Matrix", 'm');
+    if(_opt->want_verbose) MxPrint(U, "aufgeblasene Matrix", 'm');
 
   }  /*== end absorbing states ==*/
 
@@ -1070,9 +1085,9 @@ Calc<T>::MxMethodeA (BarData *Data)
     /* calculate column sum */
     for(i = 0; i < dim; i++) tmp += U[dim*i+j];
     U[dim*j+j] = (T)(-tmp); /* make U a stochastic matrix */
-    if (_opt.useplusI) U[dim*j+j] += 1.0;
+    if (_opt->useplusI) U[dim*j+j] += 1.0;
   }
-  if (_opt.want_verbose) MxPrint (U,"U with Methode A", 'm');
+  if (_opt->want_verbose) MxPrint (U,"U with Methode A", 'm');
   return (U);
 }
 
@@ -1085,9 +1100,9 @@ Calc<T>::MxMethodeFULL (T *R)
   int i, j;
   delete[] D; //free(D);
 
-  if(_opt.absrb) { /*==== absorbing  states ====*/
+  if(_opt->absrb) { /*==== absorbing  states ====*/
     for(i = 0; i < dim; i++)
-      R[dim*i+(_opt.absrb-1)] = 0. ;
+      R[dim*i+(_opt->absrb-1)] = 0. ;
   }              /*== end absorbing states ==*/
 
   /* set diagonal elements  to 0 */
@@ -1097,10 +1112,10 @@ Calc<T>::MxMethodeFULL (T *R)
     /* calculate column sum */
     for(i = 0; i < dim; i++) tmp += R[dim*i+j];
     R[dim*j+j] = (T)(-tmp); /* make U a stochastic matrix */
-    if (_opt.useplusI) R[dim*j+j] += 1.0;
+    if (_opt->useplusI) R[dim*j+j] += 1.0;
   }
 
-  if (_opt.want_verbose) MxPrint (R, "R with Methode F", 'm');
+  if (_opt->want_verbose) MxPrint (R, "R with Methode F", 'm');
   return R;
 }
 
@@ -1113,18 +1128,18 @@ Calc<T>::MxMethodeINPUT (BarData *Data, T *Input)
   int i, j;
   T *U=NULL, Zabs, abs_rate;
 
-  if (_opt.want_verbose) MxPrint(Input, "Input Matrix", 'm');
+  if (_opt->want_verbose) MxPrint(Input, "Input Matrix", 'm');
 
-  if (_opt.absrb) {  /*==== absorbing  states ====*/
+  if (_opt->absrb) {  /*==== absorbing  states ====*/
     dim++;
     fprintf(stderr, "dim increased to %i\n", dim);
     U = new T[dim*dim]; //(T *) MxNew(dim*dim*sizeof(T));
-    _opt.real_abs = _opt.absrb; /* the original absorbing lmin */
-    _opt.real_abs--;
-    _opt.absrb = dim; /* the 'new' abs state = last row/column of rate matrix */
-    fprintf(stderr, "new absorbing lmin is: %i\n", _opt.absrb);
-    Zabs = exp((-Data[_opt.real_abs].FGr)/_kT);
-    abs_rate = (T)(exp((-Data[_opt.real_abs].energy)/_kT)/Zabs);
+    _opt->real_abs = _opt->absrb; /* the original absorbing lmin */
+    _opt->real_abs--;
+    _opt->absrb = dim; /* the 'new' abs state = last row/column of rate matrix */
+    fprintf(stderr, "new absorbing lmin is: %i\n", _opt->absrb);
+    Zabs = exp((-Data[_opt->real_abs].FGr)/_kT);
+    abs_rate = (T)(exp((-Data[_opt->real_abs].energy)/_kT)/Zabs);
 
     for(i = 0; i < (dim-1); i++) { /* all except the last row */
       for(j = 0; j < (dim-1); j++)
@@ -1133,8 +1148,8 @@ Calc<T>::MxMethodeINPUT (BarData *Data, T *Input)
     }
     for(j = 0; j < dim; j++) /* last row */
       U[dim*(dim-1)+j] = 0.;
-    U[dim*(dim-1)+_opt.real_abs] = abs_rate;
-    /*   if(_opt.want_verbose) MxPrint(U, "aufgeblasene Matrix", 'm'); */
+    U[dim*(dim-1)+_opt->real_abs] = abs_rate;
+    /*   if(_opt->want_verbose) MxPrint(U, "aufgeblasene Matrix", 'm'); */
   }      /*== end absorbing states ==*/
   else { /*== non-absorbing states ==*/
     U = new T[dim*dim]; //(T *) MxNew(dim*dim*sizeof(T));
@@ -1150,7 +1165,7 @@ Calc<T>::MxMethodeINPUT (BarData *Data, T *Input)
     // calculate column sum
     for(j = 0; j < dim; j++)  tmp += U[dim*j+i];
     U[dim*i+i] = (T)(-tmp);   // make U a stochastic matrix U = Q+I ??
-    if (_opt.useplusI) U[dim*i+i] += 1.0;
+    if (_opt->useplusI) U[dim*i+i] += 1.0;
   }
 
 /*  // normalize each column to sum=1
@@ -1161,13 +1176,12 @@ Calc<T>::MxMethodeINPUT (BarData *Data, T *Input)
   }*/
 
 
-  if(_opt.want_verbose) MxPrint (U,"U with Methode I" , 'm');
-  delete[] Input; //free(Input);
+  if(_opt->want_verbose) MxPrint (U,"U with Methode I" , 'm');
+  delete[] Input;
   return U;
 }
 
 /*==*/
-
 template<typename T>
 T
 Calc<T>::max_saddle(int i, int j, BarData *Data)
@@ -1308,7 +1322,7 @@ Calc<T>::MxFixevecsAbsorb(T *evecs, T *evals)
       evecs[dim*i+j] -= mu/(T)abscount;
   }
 
-  if (_opt.want_verbose) {
+  if (_opt->want_verbose) {
     MxPrint (evals, "evals_complete", 'v');
     MxPrint (evecs, "evecs_complete", 'm');
     fflush(stdout);
@@ -1317,14 +1331,14 @@ Calc<T>::MxFixevecsAbsorb(T *evecs, T *evals)
 
   norm2(evecs);
 
-  if (_opt.want_verbose) {
+  if (_opt->want_verbose) {
     MxPrint (evals, "evals_complete", 'v');
     MxPrint (evecs, "evecs_complete", 'm');
     fflush(stdout);
     fflush(stderr);
   }
 
-  if (_opt.want_verbose) {
+  if (_opt->want_verbose) {
     fprintf(stderr,"colsums: ");
     for (i=0; i<dim; i++) {
       csum=0.0;
@@ -1335,9 +1349,9 @@ Calc<T>::MxFixevecsAbsorb(T *evecs, T *evals)
     fprintf(stderr,"\n");
   }
 
-  if (_opt.absrb && (abscount > 1)) {
+  if (_opt->absrb && (abscount > 1)) {
     int i,j;
-    if (!_opt.quiet) fprintf(stderr, "\nWARNING: found %d additional absorbing state(s): ", abscount-1);
+    if (!_opt->quiet) fprintf(stderr, "\nWARNING: found %d additional absorbing state(s): ", abscount-1);
     for(i=1; i<dim; i++) {
       if(evals[i] == 1.) {
         for(j=0; j<dim; j++) {
@@ -1380,7 +1394,7 @@ Calc<T>::MxFixevecs(T *evecs, T *evals)
   V = new T[dim*dim]; //(T *) MxNew (dim*dim*sizeof(T));
   mxccm.mmul (V, sqrPI_, evecs, dim);
 
-  if (_opt.want_verbose)
+  if (_opt->want_verbose)
     MxPrint(V, "Eigenvectors of rate matrix M, before Fixevecs", 'm');
 
   fprintf(stderr, "Sums of EVs of rate matrix R before fixing\n");
@@ -1397,7 +1411,7 @@ Calc<T>::MxFixevecs(T *evecs, T *evals)
   sum0=0.; i=0;
   for (j=0; j<dim; j++) {
     //    if (V[dim*j+i]<0) {
-    //  if (!_opt.quiet)
+    //  if (!_opt->quiet)
     //  fprintf(stderr, "correcting negative equilib probability for state p[%d]=%g\n",j,V[dim*j+i]);
     //      V[dim*j+i]=0;
     //}
@@ -1429,7 +1443,7 @@ Calc<T>::MxFixevecs(T *evecs, T *evals)
 
   norm2(evecs);
 
-  if (_opt.want_verbose)
+  if (_opt->want_verbose)
     MxPrint(evecs, "Eigenvectors of symmetric matrix U, after Fixevecs", 'm');
 
   delete[] V; //free(V);
@@ -1475,14 +1489,14 @@ Calc<T>::MxBinWrite(T *Mx, const char what[], char c)
   //size_t info;
 
   wosis=(char *)what;
-  if (_opt.basename == NULL)
+  if (_opt->basename == NULL)
     len=strlen(suffix)+strlen(wosis)+4;
   else
-    len=strlen(_opt.basename)+strlen(wosis)+strlen(suffix)+4;
+    len=strlen(_opt->basename)+strlen(wosis)+strlen(suffix)+4;
   binfile = (char *)calloc(len, sizeof(char));
   assert(binfile != NULL);
-if(_opt.basename != NULL) {
-    strcpy(binfile, _opt.basename);
+if(_opt->basename != NULL) {
+    strcpy(binfile, _opt->basename);
     strcat(binfile, ".");
     strcat(binfile, wosis);
     strcat(binfile, ".");
@@ -1493,7 +1507,7 @@ if(_opt.basename != NULL) {
     strcat(binfile, ".");
     strcat(binfile,suffix);
   }
-  if (!_opt.quiet) fprintf(stderr, "MxBinWrite: writing %s to %s\n", wosis, binfile);
+  if (!_opt->quiet) fprintf(stderr, "MxBinWrite: writing %s to %s\n", wosis, binfile);
   BINOUT = fopen(binfile, "w");
   if (!BINOUT) {
     fprintf(stderr, "ERROR: could not open file pointer for binary outfile %s\n", binfile);
@@ -1507,7 +1521,7 @@ if(_opt.basename != NULL) {
       for(j=0; j<dim; j++){
         double val = (double)Mx[dim*i+j];
         fwrite(&val,sizeof(double),1,BINOUT);
-        //if (!_opt.quiet) fprintf(stderr, "\n");
+        //if (!_opt->quiet) fprintf(stderr, "\n");
       }
     break;
   case 'v': /* write vector entries */
@@ -1540,14 +1554,14 @@ Calc<T>::MxBinRead(T **Mx, const char what[], char c)
   //size_t info;
 
   wosis=(char*)what;
-  if (_opt.basename == NULL)
+  if (_opt->basename == NULL)
     len=strlen(suffix)+strlen(wosis)+4;
   else
-    len=strlen(_opt.basename)+strlen(wosis)+strlen(suffix)+4;
+    len=strlen(_opt->basename)+strlen(wosis)+strlen(suffix)+4;
   binfile = (char *)calloc(len, sizeof(char));
   assert(binfile != NULL);
-if(_opt.basename != NULL) {
-  strcpy(binfile, _opt.basename);
+if(_opt->basename != NULL) {
+  strcpy(binfile, _opt->basename);
   strcat(binfile, ".");
   strcat(binfile, wosis);
   strcat(binfile, ".");
@@ -1616,7 +1630,7 @@ for(i=0; i<dim; i++) {
   }
   fprintf(ASCIIOUT,"\n");
 }
-if (!_opt.quiet) fprintf(stderr, "matrix written to ASCII file\n");
+if (!_opt->quiet) fprintf(stderr, "matrix written to ASCII file\n");
 fclose(ASCIIOUT);
 }
 
@@ -1636,7 +1650,7 @@ if (!ASCIIOUT) {
 for(i=0; i<dim; i++) {
   fprintf(ASCIIOUT,"%15.10g ", (double)Mx[i]);
 }
-if (!_opt.quiet) fprintf(stderr, "vector written to ASCII file\n");
+if (!_opt->quiet) fprintf(stderr, "vector written to ASCII file\n");
 fclose(ASCIIOUT);
 }
 
@@ -1660,20 +1674,20 @@ pdiff = new T[dim];//(T *) MxNew (dim*sizeof(T));
 std::copy(U,U+dim*dim, Umerk);//U to Umerk
 
 /* solve fundamental equation */
-if (_opt.t0 == 0.0) {
-  if (_opt.method=='F') PrintProbFull(p0, dim, 0.0, _lmins);
+if (_opt->t0 == 0.0) {
+  if (_opt->method=='F') PrintProbFull(p0, dim, 0.0, _lmins);
   else PrintProb(p0, dim, 0.0);
-  _opt.t0 = _globalParameters->TZERO;
+  _opt->t0 = _globalParameters->TZERO;
 }
 
 for (i=0; i<dim; i++) U[(dim+1)*i] -= 1;
 print_settings();
-for (tt = _opt.t0; tt < _opt.t8*_opt.tinc; tt *= _opt.tinc) {
-  time = (tt<_opt.t8)? tt:(T)_opt.t8;
+for (tt = _opt->t0; tt < _opt->t8*_opt->tinc; tt *= _opt->tinc) {
+  time = (tt<_opt->t8)? tt:(T)_opt->t8;
   //memcpy(U, Umerk, dim*dim*sizeof(T));
   std::copy(Umerk,Umerk+dim*dim, U);// Umerk to U;
   for (i=0; i<dim*dim; i++) U[i]*=time;
-  em.padexp(U,Uexp,dim,30, _opt.FEPS);
+  em.padexp(U,Uexp,dim,30, _opt->FEPS);
   x = 0.;
   for(j=0; j<dim*dim; j++) x+=Uexp[j];
   for(j=0; j<dim*dim; j++) Uexp[j]*=(T)dim/x;
@@ -1703,8 +1717,8 @@ for (tt = _opt.t0; tt < _opt.t8*_opt.tinc; tt *= _opt.tinc) {
   count++; /* # of iterations */
 
   if ( ((check-1.) < -0.01) || ((check-1.) > 0.01) ) {
-    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", (double)time, (double)check, (_opt.num_err == 'R'?"rescaling":"exiting") );
-    if (_opt.num_err == 'H') {
+    fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", (double)time, (double)check, (_opt->num_err == 'R'?"rescaling":"exiting") );
+    if (_opt->num_err == 'H') {
       //clean up before writing error.
       delete[] Uexp;//free(Uexp);
       delete[] pt;//free(pt);
@@ -1737,12 +1751,12 @@ Calc<T>::MxFPT(T *U, T *p8, FILE *out)
 int i,j;
 
 //fprintf(stderr, "in MxFPT\n");
-//if(_opt.want_verbose) MxPrint (U,"U" , 'm');
+//if(_opt->want_verbose) MxPrint (U,"U" , 'm');
 T *Z=NULL, *M=NULL;
 
 //MxPrint(U, "U mxfpt", 'm');
 
-if (_opt.absrb) {
+if (_opt->absrb) {
   Z = new T[(dim-1)*(dim-1)]; //(T *) MxNew((dim-1)*(dim-1)*sizeof(T));
 
   int i,j,nrhs,nfo,*ipiv=NULL;
@@ -1752,7 +1766,7 @@ if (_opt.absrb) {
 
   for(i = 0; i < dim-1; i++)
   for(j = 0; j < dim-1; j++) {
-    Z[(dim-1)*i+j] = (T)((i==j && _opt.useplusI?1.0:0.0) - U[dim*i+j]); /* I-U = -Q  (U is transposed) without absorbing state*/
+    Z[(dim-1)*i+j] = (T)((i==j && _opt->useplusI?1.0:0.0) - U[dim*i+j]); /* I-U = -Q  (U is transposed) without absorbing state*/
   }
 
   ipiv = (int *)malloc((dim-1)*sizeof(int));
@@ -1764,7 +1778,7 @@ if (_opt.absrb) {
 
   // fix non-zero in real absorbing state
   for(i=0; i<dim-1; i++) {
-    B[i] -= B[_opt.real_abs];
+    B[i] -= B[_opt->real_abs];
   }
   dim--;
   MxFPrint(B, "Absorbing times: ", 'v', out, out!=stderr);
@@ -1780,12 +1794,12 @@ else { // non-absorbing case
 
   for(i = 0; i < dim; i++)
   for(j = 0; j < dim; j++) {
-    Z[dim*i+j] = (T)((i==j&& _opt.useplusI?1.0:0.0) - U[dim*j+i] + p8[j]); /* I-U+W = W-Q  (U is transposed)*/
+    Z[dim*i+j] = (T)((i==j&& _opt->useplusI?1.0:0.0) - U[dim*j+i] + p8[j]); /* I-U+W = W-Q  (U is transposed)*/
   }
 
-  //if(_opt.want_verbose) MxPrint (Z,"I-U+W" , 'm');
-  mxccm.minv(Z,dim, _opt.FEPS);
-  //if(_opt.want_verbose)MxPrint (Z,"Fundamental matrix Z=inv(I-U+W)" , 'm');
+  //if(_opt->want_verbose) MxPrint (Z,"I-U+W" , 'm');
+  mxccm.minv(Z,dim, _opt->FEPS);
+  //if(_opt->want_verbose)MxPrint (Z,"Fundamental matrix Z=inv(I-U+W)" , 'm');
 
   M = new T[dim*dim];//(T *) MxNew(dim*dim*sizeof(T));
   for(i = 0; i < dim; i++) {
@@ -1852,7 +1866,7 @@ for(i=0; i<n; i++) {
   for (j=0; j<n; j++) {
     int ui = (i>=state?i+1:i);
     int uj = (j>=state?j+1:j);
-    A[n*i+j] = (T)(U[dim*ui+uj] - (i==j && _opt.useplusI ?1.0:0.0));
+    A[n*i+j] = (T)(U[dim*ui+uj] - (i==j && _opt->useplusI ?1.0:0.0));
   }
 }
 
@@ -1932,7 +1946,7 @@ for (i=0; i<dim; i++) {
 //MxPrint(U, "U", 'm');
 //#MxPrint(P, "P", 'm');
 
-if (!_opt.absrb) {
+if (!_opt->absrb) {
   // ergodic option
   M = (T *)malloc(dim*dim*sizeof(T));
   for (i=0; i<dim; i++) {
@@ -1992,9 +2006,9 @@ Calc<T>::MxEVLapackSym(T *U) {
 /*   extern void dsyev_(char *jobz, char *uplo, int *n, double *A,int *lda, */
 /*         double *w, double *work, int *lwork, int *info); */
 T abstol;
-abstol = _opt.FEPS;
+abstol = _opt->FEPS;
 
-if (_opt.want_verbose) fprintf(stderr, "FEPS precision %20.10g\n", (double)abstol);
+if (_opt->want_verbose) fprintf(stderr, "FEPS precision %20.10g\n", (double)abstol);
 
 T *work=NULL, vl, vu;   // unused or inputs
 int il, iu, m, lwork, liwork, *iwork=NULL, *ifail=NULL, *isuppz=NULL, nfo;// unused or inputs
@@ -2005,7 +2019,7 @@ iwork = (int *) malloc (liwork * sizeof(int));
 ifail = (int *) malloc (dim * sizeof(int));
 isuppz = (int *) malloc (2*dim * sizeof(int));
 
-//if (!_opt.useplusI) for (il=0; il<dim; il++) U[il*dim+il]-=1.0;
+//if (!_opt->useplusI) for (il=0; il<dim; il++) U[il*dim+il]-=1.0;
 
 // works only with: dim, U, evals, evecs
 solver->Mx_Dsyevx("V", "A", "U",&dim, U, &dim, &vl, &vu, &il, &iu,
@@ -2035,7 +2049,7 @@ if(nfo != 0) {
   exit(EXIT_FAILURE);
 }
 
-//if (!_opt.useplusI) for (il=0; il<dim; il++) U[il*dim+il]+=1.0;
+//if (!_opt->useplusI) for (il=0; il<dim; il++) U[il*dim+il]+=1.0;
 
 free(work);
 free(iwork);
@@ -2091,7 +2105,7 @@ solver->Mx_Dgeevx("B", "N", "V", "V", &dim, origU, &dim, evals_re, evals_im, tmp
 
 for (i=0; i<dim; i++) evals[i]=evals_re[i];
 for (i=0; i<dim; i++)
-if ((evals_re[i] != 0.0) && abs(evals_im[i]/evals_re[i])>_opt.FEPS)
+if ((evals_re[i] != 0.0) && abs(evals_im[i]/evals_re[i])>_opt->FEPS)
 fprintf(stderr,"eigenvalue %d is %g + i*%g, which is somewhat complex\n",
     i, (double)evals_re[i], (double)evals_im[i]);
 
@@ -2119,6 +2133,7 @@ int j=1;
 int k;
 
 done = new int[dim];
+std::fill_n(done,dim,0);
 
 for(k=1; k<dim; k++) {
   res[k] = 0.0;
@@ -2128,9 +2143,9 @@ res[0] = 1.0;
 // while there are unsolved states
 while (count != dim) {
   for (j=1; j<dim; j++) {
-    if (res[j]>0.) continue;
-    if (U[dim*i+j]>0.0) {
-      if (U[dim*j+i]==0.0) {
+    if (res[j]>(T)0.) continue;
+    if (U[dim*i+j]>(T)0.0) {
+      if (U[dim*j+i]==(T)0.0) {
         fprintf(stderr, "Local balance is unsatisfiable at U[%d][%d]=%f\n", i, j, (double)U[dim*i+j]);
         exit(EXIT_FAILURE);
       }
@@ -2139,8 +2154,8 @@ while (count != dim) {
       tmp *= res[i];
       tmp /= U[dim*i+j];
       res[j] = tmp;
-      count ++;
-      if (res[j]>1. || res[j]<=0.) {
+      count++;
+      if (res[j]>(T)1. || res[j]<=(T)0.) {
         fprintf(stderr, "Weird eqilibrium pop for state %d", j);
         MxPrint(res, "p8 (local balance)", 'v');
       }
@@ -2148,7 +2163,7 @@ while (count != dim) {
   }
   done[i] = 1;
   for (i=1; i<dim; i++) {
-    if ((!done[i]) && (res[i]>0.)) break;
+    if ((!done[i]) && (res[i]>(T)0.)) break;
   }
 
   if (i==dim && count<dim) {
@@ -2189,9 +2204,9 @@ template<typename T>
 void
 Calc<T>::MxMemoryCleanUp (void)
 {
-if(_opt.sequence) free(_opt.sequence);
-if(_opt.basename) free(_opt.basename);
-if(_opt.fpt_file) free(_opt.fpt_file);
+if(_opt->sequence) free(_opt->sequence);
+if(_opt->basename) free(_opt->basename);
+if(_opt->fpt_file) free(_opt->fpt_file);
 delete[] _sqrPI;
 delete[] sqrPI_;
 delete[]evecs;
@@ -2208,21 +2223,21 @@ printf(
     "# Sequence: %s\n"
     "# Method: %c  Start Time: %.2f  Stop Time: %.2f Temperature: %.2f\n",
     time_stamp(),
-    _opt.sequence,
-    _opt.method,
-    _opt.t0,
-    _opt.t8,
-    _opt.T
+    _opt->sequence,
+    _opt->method,
+    _opt->t0,
+    _opt->t8,
+    _opt->T
 );
-if(_opt.basename != NULL) printf("# basename: %s\n",_opt.basename);
+if(_opt->basename != NULL) printf("# basename: %s\n",_opt->basename);
 else printf("# basename: <stdin>\n");
-if (_opt.tinc) printf("# time increment: %.2f\n", _opt.tinc);
-else printf("# time increment: %.2f \n", _opt.tinc);
-if(_opt.want_degenerate == 1)printf("# degeneracy:  on\n");
+if (_opt->tinc) printf("# time increment: %.2f\n", _opt->tinc);
+else printf("# time increment: %.2f \n", _opt->tinc);
+if(_opt->want_degenerate == 1)printf("# degeneracy:  on\n");
 else printf("# degeneracy:  off\n");
-if (_opt.absrb < 1) printf("# absorbing lmin: none\n");
-else printf("# absorbing lmin: %d\n", _opt.absrb);
-if (_opt.n > 0) printf("# nlmins: %d\n", _opt.n);
+if (_opt->absrb < 1) printf("# absorbing lmin: none\n");
+else printf("# absorbing lmin: %d\n", _opt->absrb);
+if (_opt->n > 0) printf("# nlmins: %d\n", _opt->n);
 else printf("# nlmins: till EOF\n");
 }
 
@@ -2286,7 +2301,7 @@ for(i = 0; i < dim; i++) /* make matrix symmetric */
   if (i != j)
   D[dim*j+i] = D[dim*i+j];
 }
-if (_opt.want_verbose) {
+if (_opt->want_verbose) {
   sprintf (Aname, "%s", "D (degeneracies)");
   MxPrint (D, Aname, 'm');
 }
