@@ -20,8 +20,9 @@ using namespace treekinCastableTypes;
 
 template<class T>
 T *convertRates(double *rates, size_t dim){
-  T *data = new T[dim*dim];
-  for(size_t i = 0; i < dim*dim; i++){
+  size_t length = dim*dim;
+  T *data = new T[length];
+  for(size_t i = 0; i < length; i++){
    data[i] = (T)(rates[i]);
   }
   free(rates);

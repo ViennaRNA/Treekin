@@ -150,7 +150,7 @@ int Calc<T>::MxEgro(T **Up, T **p0p, int dim)
 
   // lokalize first non-empty state
   int first = 0;
-  while (p0[first]==0.0) first++;
+  while (p0[first]==(T)0.0) first++;
 
   // make set of all non-empty states
   std::set<int> set_ergo;
@@ -167,7 +167,7 @@ int Calc<T>::MxEgro(T **Up, T **p0p, int dim)
     // collect contingency
     for (int i=0; i<dim; i++) {
       if (i==to_do) continue;
-      if (U[i*dim + to_do]>0.0 && (int)set_ergo.count(i)==0) {
+      if (U[i*dim + to_do]>(T)0.0 && (int)set_ergo.count(i)==0) {
         set_ergo.insert(i);
         que_ergo.push(i);
       }
@@ -179,7 +179,7 @@ int Calc<T>::MxEgro(T **Up, T **p0p, int dim)
   else {
     int i=first+1;
     while (i<dim) {
-      if (p0[i]>0.0 && set_ergo.count(i)==0) { // disconnected :(
+      if (p0[i]>(T)0.0 && set_ergo.count(i)==0) { // disconnected :(
         fprintf(stderr, "ERROR: Matrix is non-ergodic and initial populations are disconected!! Exiting...\n");
         exit(-1);
       }
@@ -201,21 +201,20 @@ int Calc<T>::MxEgro(T **Up, T **p0p, int dim)
     }
 
     dim = set_ergo.size();
-    *Up = (T*)realloc(U, dim*dim*sizeof(T));
-
-    /*TODO: Do this in c++ style
-     * newbuf = new Type[newsize];
-        std::copy_n(oldbuf, std::min(oldsize, newsize), newbuf);
-        delete[] oldbuf;
-        return newbuf;
-     *
-     */
+    //*Up = (T*)realloc(U, dim*dim*sizeof(T));
+    *Up = new T[dim*dim];
+    std::copy_n(U, dim*dim, *Up);
+    delete[] U;
 
     // reorganize p0
     for (int i=0; i<(int)set_ergo.size(); i++) {
       p0[i]=p0[reorganize[i]];
     }
-    *p0p = (T*)realloc(p0, dim*sizeof(T));
+    //*p0p = (T*)realloc(p0, dim*sizeof(T));
+    T* tmp = *p0p;
+    *p0p = new T[dim];
+    std::copy_n(tmp, dim, *p0p);
+    delete[] tmp;
 
     if (!_opt.quiet) fprintf(stderr, "WARNING: Matrix is non-ergodic! Decreasing dimension to %d.\n", dim);
     //MxPrint(U, "Ergodic U", 'm');
@@ -380,7 +379,7 @@ int * Calc<T>::MxErgoEigen(T *U, int dim)
     // collect contingency
     for (int i=0; i<dim; i++) {
       if (i==to_do) continue;
-      if (U[i*dim + to_do]!=0.0 && U[to_do*dim + i]!=0.0 && !reached[i]) {
+      if ((double)U[i*dim + to_do]!=0.0 && (double)U[to_do*dim + i]!=0.0 && !reached[i]) {
         reached[i] = true;
         que_ergo.push(i);
         count++;
@@ -450,7 +449,7 @@ Calc<T>::MxStartVec (T **p0)
 
   if (_opt.pini) {
     for (i = 1; i < (int) *_opt.pini; i+=2)
-      pzero[(int)_opt.pini[i]-1] = _opt.pini[i+1];
+      pzero[(int)_opt.pini[i]-1] = (T)_opt.pini[i+1];
     /* -1 because our lmins start with 1, not with 0 (as Data does ) */
   } else {
     // all into first state...
@@ -1140,7 +1139,7 @@ Calc<T>::MxMethodeINPUT (BarData *Data, T *Input)
   else { /*== non-absorbing states ==*/
     U = new T[dim*dim]; //(T *) MxNew(dim*dim*sizeof(T));
     //memcpy(U, Input, dim*dim*sizeof(T));
-    std::copy (Input, U+dim*dim, U );
+    std::copy (Input, Input+dim*dim, U );
   }      /*== end non-absorbing states ==*/
 
   /* diagonal elements */
