@@ -13,7 +13,13 @@
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
 
-#define TZERO 0.0001
+#include <cstdio>
+#include <getopt.h>
+#include "treekin_cmdline.h"
+//#include <stdlib.h>
+//#include <string.h>
+//#include <errno.h>
+//#include <limits.h>
 
 //typedef enum { false = 0, true = 1 } bool;
 
@@ -61,14 +67,40 @@ typedef struct {         /* command-line options */
   int warnings;          // all warnings on?
 } treekin_options;
 
-treekin_options opt;
-int lmins; /* # of lmins in the barrier tree, needed in FULL process */
+// determines double precision machine parameters
+extern "C" double dlamch_(char *cmach); //TODO: replace this for each mpack data type.
 
-void parse_commandline(int argc, char **argv);
+class Globals {
 
-void free_gengetopt();
+private:
+  static Globals* instance;
+  Globals() : lmins(0),opt(){}
+  ~Globals(){}
+  void ini_globs(void);
+  void set_parameters(void);
+  void display_settings(void);
+  void to_basename(char *arg);
+  gengetopt_args_info args_info;
 
-void MxFPrint(double *mx, char *name, char T, FILE *out, int pure);
-void MxPrint(double *mx, char *name, char T);
+public:
+  treekin_options opt;
+  int lmins; /* # of lmins in the barrier tree, needed in FULL process */
+
+  static double TZERO;
+
+  static Globals* initGlobals(){
+    if(instance == NULL){
+      instance = new Globals();
+    }
+    return instance;
+  }
+  static void destroy();
+
+  void parse_commandline(int argc, char **argv);
+  void free_gengetopt();
+};
+
+
+
 #endif
 /* End of file */

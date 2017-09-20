@@ -4,18 +4,20 @@ bin_PROGRAMS = treekin
 
 treekin_LDADD=$(mpack_LIBS)
 
-treekin_SOURCES = main.c\
-                  globals.c globals.h \
-                  calc.c  calc.h \
-                  mxccm.c mxccm.h \
-                  barparser.c barparser.h \
-                  exp_matrix.c  exp_matrix.h \
+treekin_SOURCES = mxccm.cpp mxccm.h \
+                  globals.cpp globals.h \
+                  barparser.cpp barparser.h bardata.h\
+                  calcpp.cpp  calcpp.h \
+                  calc.cpp calc.h \
+                  exp_matrix.cpp  exp_matrix.h \
                   treekin_cmdline.c treekin_cmdline.h \
-                  calcpp.cpp  calcpp.h
+                  treekinCastableTypes.h main.cpp
+                  
+                  
 
 EXTRA_DIST = treekin.ggo treekin_cmdline.c treekin_cmdline.h
 
-globals.c:  treekin_cmdline.h
+globals.cpp:  treekin_cmdline.h
 
 if MAKE_CMDLINE_PARSER
 treekin_cmdline.h treekin_cmdline.c:  treekin.ggo

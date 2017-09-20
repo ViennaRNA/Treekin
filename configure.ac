@@ -6,7 +6,7 @@ dnl ---------------------------------------------------------------------------
 
 AC_INIT([Treekin], 0.4.1, [mtw@tbi.univie.ac.at], [Treekin], [http://www.tbi.univie.ac.at/RNA/Treekin])
 AC_CONFIG_AUX_DIR(config)
-AC_CONFIG_SRCDIR(calc.c)
+AC_CONFIG_SRCDIR(calc.cpp)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE
@@ -214,7 +214,7 @@ if test "$enable_mpack" = "yes"; then
 fi
 
 if test "$enable_mpack" = "yes"; then
-	CPPFLAGS="-DWITH_MPACK $CPPFLAGS"
+	CPPFLAGS=" -DWITH_MPACK $CPPFLAGS"
 fi
 
 # error output if MPACK not found

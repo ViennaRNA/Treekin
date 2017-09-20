@@ -10,6 +10,7 @@
 /*=                             treekin                           =*/
 /*=================================================================*/
 
+/*
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,19 +19,27 @@
 
 #include <getopt.h>
 
-#include "globals.h"
+
 #include "treekin_cmdline.h"
+*/
+#include <limits.h>
+#include <cstring>
+#include <cstdlib>
+#include "globals.h"
 
-static void ini_globs(void);
-static void set_parameters(void);
-static void display_settings(void);
-static void to_basename(char *arg);
+double Globals::TZERO = 0.0001;
+Globals* Globals::instance = NULL;
 
-static struct gengetopt_args_info args_info;
+void Globals::destroy(){
+  if(instance != NULL){
+    delete instance;
+    instance = NULL;
+  }
+}
 
 /*==============================*/
 void
-parse_commandline(int argc, char **argv)
+Globals::parse_commandline(int argc, char **argv)
 {
   ini_globs();
   if (cmdline_parser (argc, argv, &args_info) != 0) {
@@ -70,14 +79,14 @@ parse_commandline(int argc, char **argv)
   set_parameters();
 }
 
-void free_gengetopt()
+void Globals::free_gengetopt()
 {
   cmdline_parser_free(&args_info);
 }
 
 /*==============================*/
-static void
-to_basename(char *arg)
+void
+Globals::to_basename(char *arg)
 {
   int len;
   char *s=NULL, *t=NULL;
@@ -93,9 +102,74 @@ to_basename(char *arg)
   free(s);
 }
 
+#ifdef WITH_MPACK_QD
+int is_QD_available(){
+  return 1;
+}
+#else
+int is_QD_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_DD
+int is_DD_available(){
+  return 1;
+}
+#else
+int is_DD_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_GMP
+int is_GMP_available(){
+  return 1;
+}
+#else
+int is_GMP_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_MPFR
+int is_MPFR_available(){
+  return 1;
+}
+#else
+int is_MPFR_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK___FLOAT128
+int is___FLOAT128_available(){
+  return 1;
+}
+#else
+int is___FLOAT128_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_LD
+int is_LD_available(){
+  return 1;
+}
+#else
+int is_LD_available(){
+  return 0;
+}
+#endif
+#ifdef WITH_MPACK_DOUBLE
+int is_DOUBLE_available(){
+  return 1;
+}
+#else
+int is_DOUBLE_available(){
+  return 0;
+}
+#endif
+
+
 /*==============================*/
-static void
-set_parameters(void)
+void
+Globals::set_parameters(void)
 {
   if(strncmp(args_info.method_arg, "F", 1)==0)
     opt.method = 'F';
@@ -108,9 +182,8 @@ set_parameters(void)
     opt.num_err = 'R';
 
   opt.FEPS = args_info.feps_arg;
-  // determines double precision machine parameters
-  extern double dlamch_(char *cmach);
-  if (opt.FEPS<0.0) opt.FEPS = 2*dlamch_("S");
+
+  if (opt.FEPS<0.0) opt.FEPS = 2*dlamch_((char *)"S");
 
   opt.useplusI = args_info.useplusI_flag;
 
@@ -271,71 +344,6 @@ set_parameters(void)
     opt.mpackMethod_Bits = args_info.mpack_precision_arg;
   }
   if(args_info.mpack_method_given){
-
-#ifdef WITH_MPACK_QD
-int is_QD_available(){
-  return 1;
-}
-#else
-int is_QD_available(){
-  return 0;
-}
-#endif
-#ifdef WITH_MPACK_DD
-int is_DD_available(){
-  return 1;
-}
-#else
-int is_DD_available(){
-  return 0;
-}
-#endif
-#ifdef WITH_MPACK_GMP
-int is_GMP_available(){
-  return 1;
-}
-#else
-int is_GMP_available(){
-  return 0;
-}
-#endif
-#ifdef WITH_MPACK_MPFR
-int is_MPFR_available(){
-  return 1;
-}
-#else
-int is_MPFR_available(){
-  return 0;
-}
-#endif
-#ifdef WITH_MPACK___FLOAT128
-int is___FLOAT128_available(){
-  return 1;
-}
-#else
-int is___FLOAT128_available(){
-  return 0;
-}
-#endif
-#ifdef WITH_MPACK_LD
-int is_LD_available(){
-  return 1;
-}
-#else
-int is_LD_available(){
-  return 0;
-}
-#endif
-#ifdef WITH_MPACK_DOUBLE
-int is_DOUBLE_available(){
-  return 1;
-}
-#else
-int is_DOUBLE_available(){
-  return 0;
-}
-#endif
-
     if (strcmp(args_info.mpack_method_arg, "QD") == 0) {
       if(!is_QD_available()){
         fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
@@ -393,8 +401,8 @@ int is_DOUBLE_available(){
 }
 
 /*==============================*/
-static void
-ini_globs(void)
+void
+Globals::ini_globs(void)
 {
   opt.absrb           =          0;
   opt.real_abs        =          0;
@@ -426,8 +434,8 @@ ini_globs(void)
 }
 
 /*==============================*/
-static void
-display_settings(void)
+void
+Globals::display_settings(void)
 {
   int i,j;
   fprintf(stderr,
@@ -470,7 +478,5 @@ display_settings(void)
             (int)opt.pini[j],opt.pini[j+1]);
   }
 }
-
-/* End of file */
 
 
