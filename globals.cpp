@@ -10,28 +10,25 @@
 /*=                             treekin                           =*/
 /*=================================================================*/
 
-/*
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <limits.h>
-
-#include <getopt.h>
-
-
-#include "treekin_cmdline.h"
-*/
 #include <limits.h>
 #include <cstring>
 #include <cstdlib>
 #include "globals.h"
 
+/* determines double precision machine parameters
+ * it is only used for lapack.
+ * The mpack methods use the smallest possible epsilon for each
+ * data type.
+ */
+extern "C" double dlamch_(char *cmach);
+// default start time
 double Globals::TZERO = 0.0001;
+
 Globals* Globals::instance = NULL;
 
 void Globals::destroy(){
   if(instance != NULL){
+    instance->free_gengetopt();
     delete instance;
     instance = NULL;
   }

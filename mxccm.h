@@ -30,39 +30,39 @@ public:
    * output: a - eigenvectors, ev - eigenvalues
    */
   template<typename T>
-  void eigen(T *a,T *ev,int n);
+  static void eigen(T *a,T *ev,int n);
 
   /**
    * Perform a QR reduction of a real symmetric tridiagonal matrix
    * to diagonal form and update an orthogonal transformation matrix.
    */
   template<typename T>
-  int qrevec(T *ev,T *v,T *d,int m, double epsilon);
+  static int qrevec(T *ev,T *v,T *d,int m, double epsilon);
 
   /**
    * Transform a real symmetric matrix to tridiagonal form and
    * compute the orthogonal matrix of this transformation.
    */
   template<typename T>
-  void housev(T *a,T *d,T *dp,int n);
+  static void housev(T *a,T *d,T *dp,int n);
 
   /**
    * Multiply two real square matrices C = A * B.
    */
   template<typename T>
-  void mmul(T *c,T *a,T *b,int n);
+  static void mmul(T *c,T *a,T *b,int n);
 
   /**
    * Multiply a vector by a matrix vp = mat*v.
    */
   template<typename T>
-  void vmul(T *vp,T *mat,T *v,int n);
+  static void vmul(T *vp,T *mat,T *v,int n);
 
   /**
    * Transpose a real square matrix in place A -> A~.
    */
   template<typename T>
-  void trnm(T *a,int m);
+  static void trnm(T *a,int m);
 
   /**
    * Copy an array a = b.
@@ -85,7 +85,7 @@ public:
 
   template<typename T>
   int
-  solv(T *a,T *b,int n, double epsilon);
+  static solv(T *a,T *b,int n, double epsilon);
 };
 
 template<typename T>
@@ -206,7 +206,7 @@ Mxccm::housev(T *a,T *d,T *dp,int n)
   d[j]= *pc;
   dp[j]= *(pc+1);
   d[j+1]= *(pc+=n+1);
-  delete[] qs; //free(qs);
+  delete[] qs;
   for(i=0,m=n+n,p=pc; i<m; ++i) *p-- =0.;
   *pc=1.;
   *(pc-=n+1)=1.;

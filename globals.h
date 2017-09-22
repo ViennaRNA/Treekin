@@ -16,12 +16,6 @@
 #include <cstdio>
 #include <getopt.h>
 #include "treekin_cmdline.h"
-//#include <stdlib.h>
-//#include <string.h>
-//#include <errno.h>
-//#include <limits.h>
-
-//typedef enum { false = 0, true = 1 } bool;
 
 typedef enum {MPACK_GMP = 2, MPACK_MPFR = 4, MPACK_DD = 8, MPACK_QD = 16, MPACK_FLOAT128 = 32, MPACK_LD = 64, MPACK_DOUBLE = 128 } MPackMethod;
 
@@ -66,9 +60,6 @@ typedef struct {         /* command-line options */
   int mpackMethod;       // MPackMethod (compromise between precision and speed)
   int warnings;          // all warnings on?
 } treekin_options;
-
-// determines double precision machine parameters
-extern "C" double dlamch_(char *cmach); //TODO: replace this for each mpack data type.
 
 class Globals {
 

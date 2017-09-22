@@ -13,22 +13,6 @@
 #ifndef _EXP_MATRIX_H_
 #define _EXP_MATRIX_H_
 
-/*
-#ifdef WITH_MPACK
-  #ifdef WITH_MPACK_GMP
-      #include <gmpxx.h>
-  #endif
-  #ifdef WITH_MPACK_QD
-      #include <qd/qd_real.h>
-  #endif
-  #ifdef WITH_MPACK_DD
-      #include <qd/dd_real.h>
-  #endif
-  #ifdef WITH_MPACK_MPFR
-      #include <mpack/mpreal.h>
-  #endif
-#endif
-*/
 #ifdef WITH_MPACK
 #ifdef WITH_MPACK_GMP
    #include <gmpxx.h>
@@ -104,19 +88,17 @@ void
 ExpMatrix::ipmmul(T *a,T *b, T *c,int n)
 {
   T *T1,*T2;
+  size_t n_size = n*n;
 
-  T1 = new T[n*n]; //(T *) malloc(n*n*sizeof(T));
-  T2 = new T[n*n]; // (T *) malloc(n*n*sizeof(T));
+  T1 = new T[n_size];
+  T2 = new T[n_size];
 
-  //memcpy(T1,a,sizeof(T)*n*n);
-  std::copy(a, a+n*n, T1);
-  //memcpy(T2,b,sizeof(T)*n*n);
-  std::copy(b, b+n*n, T2);
+  std::copy_n(a, n_size, T1);
+  std::copy_n(b, n_size, T2);
   mxccm.mmul(T1,T2,c,n);
-  //memcpy(a,T1,sizeof(T)*n*n);
-  std::copy(T1, T1+n*n, a);
-  delete[] T2; //free(T2);
-  delete[] T1; //free(T1);
+  std::copy_n(T1, n_size, a);
+  delete[] T2;
+  delete[] T1;
   return;
 }
 
@@ -139,7 +121,7 @@ ExpMatrix::padexp(T *from,T *out,int n,int ord, double epsilon)
   T scfac;
 
 
-  mat_in = new T[n*n]; //(T *) malloc(n*n*sizeof(T));
+  mat_in = new T[n*n];
   for (i=0; i<n*n; i++) mat_in[i] = from[i];
 
   /* get the infinity norm of the matrix for scaling/squaring*/
@@ -164,10 +146,10 @@ ExpMatrix::padexp(T *from,T *out,int n,int ord, double epsilon)
      X2 the squared input matrix    ,
      MN the numerator polynomial    ,
      MD the denominator polynomial */
-  cp = new T[ord+1]; //(T *) malloc((ord+1)*sizeof(T));
-  X2 = new T[n*n]; // (T *) malloc(n*n*sizeof(T));
-  MN = new T[n*n]; // (T *) malloc(n*n*sizeof(T));
-  MD = new T[n*n]; //(T *) malloc(n*n*sizeof(T));
+  cp = new T[ord+1];
+  X2 = new T[n*n];
+  MN = new T[n*n];
+  MD = new T[n*n];
 
   cp[0]=1.;
   for (i=1; i<=ord; i++)
@@ -204,12 +186,13 @@ ExpMatrix::padexp(T *from,T *out,int n,int ord, double epsilon)
       ipmmul(mat_in,mat_in,mat_in,n);
   }
 
-  for (i=0; i<n*n; i++) out[i] = (T) mat_in[i];
-  delete[] MD; //free(MD);
-  delete[] MN; //free(MN);
-  delete[] X2; //free(X2);
-  delete[] cp; //free(cp);
-  delete[] mat_in; //free(mat_in);
+  std::copy_n(mat_in,n*n,out);
+
+  delete[] MD;
+  delete[] MN;
+  delete[] X2;
+  delete[] cp;
+  delete[] mat_in;
 }
 
 

@@ -786,8 +786,8 @@ void
 Calc<T>::MxRecover (T **_S, T *P8)
 {
   MxDiagHelper(P8);
-  delete[] evecs; //free(evecs);
-  delete[] evals; //free(evals);
+  delete[] evecs;
+  delete[] evals;
 
   if(MxBinRead(&evecs, "evecs", 'm') != dim ) {
     fprintf(stderr, "ERROR: MxBinRead() returns wrong dimension for evecs\n");
@@ -826,10 +826,10 @@ int Calc<T>::ConvergenceReached(T *p8, T *pt, int dim, int full) {
   return false;
 }
 
-/*==*/
-/* S which comes into this function contains the (right) eigenvectors
-calculated by LAPACK */
-
+/**
+ * @param S which comes into this function contains the (right)
+ * eigenvectors calculated by LAPACK
+ */
 template<typename T>
 void
 Calc<T>::MxIterate (T *p0, T *p8, T *S)
@@ -1013,7 +1013,6 @@ Calc<T>::MxIterate (T *p0, T *p8, T *S)
 }
 
 /*==*/
-
 template<typename T>
 T*
 Calc<T>::MxMethodeA (BarData *Data)
@@ -1036,9 +1035,8 @@ Calc<T>::MxMethodeA (BarData *Data)
 
   int i,j,real_abs = 0;
   T m_saddle, Zabs, abs_rate;
-  T *tmpU; //, *U;
 
-  T* U = new T[dim*dim]; //(T *) MxNew ((dim*dim)*sizeof(T));
+  T* U = new T[dim*dim];
 
   for( i = 0; i < dim; i++) {
     for( j = i+1; j < dim; j++) {
@@ -1056,7 +1054,7 @@ Calc<T>::MxMethodeA (BarData *Data)
   if(_opt->absrb) { /*==== absorbing  states ====*/
     dim++;
     fprintf(stderr, "dim increased to %i\n", dim);
-    tmpU = new T[dim*dim]; //(T *) MxNew(dim*dim*sizeof(T));
+    T * tmpU = new T[dim*dim];
     real_abs = _opt->absrb; /* the original absorbing lmin */
     real_abs--;
     _opt->absrb = dim; /* the 'new' abs state = last row/column of rate matrix */
@@ -1092,7 +1090,6 @@ Calc<T>::MxMethodeA (BarData *Data)
 }
 
 /*==*/
-
 template<typename T>
 T*
 Calc<T>::MxMethodeFULL (T *R)
@@ -1120,7 +1117,6 @@ Calc<T>::MxMethodeFULL (T *R)
 }
 
 /*==*/
-
 template<typename T>
 T*
 Calc<T>::MxMethodeINPUT (BarData *Data, T *Input)
@@ -1227,9 +1223,9 @@ void Calc<T>::MxFPrint(T *mx, const char *name, char c, FILE *out, int pure)
   }
 }
 
-/*==*/
-/* print matrix stored in ccmath-format */
-
+/**
+ * print matrix stored in ccmath-format
+ */
 template<typename T>
 void
 Calc<T>::MxPrint(T *mx, const char *name, char c)
@@ -1239,7 +1235,6 @@ Calc<T>::MxPrint(T *mx, const char *name, char c)
 
 
 /*==*/
-
 template<typename T>
 void
 Calc<T>::norm2(T *mx)
@@ -1266,7 +1261,6 @@ Calc<T>::norm2(T *mx)
 //#define abs(x) ((x)>0.0?(x):(-x))
 
 /*==*/
-
 template<typename T>
 void
 Calc<T>::MxFixevecsAbsorb(T *evecs, T *evals)
@@ -1450,9 +1444,9 @@ Calc<T>::MxFixevecs(T *evecs, T *evals)
 }
 
 
-/*==*/
-/* sort evecs,evals */
-
+/**
+ * sort evecs,eval
+ */
 template<typename T>
 void
 Calc<T>::MxSortEig(T *evals, T *evecs)
@@ -1477,7 +1471,6 @@ Calc<T>::MxSortEig(T *evals, T *evecs)
 }
 
 /*==*/
-
 template<typename T>
 void
 Calc<T>::MxBinWrite(T *Mx, const char what[], char c)
@@ -1540,7 +1533,6 @@ if(_opt->basename != NULL) {
 }
 
 /*==*/
-
 template<typename T>
 int
 Calc<T>::MxBinRead(T **Mx, const char what[], char c)
@@ -1720,25 +1712,25 @@ for (tt = _opt->t0; tt < _opt->t8*_opt->tinc; tt *= _opt->tinc) {
     fprintf(stderr, "overall probability at time %e is %e != 1.0 %s!\n", (double)time, (double)check, (_opt->num_err == 'R'?"rescaling":"exiting") );
     if (_opt->num_err == 'H') {
       //clean up before writing error.
-      delete[] Uexp;//free(Uexp);
-      delete[] pt;//free(pt);
-      delete[] pdiff;//free(pdiff);
-      delete[] Umerk;//free(Umerk);
+      delete[] Uexp;
+      delete[] pt;
+      delete[] pdiff;
+      delete[] Umerk;
       return 1;
       //exit(EXIT_FAILURE); //Exit in main.
     }
   }
-  fill_n(pt, dim, 0); //memset(pt, 0, dim*sizeof(T));
-  fill_n(pdiff, dim, 0);//memset(pdiff, 0, dim*sizeof(T));
-  fill_n(Uexp, dim*dim, 0);//memset(Uexp, 0, dim*dim*sizeof(T));
-  fill_n(U, dim*dim, 0);//memset(U, 0, dim*dim*sizeof(T));
+  fill_n(pt, dim, 0);
+  fill_n(pdiff, dim, 0);
+  fill_n(Uexp, dim*dim, 0);
+  //fill_n(U, dim*dim, 0);
 
 }
 printf("# of iterations: %d\n", count);
-delete[] Uexp; //free(Uexp);
-delete[] pt;//free(pt);
-delete[] pdiff;//free(pdiff);
-delete[] Umerk;//free(Umerk);
+delete[] Uexp;
+delete[] pt;
+delete[] pdiff;
+delete[] Umerk;
 
 return 0;
 }
@@ -1757,10 +1749,10 @@ T *Z=NULL, *M=NULL;
 //MxPrint(U, "U mxfpt", 'm');
 
 if (_opt->absrb) {
-  Z = new T[(dim-1)*(dim-1)]; //(T *) MxNew((dim-1)*(dim-1)*sizeof(T));
+  Z = new T[(dim-1)*(dim-1)];
 
   int i,j,nrhs,nfo,*ipiv=NULL;
-  T *B = new T[(dim-1)];// (T *)malloc((dim-1)*sizeof(T));
+  T *B = new T[(dim-1)];
 
   for (i=0; i<dim-1; i++) B[i] = 1.0;
 
@@ -1784,13 +1776,13 @@ if (_opt->absrb) {
   MxFPrint(B, "Absorbing times: ", 'v', out, out!=stderr);
   dim++;
 
-  delete[] B; //free(B);
-  delete[] Z;//free(Z);
+  delete[] B;
+  delete[] Z;
   free(ipiv);
 
 }
 else { // non-absorbing case
-  Z = new T[dim*dim];//(T *) MxNew(dim*dim*sizeof(T));
+  Z = new T[dim*dim];
 
   for(i = 0; i < dim; i++)
   for(j = 0; j < dim; j++) {
@@ -1801,7 +1793,7 @@ else { // non-absorbing case
   mxccm.minv(Z,dim, _opt->FEPS);
   //if(_opt->want_verbose)MxPrint (Z,"Fundamental matrix Z=inv(I-U+W)" , 'm');
 
-  M = new T[dim*dim];//(T *) MxNew(dim*dim*sizeof(T));
+  M = new T[dim*dim];
   for(i = 0; i < dim; i++) {
     for(j = 0; j < dim; j++) {
       M[dim*i+j] = (T)((Z[dim*j+j]-Z[dim*i+j])/p8[j]);
@@ -1809,8 +1801,8 @@ else { // non-absorbing case
   }
 
   MxFPrint(M, "First passage times (i-th row, j-th column represents fpt from i-th to j-th state)", 'm', out, out!=stderr);
-  delete[] M; //free(M);
-  delete[] Z;//free(Z);
+  delete[] M;
+  delete[] Z;
 }
 }
 
@@ -1858,8 +1850,8 @@ int i,j,nrhs,nfo;
 int *ipiv=NULL;
 int n=dim-1;
 T *A=NULL, *B=NULL;
-A = new T[n*n]; //(T *)malloc(n*n*sizeof(T));
-B = new T[dim];//(T *)malloc(dim*sizeof(T));
+A = new T[n*n];
+B = new T[dim];
 
 // A = Q(infinetisimal generator) = U^T-I with state-th column and row deleted (U is transposed!)
 for(i=0; i<n; i++) {
@@ -1890,7 +1882,7 @@ for (i=dim-1; i>state; i--) {
 }
 B[state] = 0.0;
 
-delete[] A; //free(A);
+delete[] A;
 free(ipiv);
 return B;
 }
@@ -1901,7 +1893,7 @@ void Calc<T>::MxFPTSimple(T *U)
 {
 int i,j;
 fprintf(stderr, "in MxFTPSimple\n");
-T *M = new T[dim*dim]; //(T *) MxNew(dim*dim*sizeof(T));
+T *M = new T[dim*dim];
 T *B;
 int p_done = 0;
 
@@ -1921,7 +1913,7 @@ for (i=0; i<dim; i++) {
 
 MxPrint(M, "FPT", 'm');
 
-delete[] M; //free(M);
+delete[] M;
 }
 
 template<typename T>
