@@ -39,9 +39,9 @@ int treekin_main_precision(Globals *globalParameters){
   SubInfo *E; //will be filled in Barparser::ParseInfile
 
   BarData *Data=NULL;
-  /*  U - matrix (Q+I)^T, where Q is infetisimal generator (^T - transposed)
+  /*  U - matrix (Q+I)^T, where Q is infitisimal generator (^T - transposed)
       S - eigenvectors of U
-      p0 - distribution in the begining
+      p0 - distribution in the beginning
       p8 - stable (end) distribution
       R - tmp rates matrix (transposed) */
   T *U=NULL, *S=NULL, *p0=NULL, *p8=NULL, *R=NULL;
