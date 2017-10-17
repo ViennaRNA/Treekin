@@ -92,6 +92,24 @@ AC_CHECK_LIB(blas,ddot_,[],[
 AC_CHECK_LIB(lapack,dgeevx_,[],[
 	AC_MSG_ERROR([unable to find the dgeevx_() function in lblas. Is lapack installed?])
 ])
+
+#search for the correct include path in the default locations
+AC_CHECK_HEADERS([/usr/include/lapacke.h], [
+  CXXFLAGS="-I/usr/include $CXXFLAGS"
+], [
+  AC_CHECK_HEADERS([/usr/include/lapacke/lapacke.h], [
+    CXXFLAGS="-I/usr/include/lapacke $CXXFLAGS"
+  ], [
+    AC_CHECK_HEADERS([/usr/local/include/lapacke.h], [
+      CXXFLAGS="-I/usr/local/include $CXXFLAGS"
+    ], [
+      AC_CHECK_HEADERS([/usr/local/include/lapacke/lapacke.h], [
+        CXXFLAGS="-I/usr/local/include/lapacke $CXXFLAGS"
+      ], [])
+    ])
+  ])
+])
+
 dnl AC_CHECK_LIB(m, isnan)
 dnl AC_CHECK_LIB(arpack,dseupd_)
 
@@ -153,13 +171,17 @@ NEED_LIB_MPFR=0
 if test "$enable_mpack" = "yes"; then
   if test  $MPACKPATHSET = 1 ; then
         AC_LANG_PUSH([C++])
-		AC_CHECK_HEADERS([mpack/mpack_config.h],
-		  [
-				MPACKNOTFOUND=0;
-		  ],
-		  [
-			    MPACKNOTFOUND=1;
-		  ])
+		AC_CHECK_HEADER(mpack/mpack_config.h,
+          [
+            MPACKNOTFOUND=0;
+          ],
+          [
+            MPACKNOTFOUND=1;
+          ],
+           [#if HAVE_MPACK_MPACK_CONFIG_H
+           #include <mpack/mpack_config.h>
+           #endif
+        ])
 		AC_LANG_POP
   else
 		PKG_CHECK_MODULES([mpack], [mpack >= 0.8], 

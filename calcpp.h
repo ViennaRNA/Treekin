@@ -39,7 +39,7 @@
 #endif
 #endif
 
-#include <lapacke/lapacke.h>
+#include <lapacke.h>
 #include "bardata.h"
 #include "globals.h"
 #include "treekinCastableTypes.h"
