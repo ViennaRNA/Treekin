@@ -174,7 +174,7 @@ double PrintProbFull(double *line, int dim, double time, int lmins)
   }
 
   // print:
-  printf("%e ", time);
+  printf("%22.20e ", time);
   for (int i=0; i<lmins; i++) {
     if (opt.num_err == 'R') printf("%e ", fabs(ptFULL[i])/check);
     else printf("%e ", fabs(ptFULL[i]));
@@ -206,7 +206,7 @@ double PrintProbNR(double *line, int dim, double time)
   }
 
   // print
-  printf("%e ", time);
+  printf("%22.20e ", time);
   for (int i=0; i<dim; i++) {
     if (opt.num_err == 'R') printf("%e ", fabs(line[i])/check);
     else printf("%e ", fabs(line[i]));
@@ -238,7 +238,7 @@ double PrintProb(double *line, int dim, double time)
   }
 
   // print finally:
-  printf("%e ", time);
+  printf("%22.20e ", time);
   if (reorganize.size()==0) {
     for (int i=0; i<dim; i++) {
       /* map individual structure -> gradient basins */
