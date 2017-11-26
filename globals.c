@@ -2,8 +2,7 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-25 17:19:02 mtw>          =*/
-/*=   $Id: globals.c,v 1.16 2006/11/27 13:48:34 mtw Exp $        =*/
+/*=   Last changed Time-stamp: <2017-11-27 00:05:49 mtw>          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -15,9 +14,7 @@
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
-
 #include <getopt.h>
-
 #include "globals.h"
 #include "treekin_cmdline.h"
 
@@ -237,7 +234,7 @@ set_parameters(void)
   if (args_info.degeneracy_given) opt.want_degenerate = 1;
   if (args_info.quiet_flag) opt.quiet = 1;
   if (args_info.verbose_given) opt.want_verbose = 1;
-  if (args_info.umatrix_given) opt.dumpU = 1;
+  if (args_info.dumpU_given) opt.dumpU = 1;
   if (args_info.mathematicamatrix_given) opt.dumpMathematica = 1;
   if (args_info.bin_given) opt.binrates = 1;
   if (args_info.warnings_flag) opt.warnings = 1;
@@ -253,8 +250,8 @@ set_parameters(void)
       }
     }
   }
-  if (args_info.recover_given) opt.rrecover = 1;
-  if (args_info.wrecover_given) opt.wrecover = 1;
+  if (args_info.recoverE_given) opt.rrecover = 1;
+  if (args_info.dumpE_given) opt.wrecover = 1;
   if (args_info.info_given) {
     display_settings();
     if (opt.pini != NULL) free(opt.pini);
