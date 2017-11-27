@@ -2,7 +2,7 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-11-27 00:05:49 mtw>          =*/
+/*=   Last changed Time-stamp: <2017-11-27 00:37:11 mtw>          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -235,6 +235,7 @@ set_parameters(void)
   if (args_info.quiet_flag) opt.quiet = 1;
   if (args_info.verbose_given) opt.want_verbose = 1;
   if (args_info.dumpU_given) opt.dumpU = 1;
+  if (args_info.dumpX_given) opt.dumpX = 1;
   if (args_info.mathematicamatrix_given) opt.dumpMathematica = 1;
   if (args_info.bin_given) opt.binrates = 1;
   if (args_info.warnings_flag) opt.warnings = 1;
@@ -277,6 +278,7 @@ ini_globs(void)
   opt.tinc            =          1.02;
   opt.method          =          'I';
   opt.dumpU           =          0;
+  opt.dumpX           =          0;
   opt.dumpMathematica =          0;
   opt.matexp          =          0;
   opt.binrates        =          0;
@@ -312,13 +314,12 @@ display_settings(void)
           "--method   = %c\n"
           "--nstates  = %d\n"
           "--fpt      = %d\n"
-          "-d         = %d\n"
-          "-e         = %d\n"
-          "-u         = %d\n"
-          "-x         = %d\n"
+          "--exponent = %d\n"
+          "--dumpU    = %d\n"
+          "--dumpX    = %d\n"
           "-b         = %d\n"
           "-r         = %d\n"
-          "-w         = %d\n"
+          "-e         = %d\n"
           "-v         = %d\n",
           opt.absrb,
           opt.t0,
@@ -328,10 +329,9 @@ display_settings(void)
           opt.method,
           opt.n,
           opt.fpt,
-          opt.want_degenerate,
           opt.matexp,
           opt.dumpU,
-          opt.dumpMathematica,
+          opt.dumpX,
           opt.binrates,
           opt.rrecover,
           opt.wrecover,

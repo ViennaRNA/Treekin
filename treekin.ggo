@@ -3,7 +3,7 @@ package "treekin" # don't use package if you're using automake
 purpose "Compute biopolymer macrostate dynamics"
 
 # Version of your program
-version "0.4.1"   # don't use version if you're using automake
+version "0.4.2"   # don't use version if you're using automake
 
 # command line options passed to gengetopt
 args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-opts"
@@ -18,14 +18,15 @@ option "Temp"               T "Temperature in Celsius" default="37.0" double no
 option "nstates"            n "Read only first <int> states (assume quasi-stationary distribution (derivation of others is = 0))" int no
 option "p0"                 - "Set initial population of state <int> to <double>\nCan be given multiple times\n(NOTE: sum of <double> must equal 1)\n(example: \"--p0 2=1.0\" - state 2 has initial population 100 percent)" string no multiple
 option "tinc"               - "Time scaling factor (for log time-scale)" default="1.02" double no
-option "degeneracy"         d "Consider degeneracy in transition rates" flag off
-option "exponent"           E "Use matrix-expontent routines, rather than diagonalization" flag off
-option "dumpU"              u "Dump transition matrix U to file mx.txt (and to binary mx.bin - not fixed yet)" flag off
-option "mathematicamatrix"  x "Dump transition matrix U to Mathematica-readable file mxMat.txt" flag off
+option "degeneracy"         - "Consider degeneracy in transition rates" flag off
+option "exponent"           - "Use matrix-expontent routines, rather than diagonalization" flag off
+option "dumpU"              - "Dump transition matrix U to file mx.txt (and to binary mx.bin - not fixed yet)" flag off
+option "mathematicamatrix"  - "Dump transition matrix U to Mathematica-readable file mxMat.txt" flag off
 option "bin"                b "Assume binary rates input" flag off
 option "fpt"                t "Compute first passage times (FPT). Arguments:\nall => compute all FPT (slow)\n<num> - compute FPT to state <num> from all states" string no
 option "recoverE"           r "Recover from pre-ccomputes eigenvalues and eigenvectors" flag off
-option "dumpE"              e "Dump eigenvalues and eigenvectors to a recovery file" flag off
+option "dumpE"              e "Dump eigenvalues and eigenvectors to a binary recovery file and continue with iteration" flag off
+option "dumpX"              x "Dump eigenvalues to ASCII file and exit (do not iterate)" flag off
 option "info"               - "Show settings" flag off
 option "ratesfile"          f "Name of the text file containing the rates matrix\n(NOTE: treekin expects matrix elements in '%10.4g' format.\nIn case of -m I option (default), this is read from standard input." string no
 option "verbose"            v "Verbose output" flag off

@@ -2,8 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-11-08 14:06:40 mtw>          =*/
-/*=   $Id: calc.c,v 1.41 2006/11/27 23:01:45 mtw Exp $            =*/
+/*=   Last changed Time-stamp: <2017-11-27 00:58:33 mtw>          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -22,7 +21,6 @@
 #include "barparser.h"  /* functions for input */
 #include "calc.h"       /* does all matrix stuff for markov process */
 #include "globals.h"    /* contains getopt-stuff */
-
 #include "calcpp.h"
 
 #define SQ(X) ((X)*(X))
@@ -399,6 +397,10 @@ MxDiagonalize ( double *U, double **_S, double *P8)
   //  MxFixevecs(evecs,evals); /* so far it's not helping ... */
   
   *_S=evecs;
+  if(opt.dumpX){
+    MxASCIIWriteV(evals, "evals.txt");
+    exit(EXIT_SUCCESS);
+  }
   if(opt.wrecover) {
     MxBinWrite(evals, "evals", 'v');
     MxBinWrite(evecs, "evecs", 'm');

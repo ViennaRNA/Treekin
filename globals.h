@@ -2,8 +2,7 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-24 19:17:45 mtw>          =*/
-/*=   $Id: globals.h,v 1.15 2006/11/24 18:24:11 mtw Exp $         =*/
+/*=   Last changed Time-stamp: <2017-11-27 00:31:13 mtw>          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -25,6 +24,7 @@ typedef struct {         /* command-line options */
   int want_verbose;      /* verbose output */
   int want_degenerate;   /* consider degeneracy */
   int dumpU;             /* dump U to a binary file */
+  int dumpX;             /* dump eigenvalues to ASCII file */
   int dumpMathematica;   /* dump U to a Mathematica-readable file */
   int matexp;            /* use matrix-exponent routines */
   int binrates;          /* assume binary rates file */
