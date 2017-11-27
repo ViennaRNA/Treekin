@@ -1,0 +1,17 @@
+*.o
+*~
+*.in
+.deps/
+aclocal.m4
+autom4te.cache/
+treekin_cmdline.c
+treekin_cmdline.h
+compile
+config.*
+configure
+depcomp
+install-sh
+INSTALL
+Makefile
+missing
+stamp-h1
