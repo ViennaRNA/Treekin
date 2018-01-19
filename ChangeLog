@@ -1,0 +1,3 @@
+0.4.2
+	* removed Full process method
+	* program version is now automatically parsed from VERSION.txt

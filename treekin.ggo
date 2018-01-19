@@ -10,7 +10,7 @@ args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-o
 
 # Options
 option "absorb"             a "Make a state absorbing" typestr="state" int no
-option "method"             m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\nF ==> Full process kinetics (whole subopt)\nI ==> use input as a rate matrix" values="A","F","I" default="I" no
+option "method"             m "Select method to build transition matrix:\nA ==> Arrhenius-like kinetics\n\nI ==> use input as a rate matrix" values="A","I" default="I" no
 option "num-err"            - "Specify how to treat issues with numerical errors in probability:\nI ==> Ignore\nH ==> Halt the program\nR ==> Rescale the probability" values="I","H","R" default="H" no
 option "t0"                 - "Start time" typestr="time" default="0.1" double no
 option "t8"                 - "Stop time" typestr="time" default="1E12" double no
@@ -23,12 +23,12 @@ option "exponent"           - "Use matrix-expontent routines, rather than diagon
 option "dumpU"              - "Dump transition matrix U to file mx.txt (and to binary mx.bin - not fixed yet)" flag off
 option "mathematicamatrix"  - "Dump transition matrix U to Mathematica-readable file mxMat.txt" flag off
 option "bin"                b "Assume binary rates input" flag off
+option "bar"                B "Input barriers file. Required in case \"-m I\" (rates kinetics) AND \"-a\" (absorbing state) is given" string no
 option "fpt"                t "Compute first passage times (FPT). Arguments:\nall => compute all FPT (slow)\n<num> - compute FPT to state <num> from all states" string no
 option "recoverE"           r "Recover from pre-ccomputes eigenvalues and eigenvectors" flag off
 option "dumpE"              e "Dump eigenvalues and eigenvectors to a binary recovery file and continue with iteration" flag off
 option "dumpX"              x "Dump eigenvalues to ASCII file and exit (do not iterate)" flag off
 option "info"               - "Show settings" flag off
-option "ratesfile"          f "Name of the text file containing the rates matrix\n(NOTE: treekin expects matrix elements in '%10.4g' format.\nIn case of -m I option (default), this is read from standard input." string no
 option "verbose"            v "Verbose output" flag off
 option "quiet"              q "Be silent (do not print out the output)" flag off
 option "fptfile"            - "Filename of FPT file (provided -t option given)" string no

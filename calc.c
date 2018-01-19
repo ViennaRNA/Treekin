@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-11-27 00:58:33 mtw>          =*/
+/*=   Last changed Time-stamp: <2017-11-27 14:11:12 mtw>          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -80,9 +80,9 @@ MxBar2Matrix ( BarData *Data, double *R)
   case 'A':
     U = MxMethodeA(Data);
     break;
-  case 'F':
-    U = MxMethodeFULL(R);
-    break;
+  /* case 'F': */
+  /*   U = MxMethodeFULL(R); */
+  /*   break; */
   case 'I':
     U = MxMethodeINPUT(Data, R);
     break;

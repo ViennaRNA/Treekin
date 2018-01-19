@@ -2,7 +2,7 @@
 /*=   globals.c                                                   =*/
 /*=   global routines for treekin                                 =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-11-27 00:37:11 mtw>          =*/
+/*=   Last changed Time-stamp: <2017-11-27 13:20:14 mtw>          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -36,34 +36,34 @@ parse_commandline(int argc, char **argv)
   }
 
   //input file:
-  if (args_info.inputs_num) {
-    char *infile=NULL;
-    to_basename(args_info.inputs[0]);
-    infile = (char *)calloc(strlen(opt.basename)+5, sizeof(char));
-    strncpy(infile, opt.basename, strlen(opt.basename));
-    if (opt.method == 'F') strcat(infile, ".sub");
-    else strcat(infile, ".bar");
-    opt.INFILE = fopen(infile, "r");
-    if (opt.INFILE == NULL) {
-      fprintf(stderr, "Error opening input file \"%s\".\n", infile);
-      free(infile);
-      exit(EXIT_FAILURE);
-    }
-    free(infile);
-  } else {
-    opt.INFILE = stdin;
-  }
+  /* if (args_info.inputs_num) { */
+  /*   char *infile=NULL; */
+  /*   to_basename(args_info.inputs[0]); */
+  /*   infile = (char *)calloc(strlen(opt.basename)+5, sizeof(char)); */
+  /*   strncpy(infile, opt.basename, strlen(opt.basename)); */
+  /*   if (opt.method == 'F') strcat(infile, ".sub"); */
+  /*   else strcat(infile, ".bar"); */
+  /*   opt.INFILE = fopen(infile, "r"); */
+  /*   if (opt.INFILE == NULL) { */
+  /*     fprintf(stderr, "Error opening input file \"%s\".\n", infile); */
+  /*     free(infile); */
+  /*     exit(EXIT_FAILURE); */
+  /*   } */
+  /*   free(infile); */
+  /* } else { */
+  /*    opt.INFILE = stdin; */
+  /* } */
 
   // rate file?
-  if (args_info.ratesfile_given) {
-    opt.RATFILE = fopen(args_info.ratesfile_arg, "r");
-    if (opt.RATFILE == NULL) {
-      if (!opt.quiet) fprintf(stderr, "Cannot open rate file %s!\n", args_info.ratesfile_arg);
-    }
-  } else {
-    opt.RATFILE = NULL;
-  }
-
+  /* if (args_info.ratesfile_given) { */
+  /*   opt.RATFILE = fopen(args_info.ratesfile_arg, "r"); */
+  /*   if (opt.RATFILE == NULL) { */
+  /*     if (!opt.quiet) fprintf(stderr, "Cannot open rate file %s!\n", args_info.ratesfile_arg); */
+  /*   } */
+  /* } else { */
+  /*   opt.RATFILE = NULL; */
+  /* } */
+  opt.INFILE = stdin;
   set_parameters();
 }
 
@@ -94,10 +94,10 @@ to_basename(char *arg)
 static void
 set_parameters(void)
 {
-  if(strncmp(args_info.method_arg, "F", 1)==0)
-    opt.method = 'F';
-  else if (strncmp(args_info.method_arg, "A", 1)==0)
+  if(strncmp(args_info.method_arg, "A", 1)==0)
     opt.method = 'A';
+  /* else if (strncmp(args_info.method_arg, "F", 1)==0) */
+  /*   opt.method = 'F'; */
 
   if(strncmp(args_info.num_err_arg, "I", 1)==0)
     opt.num_err = 'I';
@@ -191,10 +191,18 @@ set_parameters(void)
   }
 
   // use input as rate matrix if rate matrix is not specified
-  if (!args_info.ratesfile_given && opt.method=='I') {
-    if (!opt.quiet) fprintf(stderr, "Using input as a rate file!\n");
-    opt.RATFILE = opt.INFILE;
-    opt.INFILE = NULL;
+  /* if (!args_info.ratesfile_given && opt.method=='I') { */
+  /*   if (!opt.quiet) fprintf(stderr, "Using input as a rate file!\n"); */
+  /*   opt.RATFILE = opt.INFILE; */
+  /*   opt.INFILE = NULL; */
+  /* } */
+
+  if (args_info.bar_given) {
+    opt.BARFILE = fopen(args_info.bar_arg, "r");
+    if (opt.BARFILE == NULL){
+      fprintf(stderr, "Cannot open rate file %s!\n", args_info.bar_arg);
+      exit (EXIT_FAILURE);
+    }
   }
 
   if (args_info.minimal_rate_given) {
@@ -297,6 +305,7 @@ ini_globs(void)
   opt.equil_file      =          NULL;
   opt.times           =          1.0;
   opt.warnings        =          0;
+  opt.BARFILE         =          NULL;
 }
 
 /*==============================*/

@@ -2,7 +2,7 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-11-27 00:31:13 mtw>          =*/
+/*=   Last changed Time-stamp: <2017-11-27 12:21:23 mtw>          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
@@ -38,7 +38,8 @@ typedef struct {         /* command-line options */
   double *pini;          /* start population at lmin xxx */
   char method;           /* method to build transition matrix */
   FILE *INFILE;          /* input file (usually bar-file) */
-  FILE *RATFILE;         /* input file (rates) */
+  /* FILE *RATFILE;     */     /* input file (rates) */
+  FILE *BARFILE;         /* input barriers file */
   char *sequence;        /* sequence */
   int  fpt;              /* switch for fpt-related calculations */
   int  fpt_num;          /* state to count ftp's to (-1 for all states)*/

@@ -2,7 +2,7 @@
 /*=   main.c                                                      =*/
 /*=   main file for treekin                                       =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2016-07-25 12:22:59 mtw>          =*/
+/*=   Last changed Time-stamp: <2017-11-27 13:27:21 mtw>          =*/
 /*=   $Id: main.c,v 1.24 2006/11/27 13:47:57 mtw Exp $            =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
@@ -41,21 +41,42 @@ main (int argc, char **argv)
   parse_commandline(argc, argv);
 
   switch (opt.method) {
-    case 'F': dim = ParseInfile(opt.INFILE, opt.RATFILE, &R); break;
+    /* case 'F': dim = ParseInfile(opt.INFILE, opt.RATFILE, &R); break; */
     case 'I':
-      if (opt.binrates) dim = MxReadBinRates(opt.RATFILE, &R, opt.n, opt.max_decrease);
-      else dim = ParseRatesFile(opt.RATFILE, &R, opt.n, opt.max_decrease);
+      if (!opt.quiet)
+	fprintf(stderr,
+		"Using rates matrix from STDIN for constructing transition matrix\n");
+      if (opt.binrates)
+	dim = MxReadBinRates(opt.INFILE, &R, opt.n, opt.max_decrease);
+      else dim = ParseRatesFile(opt.INFILE, &R, opt.n, opt.max_decrease);
 
-      if (opt.INFILE) {
-        ParseBarfile(opt.INFILE, &Data);
+      if (opt.absrb){
+	int dimb;
+	if (!opt.BARFILE) {
+	  fprintf(stderr,
+		  "ERROR: bar file must be provided via --bar option for computing proper free energy/partition function for the absorbing state\n");
+	  exit(EXIT_FAILURE);}
+	else{
+	  dimb = ParseBarfile(opt.BARFILE, &Data); /* NB: opt.BARFILE; not opt.INFILE ! */
+	  if (dim != dimb){
+	    fprintf(stderr,
+		    "ERROR: dimension mismatch among input rates file and bar file %d != %d\n",
+		    dim,dimb);
+	    exit(EXIT_FAILURE);
+	  }
+	}
       }
+      
       if (dim == 0) {
         fprintf(stderr, "ERROR: Rate file empty!\n");
         free_gengetopt();
         exit(EXIT_FAILURE);
       }
       break;
-    case 'A': dim = ParseBarfile (opt.INFILE, &Data); break;
+    case 'A':
+      if (!opt.quiet) fprintf(stderr, "Using bar file from STDIN for constructing transition matrix\n");
+      dim = ParseBarfile (opt.INFILE, &Data);
+      break;
   }
 
   /* matrix initialization */
