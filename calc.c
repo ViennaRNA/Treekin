@@ -2,7 +2,7 @@
 /*=   calc.c                                                      =*/
 /*=   main calculation and iteration routines for treekin         =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2017-11-27 14:11:12 mtw>          =*/
+/*=   Last changed Time-stamp: <2018-02-05 11:33:59 mtw>          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=     (c) Michael Thomas Wolfinger, W. Andreas Svrcek-Seiler    =*/
 /*=                  {mtw,svrci}@tbi.univie.ac.at                 =*/
@@ -632,7 +632,7 @@ MxIterate (double *p0, double *p8, double *S)
     if (opt.method=='F') PrintProbFull(pt, dim, opt.t8, lmins);
     else                 PrintProb(pt, dim, opt.t8);
   }
-  printf("# of iterations: %d\n", count);
+  /* printf("# Iterations: %d\n", count); */
 
   /*** end solve fundamental equation ***/
 
@@ -886,7 +886,7 @@ MxPrint(double *mx, char *name, char T)
   MxFPrint(mx, name, T, stderr, 0);
 }
 
-void    PrintDummy(double *line)
+void PrintDummy(double *line)
 {
   print_settings();
   PrintProb(line, 1, opt.t0);
@@ -900,7 +900,10 @@ print_settings(void)
   printf(
     "# Date: %s"
     "# Sequence: %s\n"
-    "# Method: %c  Start Time: %.2f  Stop Time: %.2f Temperature: %.2f\n",
+    "# Method: %c\n"
+    "# Start time: %.2f\n"
+    "# Stop time: %.2f\n"
+    "# Temperature: %.2f\n",
     time_stamp(),
     opt.sequence,
     opt.method,
@@ -908,16 +911,16 @@ print_settings(void)
     opt.t8,
     opt.T
   );
-  if(opt.basename != NULL) printf("# basename: %s\n",opt.basename);
-  else printf("# basename: <stdin>\n");
-  if (opt.tinc) printf("# time increment: %.2f\n", opt.tinc);
-  else printf("# time increment: %.2f \n", opt.tinc);
-  if(opt.want_degenerate == 1)printf("# degeneracy:  on\n");
-  else printf("# degeneracy:  off\n");
-  if (opt.absrb < 1) printf("# absorbing lmin: none\n");
-  else printf("# absorbing lmin: %d\n", opt.absrb);
-  if (opt.n > 0) printf("# nlmins: %d\n", opt.n);
-  else printf("# nlmins: till EOF\n");
+  if(opt.basename != NULL) printf("# Basename: %s\n",opt.basename);
+  else printf("# Basename: <stdin>\n");
+  if (opt.tinc) printf("# Time increment: %.2f\n", opt.tinc);
+  else printf("# Time increment: %.2f \n", opt.tinc);
+  if(opt.want_degenerate == 1)printf("# Degeneracy:  on\n");
+  else printf("# Degeneracy:  off\n");
+  if (opt.absrb < 1) printf("# Absorbing state: none\n");
+  else printf("# Absorbing state: %d\n", opt.absrb);
+  if (opt.n > 0) printf("# States limit: %d\n", opt.n);
+  else printf("# States limit: till EOF\n");
 }
 
 /*==*/
