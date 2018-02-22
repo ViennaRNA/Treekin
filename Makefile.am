@@ -11,7 +11,7 @@ treekin_SOURCES = main.c\
                   treekin_cmdline.c treekin_cmdline.h \
                   calcpp.cpp  calcpp.h
 
-EXTRA_DIST = treekin.ggo treekin_cmdline.c treekin_cmdline.h
+EXTRA_DIST = treekin.ggo treekin_cmdline.c treekin_cmdline.h VERSION.txt
 
 globals.c:  treekin_cmdline.h
 
