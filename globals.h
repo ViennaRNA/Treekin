@@ -27,6 +27,7 @@ typedef struct {         /* command-line options */
   int want_verbose;      /* verbose output */
   int want_degenerate;   /* consider degeneracy */
   int dumpU;             /* dump U to a binary file */
+  int dumpX;             /* dump eigenvalues to ASCII file */
   int dumpMathematica;   /* dump U to a Mathematica-readable file */
   int matexp;            /* use matrix-exponent routines */
   int binrates;          /* assume binary rates file */
@@ -40,7 +41,8 @@ typedef struct {         /* command-line options */
   double *pini;          /* start population at lmin xxx */
   char method;           /* method to build transition matrix */
   FILE *INFILE;          /* input file (usually bar-file) */
-  FILE *RATFILE;         /* input file (rates) */
+  /* FILE *RATFILE;     */     /* input file (rates) */
+  FILE *BARFILE;         /* input barriers file */
   char *sequence;        /* sequence */
   int  fpt;              /* switch for fpt-related calculations */
   int  fpt_num;          /* state to count ftp's to (-1 for all states)*/

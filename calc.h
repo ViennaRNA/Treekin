@@ -51,7 +51,7 @@ class Calc {
 
 private:
   T *MxMethodeA (BarData *Data);
-  T *MxMethodeFULL(T *);
+  //T *MxMethodeFULL(T *);
   T *MxMethodeINPUT (BarData *Data, T *);
   T  max_saddle(int i, int j, BarData *Data);
   void    print_settings(void);
@@ -271,7 +271,7 @@ T Calc<T>::PrintProbFull(T *line, int dim, double time, int lmins)
   }
 
   // print:
-  printf("%e ", time);
+  printf("%22.20e ", time);
   for (int i=0; i<lmins; i++) {
     if (_opt->num_err == 'R') printf("%e ", (double)(T)(abs(ptFULL[i])/check));
     else printf("%e ", (double)(T)abs(ptFULL[i]));
@@ -304,7 +304,7 @@ T Calc<T>::PrintProbNR(T *line, int dim, double time)
   }
 
   // print
-  printf("%e ", time);
+  printf("%22.20e ", time);
   for (int i=0; i<dim; i++) {
     if (_opt->num_err == 'R') printf("%e ", abs(line[i])/check);
     else printf("%e ", abs(line[i]));
@@ -337,7 +337,7 @@ T Calc<T>::PrintProb(T *line, int dim, double time)
   }
 
   // print finally:
-  printf("%e ", time);
+  printf("%22.20e ", time);
   if (reorganize.size()==0) {
     for (int i=0; i<dim; i++) {
       /* map individual structure -> gradient basins */
@@ -407,9 +407,11 @@ Calc<T>::MxBar2Matrix ( BarData *Data, T *R)
   case 'A':
     U = MxMethodeA(Data);
     break;
+    /*
   case 'F':
     U = MxMethodeFULL(R);
     break;
+    */
   case 'I':
     U = MxMethodeINPUT(Data, R);
     break;
@@ -481,8 +483,9 @@ Calc<T>::MxEqDistr ( BarData *Data, T **p8 )
     (*p8)[dim-1] = 1.0; /* last entry is the 'new' absorbing state */
   }
   else {
-    for(i = 0; i < dim; i++) Z += exp(-((Data[i].energy-Data[0].energy)/_kT));
-    for(i = 0; i < dim; i++) (*p8)[i] = exp(-((Data[i].energy-Data[0].energy)/_kT));
+    double mfe = Data[0].energy;
+    for(i = 0; i < dim; i++) Z += exp(-((Data[i].energy-mfe)/_kT));
+    for(i = 0; i < dim; i++) (*p8)[i] = exp(-((Data[i].energy-mfe)/_kT));
   }
 
   /* now normalize the new p8 */
@@ -738,6 +741,10 @@ Calc<T>::MxDiagonalize ( T *U, T **_S, T *P8)
   //  MxFixevecs(evecs,evals); /* so far it's not helping ... */
 
   *_S=evecs;
+  if(_opt->dumpX){
+    MxASCIIWriteV(evals, "evals.txt");
+    exit(EXIT_SUCCESS);
+  }
   if(_opt->wrecover) {
     MxBinWrite(evals, "evals", 'v');
     MxBinWrite(evecs, "evecs", 'm');
@@ -937,8 +944,14 @@ Calc<T>::MxIterate (T *p0, T *p8, T *S)
   for (i=0; i<dim; i++) underflow[i] = 0.0;
 
   // iterate
-  for (tt = _opt->t0; tt < _opt->t8*_opt->tinc; tt *= _opt->tinc) {
-    time = (tt<_opt->t8)?tt:(T)_opt->t8;
+  T inc =_opt->t0;
+  T t8 = _opt->t8;
+  for (tt = inc; tt < _opt->t8 + inc; inc *= _opt->tinc, tt += inc) {
+    if (tt > _opt->t8) {
+      tt = _opt->t8;
+      t8 = 0;
+    }
+    time=tt;
     for (i = 0; i < dim; i++) {
       errno = 0;
       exptL[dim*i+i] = (T)exp(time/_opt->times*evals[i]);
@@ -994,7 +1007,7 @@ Calc<T>::MxIterate (T *p0, T *p8, T *S)
     if (_opt->method=='F') PrintProbFull(pt, dim, _opt->t8, _lmins);
     else                 PrintProb(pt, dim, _opt->t8);
   }
-  printf("# of iterations: %d\n", count);
+  /*printf("# of iterations: %d\n", count);*/
 
   /*** end solve fundamental equation ***/
 
@@ -1090,6 +1103,7 @@ Calc<T>::MxMethodeA (BarData *Data)
 }
 
 /*==*/
+#if 0
 template<typename T>
 T*
 Calc<T>::MxMethodeFULL (T *R)
@@ -1115,6 +1129,7 @@ Calc<T>::MxMethodeFULL (T *R)
   if (_opt->want_verbose) MxPrint (R, "R with Methode F", 'm');
   return R;
 }
+#endif
 
 /*==*/
 template<typename T>
@@ -2213,7 +2228,10 @@ Calc<T>::print_settings(void)
 printf(
     "# Date: %s"
     "# Sequence: %s\n"
-    "# Method: %c  Start Time: %.2f  Stop Time: %.2f Temperature: %.2f\n",
+    "# Method: %c\n"
+    "# Start time: %.2f\n"
+    "# Stop time: %.2f\n"
+    "# Temperature: %.2f\n",
     time_stamp(),
     _opt->sequence,
     _opt->method,
@@ -2221,16 +2239,16 @@ printf(
     _opt->t8,
     _opt->T
 );
-if(_opt->basename != NULL) printf("# basename: %s\n",_opt->basename);
-else printf("# basename: <stdin>\n");
-if (_opt->tinc) printf("# time increment: %.2f\n", _opt->tinc);
-else printf("# time increment: %.2f \n", _opt->tinc);
-if(_opt->want_degenerate == 1)printf("# degeneracy:  on\n");
-else printf("# degeneracy:  off\n");
-if (_opt->absrb < 1) printf("# absorbing lmin: none\n");
-else printf("# absorbing lmin: %d\n", _opt->absrb);
-if (_opt->n > 0) printf("# nlmins: %d\n", _opt->n);
-else printf("# nlmins: till EOF\n");
+if(_opt->basename != NULL) printf("# Basename: %s\n",_opt->basename);
+else printf("# Basename: <stdin>\n");
+if (_opt->tinc) printf("# Time increment: %.2f\n", _opt->tinc);
+else printf("# Time increment: %.2f \n", _opt->tinc);
+if(_opt->want_degenerate == 1)printf("# Degeneracy:  on\n");
+else printf("# Degeneracy:  off\n");
+if (_opt->absrb < 1) printf("# Absorbing state: none\n");
+else printf("# Absorbing state: %d\n", _opt->absrb);
+if (_opt->n > 0) printf("# States limit: %d\n", _opt->n);
+else printf("# States limit: till EOF\n");
 }
 
 /*==*/

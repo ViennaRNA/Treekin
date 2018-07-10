@@ -15,7 +15,7 @@ treekin_SOURCES = mxccm.cpp mxccm.h \
                   
                   
 
-EXTRA_DIST = treekin.ggo treekin_cmdline.c treekin_cmdline.h
+EXTRA_DIST = treekin.ggo treekin_cmdline.c treekin_cmdline.h VERSION.txt
 
 globals.cpp:  treekin_cmdline.h
 

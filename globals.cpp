@@ -43,7 +43,7 @@ Globals::parse_commandline(int argc, char **argv)
     fprintf(stderr, "error while parsing command-line options\n");
     exit(EXIT_FAILURE);
   }
-
+  /*
   //input file:
   if (args_info.inputs_num) {
     char *infile=NULL;
@@ -72,6 +72,8 @@ Globals::parse_commandline(int argc, char **argv)
   } else {
     opt.RATFILE = NULL;
   }
+  */
+  opt.INFILE = stdin;
 
   set_parameters();
 }
@@ -168,9 +170,7 @@ int is_DOUBLE_available(){
 void
 Globals::set_parameters(void)
 {
-  if(strncmp(args_info.method_arg, "F", 1)==0)
-    opt.method = 'F';
-  else if (strncmp(args_info.method_arg, "A", 1)==0)
+  if(strncmp(args_info.method_arg, "A", 1)==0)
     opt.method = 'A';
 
   if(strncmp(args_info.num_err_arg, "I", 1)==0)
@@ -264,11 +264,12 @@ Globals::set_parameters(void)
     opt.vis_file = args_info.visualize_arg;
   }
 
-  // use input as rate matrix if rate matrix is not specified
-  if (!args_info.ratesfile_given && opt.method=='I') {
-    if (!opt.quiet) fprintf(stderr, "Using input as a rate file!\n");
-    opt.RATFILE = opt.INFILE;
-    opt.INFILE = NULL;
+  if (args_info.bar_given) {
+    opt.BARFILE = fopen(args_info.bar_arg, "r");
+    if (opt.BARFILE == NULL){
+      fprintf(stderr, "Cannot open rate file %s!\n", args_info.bar_arg);
+      exit (EXIT_FAILURE);
+    }
   }
 
   if (args_info.minimal_rate_given) {
@@ -308,7 +309,8 @@ Globals::set_parameters(void)
   if (args_info.degeneracy_given) opt.want_degenerate = 1;
   if (args_info.quiet_flag) opt.quiet = 1;
   if (args_info.verbose_given) opt.want_verbose = 1;
-  if (args_info.umatrix_given) opt.dumpU = 1;
+  if (args_info.dumpU_given) opt.dumpU = 1;
+  if (args_info.dumpX_given) opt.dumpX = 1;
   if (args_info.mathematicamatrix_given) opt.dumpMathematica = 1;
   if (args_info.bin_given) opt.binrates = 1;
   if (args_info.warnings_flag) opt.warnings = 1;
@@ -324,8 +326,8 @@ Globals::set_parameters(void)
       }
     }
   }
-  if (args_info.recover_given) opt.rrecover = 1;
-  if (args_info.wrecover_given) opt.wrecover = 1;
+  if (args_info.recoverE_given) opt.rrecover = 1;
+  if (args_info.dumpE_given) opt.wrecover = 1;
   if (args_info.info_given) {
     display_settings();
     if (opt.pini != NULL) free(opt.pini);
@@ -410,6 +412,7 @@ Globals::ini_globs(void)
   opt.tinc            =          1.02;
   opt.method          =          'I';
   opt.dumpU           =          0;
+  opt.dumpX           =          0;
   opt.dumpMathematica =          0;
   opt.matexp          =          0;
   opt.binrates        =          0;
@@ -428,6 +431,7 @@ Globals::ini_globs(void)
   opt.equil_file      =          NULL;
   opt.times           =          1.0;
   opt.warnings        =          0;
+  opt.BARFILE         =          NULL;
 }
 
 /*==============================*/
@@ -445,13 +449,12 @@ Globals::display_settings(void)
           "--method   = %c\n"
           "--nstates  = %d\n"
           "--fpt      = %d\n"
-          "-d         = %d\n"
-          "-e         = %d\n"
-          "-u         = %d\n"
-          "-x         = %d\n"
+          "--exponent = %d\n"
+          "--dumpU    = %d\n"
+          "--dumpX    = %d\n"
           "-b         = %d\n"
           "-r         = %d\n"
-          "-w         = %d\n"
+          "-e         = %d\n"
           "-v         = %d\n",
           opt.absrb,
           opt.t0,
@@ -461,10 +464,9 @@ Globals::display_settings(void)
           opt.method,
           opt.n,
           opt.fpt,
-          opt.want_degenerate,
           opt.matexp,
           opt.dumpU,
-          opt.dumpMathematica,
+          opt.dumpX,
           opt.binrates,
           opt.rrecover,
           opt.wrecover,

@@ -39,7 +39,7 @@ int treekin_main_precision(Globals *globalParameters){
   SubInfo *E; //will be filled in Barparser::ParseInfile
 
   BarData *Data=NULL;
-  /*  U - matrix (Q+I)^T, where Q is infitisimal generator (^T - transposed)
+  /*  U - matrix (Q+I)^T, where Q is infinitesimal generator (^T - transposed)
       S - eigenvectors of U
       p0 - distribution in the beginning
       p8 - stable (end) distribution
@@ -51,19 +51,30 @@ int treekin_main_precision(Globals *globalParameters){
   Barparser *bp = new Barparser(opt,dim,E);
 
   switch (opt->method) {
-    case 'F': dim = bp->ParseInfile(opt->INFILE, opt->RATFILE, &tmpReadRates); break;
+    /* case 'F': dim = bp->ParseInfile(opt->INFILE, opt->RATFILE, &tmpReadRates); break; */
     case 'I':
-      if (opt->binrates){
-        dim = bp->MxReadBinRates(opt->RATFILE, &tmpReadRates, opt->n, opt->max_decrease);
-      }
-      else {
-        dim = bp->ParseRatesFile(opt->RATFILE, &tmpReadRates);
-        // shorten the matrix from dimension my_dim to nstates:
-        dim = bp->MxShorten(&tmpReadRates, opt->n, dim,  opt->max_decrease);
-      }
+      if (!opt->quiet)
+        fprintf(stderr,
+                "Using rates matrix from STDIN for constructing transition matrix\n");
+      if (opt->binrates)
+        dim = bp->MxReadBinRates(opt->INFILE, &tmpReadRates, opt->n, opt->max_decrease);
+      else dim = bp->ParseRatesFile(opt->INFILE, &tmpReadRates);
 
-      if (opt->INFILE) {
-        bp->ParseBarfile(opt->INFILE, &Data);
+      if (opt->absrb){
+        int dimb;
+        if (!opt->BARFILE) {
+          fprintf(stderr,
+                  "ERROR: bar file must be provided via --bar option for computing proper free energy/partition function for the absorbing state\n");
+          exit(EXIT_FAILURE);}
+        else{
+          dimb = bp->ParseBarfile(opt->BARFILE, &Data); /* NB: opt.BARFILE; not opt.INFILE ! */
+          if (dim != dimb){
+            fprintf(stderr,
+                    "ERROR: dimension mismatch among input rates file and bar file %d != %d\n",
+                    dim,dimb);
+            exit(EXIT_FAILURE);
+          }
+        }
       }
       if (dim == 0) {
         fprintf(stderr, "ERROR: Rate file empty!\n");
@@ -72,46 +83,48 @@ int treekin_main_precision(Globals *globalParameters){
       }
 
       R = convertRates<T>(tmpReadRates,(size_t)dim);
-      // visualize the graph:
-      if (opt->vis_file) {
-        bp->VisualizeRates(opt->vis_file, R, Data, dim);
-      }
+      /* graph visualization */
+      if (opt->vis_file) bp->VisualizeRates(opt->vis_file, R, Data, dim);
       break;
-    case 'A': dim = bp->ParseBarfile (opt->INFILE, &Data); break;
+    case 'A':
+      if (!opt->quiet) fprintf(stderr, "Using bar file from STDIN for constructing transition matrix\n");
+      dim = bp->ParseBarfile (opt->INFILE, &Data);
+      break;
+
   }
 
   delete bp;
 
   Calc<T> *calc = new Calc<T>(globalParameters,E,dim);
 
-  // here we create the "almighty" rate matrix U which is actually only matrix needed for whole program
+  /* create rate matrix U which is used throughout the program */
   U  = (T*)calc->MxBar2Matrix(Data, R);
 
   Calccpp *calccpp = new Calccpp(opt, E);
 
-  // rescale if minimal_rate has been set:
+  /* rescale in case minimal_rate has been set */
   if (opt->hard_rescale != 1.0) calccpp->MxRescaleH(U, dim, opt->hard_rescale);
   else if (opt->minimal_rate > 0.0) calccpp->MxRescale(U, dim, opt->minimal_rate);
 
-  // multiply if times was set:
+  /* multiply in case times was set */
   if (opt->times != 1.0) calccpp->MxTimes(U, dim, opt->times);
 
   delete calccpp;
 
-  // create initial probability vector
+  /* create initial population probability vector */
   calc->MxStartVec(&p0);
 
-  // check for ergodicity + adjust to that
+  /* check for ergodicity and adjust accordingly */
   dim = calc->MxEgro(&U, &p0, dim);
   if (opt->want_verbose) calc->MxPrint(U, "Ergodic U", 'm');
 
-  // allocate space for other matrices
+  /* allocate space for other matrices */
   calc->MxGetSpace(&p8);
 
   if (!opt->quiet) fprintf(stderr, "Time to initialize: %.2f secs.\n", (clock() - clck1)/(double)CLOCKS_PER_SEC);
   clck1 = clock();
 
-  // calculate equilibrium distribution
+  /* compute equilibrium distribution */
   if(opt->method == 'F')
     calc->MxEqDistrFULL (E, p8);
   else {
@@ -122,7 +135,7 @@ int treekin_main_precision(Globals *globalParameters){
     //MxEqDistrFromLinSys(U, &p8);
   }
 
-  // write the equilibrium if we should
+  /* dump equilibrium */
   if (opt->equil_file) {
     FILE *equil = fopen(opt->equil_file, "w");
     if (equil) {
@@ -131,9 +144,9 @@ int treekin_main_precision(Globals *globalParameters){
     }
   }
 
-  // first passage times computation
+  /* compute first passage times */
   if(opt->fpt) {
-    // output file?
+    /* output file? */
     FILE *fpt = stderr;
     if (opt->fpt_file!=NULL) {
       fpt = fopen(opt->fpt_file, "w");
@@ -142,11 +155,11 @@ int treekin_main_precision(Globals *globalParameters){
         fpt = stderr;
       }
     }
-    // all or only one state?
-    if ((opt->fpt_num == -1) || opt->absrb) { // all ftp's
+    /* all or just one state? */
+    if ((opt->fpt_num == -1) || opt->absrb) { /* all FPTs */
       calc->MxFPT(U, p8, fpt);
-    } else {                                // only to state opt.ftp_num
-      T *res = calc->MxFPTOneState(U, opt->fpt_num-1);  // starting from 0
+    } else {                               /* just to state opt.ftp_num */
+      T *res = calc->MxFPTOneState(U, opt->fpt_num-1);  /* starting from 0 */
       if (res != NULL) {
         if (fpt==stderr) fprintf(fpt, "First passage times to state number %d:\n", opt->fpt_num);
         int k;
@@ -163,11 +176,10 @@ int treekin_main_precision(Globals *globalParameters){
 
   int exponentError = 0;
   if (!opt->just_sh) {
-    // diagonalization + iteration
+    /* diagonalization + iteration */
     if(opt->matexp) {
       exponentError = calc->MxExponent(p0,p8,U);
       if(exponentError){
-
         calc->MxMemoryCleanUp();
         delete calc;
         delete[] U;
@@ -194,7 +206,7 @@ int treekin_main_precision(Globals *globalParameters){
 
 
   if (opt->pini != NULL) free(opt->pini);
-  // clean up the memory
+  /* memory cleanup */
   calc->MxMemoryCleanUp();
   delete calc;
   delete[] U;

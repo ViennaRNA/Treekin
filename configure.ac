@@ -1,10 +1,7 @@
-dnl ---------------------------------------------------------------------------
-dnl Autoconf initialization.
-dnl
-dnl Bug reports are sent to mtw@tbi.univie.ac.at
-dnl ---------------------------------------------------------------------------
 
-AC_INIT([Treekin], 0.4.1, [mtw@tbi.univie.ac.at], [Treekin], [http://www.tbi.univie.ac.at/RNA/Treekin])
+AC_INIT([Treekin],
+	m4_esyscmd_s([cat VERSION.txt]),	
+	[mtw@tbi.univie.ac.at], [Treekin], [http://www.tbi.univie.ac.at/RNA/Treekin])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(calc.cpp)
 AC_CONFIG_HEADERS(config.h)
