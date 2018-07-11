@@ -15,8 +15,13 @@
 
 #include <cstdlib>
 
-#include "treekinCastableTypes.h"
+#ifdef WITH_MPACK
+
+# include "treekinCastableTypes.h"
 using namespace treekinCastableTypes;
+
+#endif
+
 using namespace std;
 
 class Mxccm {

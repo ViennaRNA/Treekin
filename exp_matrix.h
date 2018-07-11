@@ -57,7 +57,9 @@
 #include <math.h>
 #include "mxccm.h"
 
-#include "treekinCastableTypes.h"
+#ifdef WITH_MPACK
+# include "treekinCastableTypes.h"
+#endif
 
 using namespace std;
 

@@ -11,12 +11,14 @@
 /*=================================================================*/
 
 #include "mxccm.h"
-#include "treekinCastableTypes.h"
 #include "calc.h"
-
 using namespace std;
 
+#ifdef WITH_MPACK
+# include "treekinCastableTypes.h"
 using namespace treekinCastableTypes;
+#endif
+
 
 template<class T>
 T *convertRates(double *rates, size_t dim){

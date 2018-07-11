@@ -42,7 +42,10 @@
 #include <lapacke.h>
 #include "bardata.h"
 #include "globals.h"
-#include "treekinCastableTypes.h"
+
+#ifdef WITH_MPACK
+# include "treekinCastableTypes.h"
+#endif
 
 class Calccpp {
 
