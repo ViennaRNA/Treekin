@@ -1,10 +1,7 @@
 /*=================================================================*/
 /*=   barparser.c                                                 =*/
 /*=   routines for reading bar-files and other input for treekin  =*/
-/*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-25 22:52:02 mtw>          =*/
-/*=   $Id: barparser.c,v 1.23 2006/11/27 13:45:41 mtw Exp $       =*/
-/*=   ---------------------------------------------------------   =*/
+/*=                                                               =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
 /*=                             treekin                           =*/

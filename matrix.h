@@ -2,10 +2,7 @@
 /*=   matrix.h                                                    =*/
 /*=   header file for matrix-calculation stuff from treekin       =*/
 /*=   mainly type definitions from meschach library               =*/
-/*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-03-15 15:16:18 mtw>          =*/
-/*=   $Id: matrix.h,v 1.3 2006/03/15 14:18:20 mtw Exp $           =*/
-/*=   ---------------------------------------------------------   =*/
+/*=                                                               =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/
 /*=                             treekin                           =*/
