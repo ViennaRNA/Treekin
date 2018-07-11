@@ -48,6 +48,16 @@ AC_SUBST(HOST_TYPE)
 AC_SUBST(SHAREDLIBEXT)
 AC_SUBST(CFLAGS)
 
+
+AC_DEFUN([AC_TREEKIN_APPEND_VAR_COMMA],[
+  if test "x$$1" != "x" ; then
+    $1="${$1}, "
+  fi
+  $1="${$1}$2"
+])
+
+
+
 dnl ---------------------------------------------------------------------------
 dnl Checks for various programs and packages.
 dnl ---------------------------------------------------------------------------
@@ -189,8 +199,11 @@ eval _mandir=$(eval printf "%s" $mandir)
 
 if test "x$mpack_wanted_but_failed" != "x"; then
   drtrafo_note="Note, that the program DrTransformer requires Treekin to be linked against the MPACK library!"
+else
+  if test "x$mpack_data_types" != "x"; then
+    mpack_types="( Supported Data Types: $mpack_data_types )"
+  fi
 fi
-
 
 AC_MSG_NOTICE(
 [
@@ -203,7 +216,7 @@ Configured successful with the following options:
 
 Extra Libraries
 ---------------
-  * MPack             : ${enable_MPACK:-no}   $mpack_wanted_but_failed
+  * MPack             : ${enable_mpack:-no} $mpack_wanted_but_failed $mpack_types
 
 Install Directories
 -------------------

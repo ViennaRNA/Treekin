@@ -2,14 +2,27 @@
 #define _TREEKINCASTABLETYPES_
 
 
-#include <gmpxx.h>
-#include <qd/qd_real.h>
-#include <qd/dd_real.h>
-#include <mpack/mpreal.h>
-#include <mpack/mutils_mpfr.h>
-#include <mpack/mutils___float128.h>
+#ifdef WITH_MPACK_GMP
+# include <gmpxx.h>
+#endif
+
+#ifdef WITH_MPACK_QD
+# include <qd/qd_real.h>
+# include <qd/dd_real.h>
+#endif
+
+#ifdef WITH_MPACK_MPFR
+# include <mpack/mpreal.h>
+# include <mpack/mutils_mpfr.h>
+#endif
+
+#ifdef WITH_MPACK___FLOAT128
+# include <mpack/mutils___float128.h>
+#endif
 
 namespace treekinCastableTypes {
+#ifdef WITH_MPACK_QD
+
 class qd_real_castable : public qd_real {
 public:
   qd_real_castable() : qd_real()
@@ -31,6 +44,10 @@ public:
   }
 };
 
+#endif
+
+#ifdef WITH_MPACK_DD
+
 class dd_real_castable : public dd_real {
 public:
   dd_real_castable() : dd_real()
@@ -51,6 +68,8 @@ public:
     return this->x[0];
   }
 };
+
+#endif
 
 class mpf_real_castable : public mpf_class {
 public:
@@ -105,6 +124,8 @@ public:
   }
 };
 
+#ifdef WITH_MPACK_MPFR
+
 class mpreal_castable : public mpreal {
 public:
   mpreal_castable() : mpreal()
@@ -124,7 +145,12 @@ public:
     return (int)mpfr_get_ui((mpfr_ptr)this, default_rnd);
   }
 };
+
+#endif
+
 }
+
+#ifdef WITH_MPACK_MPFR
 
 namespace std {
 static treekinCastableTypes::mpreal_castable
@@ -148,5 +174,6 @@ sqrt(treekinCastableTypes::mpreal_castable a)
   return sqrt((mpfr::mpreal)a);
 }
 }
+#endif
 
 #endif

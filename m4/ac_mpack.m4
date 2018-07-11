@@ -29,7 +29,7 @@ AS_IF([test $MPACKPATHSET = 1],
 
 mpack_LIBS=""
 mpack_wanted_but_failed=""
-mpack_DIR=""
+mpack_data_types=""
 
 NEED_LIB_QD=0
 NEED_LIB_GMP=0
@@ -54,8 +54,6 @@ if test "$enable_mpack" = "yes"; then
                           [mpack >= 0.8],
                           [
                             CXXFLAGS="$mpack_CFLAGS $CXXFLAGS"
-                            # PKG_CHECK_MODULES sets mpack_LIBS automatically
-                            mpack_DIR=`pkg-config --variable includedir mpack`
                           ],
                           [
                             mpack_wanted_but_failed="( mpack library missing or not of version 0.8 or higher )";
@@ -66,39 +64,57 @@ fi
 
 if test "$enable_mpack" = "yes"; then
   ppFlags=" "
-##  if test "x$mpack_DIR" != "x"; then
-##    ac_save_CPPFLAGS="$CPPFLAGS"
-##    CPPFLAGS="-I${mpack_DIR}/mpack $CPPFLAGS"
-##  fi
 
   #test which libraries of the mpack package are installed and set the flags.
   AC_LANG_PUSH([C++])
-  AC_CHECK_HEADER(mpack/mlapack_qd.h, [ppFlags="-DWITH_MPACK_QD $ppFlags"; NEED_LIB_QD=1 ],[],
-  [ #include <mpack/mpack_config.h>
-   ])
-  AC_CHECK_HEADER(mpack/mlapack_dd.h, [ppFlags="-DWITH_MPACK_DD $ppFlags"; NEED_LIB_QD=1 ],[],
-  [#include <mpack/mpack_config.h>
-   ])
-  AC_CHECK_HEADER(mpack/mlapack_double.h, [ppFlags="-DWITH_MPACK_DOUBLE $ppFlags" ],[],
-  [#include <mpack/mpack_config.h>
-   ])
-  AC_CHECK_HEADER(mpack/mlapack_longdouble.h, [ppFlags="-DWITH_MPACK_LD $ppFlags" ],[],
-  [#include <mpack/mpack_config.h>
-   ])
-  AC_CHECK_HEADER(mpack/mlapack___float128.h, [ppFlags="-DWITH_MPACK___FLOAT128 $ppFlags" ],[],
-  [#include <mpack/mpack_config.h>
-   ])
-  AC_CHECK_HEADER(mpack/mlapack_mpfr.h, [ppFlags="-DWITH_MPACK_MPFR $ppFlags"; NEED_LIB_MPFR=1; NEED_LIB_MPC=1 ],[],
-  [#include <mpack/mpack_config.h>
-   ])
-  AC_CHECK_HEADER(mpack/mlapack_gmp.h, [ppFlags="-DWITH_MPACK_GMP $ppFlags"; NEED_LIB_GMP=1 ],[],
-  [#include <mpack/mpack_config.h>
-   ])
+
+  AC_CHECK_HEADER(mpack/mlapack_qd.h, [
+      ppFlags="-DWITH_MPACK_QD $ppFlags"
+      AC_DEFINE([WITH_MPACK_QD], [1], [Quad Double support])
+      NEED_LIB_QD=1
+  ], [],
+  [#include <mpack/mpack_config.h>])
+
+  AC_CHECK_HEADER(mpack/mlapack_dd.h, [
+      ppFlags="-DWITH_MPACK_DD $ppFlags"
+      NEED_LIB_QD=1
+      AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [DD])
+  ], [],
+  [#include <mpack/mpack_config.h>])
+
+  AC_CHECK_HEADER(mpack/mlapack_double.h, [
+      ppFlags="-DWITH_MPACK_DOUBLE $ppFlags"
+      AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [double])
+  ], [],
+  [#include <mpack/mpack_config.h>])
+
+  AC_CHECK_HEADER(mpack/mlapack_longdouble.h, [
+      ppFlags="-DWITH_MPACK_LD $ppFlags"
+      AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [long double])
+  ], [],
+  [#include <mpack/mpack_config.h>])
+
+  AC_CHECK_HEADER(mpack/mlapack___float128.h, [
+      ppFlags="-DWITH_MPACK___FLOAT128 $ppFlags"
+      mpack_LIBS="$mpack_LIBS -lquadmath"
+      AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [__float128])
+  ], [],
+  [#include <mpack/mpack_config.h>])
+
+  AC_CHECK_HEADER(mpack/mlapack_mpfr.h, [
+      ppFlags="-DWITH_MPACK_MPFR $ppFlags"
+      NEED_LIB_MPFR=1
+      NEED_LIB_MPC=1
+  ], [],
+  [#include <mpack/mpack_config.h>])
+
+  AC_CHECK_HEADER(mpack/mlapack_gmp.h, [
+      ppFlags="-DWITH_MPACK_GMP $ppFlags"
+      NEED_LIB_GMP=1
+  ], [],
+  [#include <mpack/mpack_config.h>])
+
   AC_LANG_POP
-  
-##  if test "x$mpack_DIR" != "x"; then
-##    CPPFLAGS="$ac_save_CPPFLAGS"
-##  fi
 
   CPPFLAGS=$CPPFLAGS$ppFlags
 fi
@@ -110,15 +126,10 @@ if test "$enable_mpack" = "yes"; then
   # check for further dependencies of MPACK
   AC_LANG_PUSH([C++])
   if test "$NEED_LIB_GMP" = "1"; then
-      AC_CHECK_HEADER(gmp.h, HAVE_GMP_HEADER=yes,[],
-      [
-#if HAVE_SUPPRESS_COMPILER_WARNING_H
-#include <SUPPRESS_COMPILER_WARNING.h>
-#endif
-      ])
+      AC_CHECK_HEADER(gmp.h, HAVE_GMP_HEADER=yes)
 
       if test "x$HAVE_GMP_HEADER" = "xyes"; then
-          AC_CHECK_LIB(gmp, __gmpz_init, [mpack_LIBS="$mpack_LIBS -lgmpxx -lgmp"; HAVE_GMP=yes])
+          AC_CHECK_LIB(gmp, __gmpz_init, [mpack_LIBS="$mpack_LIBS -lgmpxx -lgmp"; HAVE_GMP=yes; AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [GMP])])
       fi
 
       if test "x$HAVE_GMP" != "xyes"; then
@@ -127,15 +138,10 @@ if test "$enable_mpack" = "yes"; then
   fi
 
   if test "$NEED_LIB_MPFR" = "1"; then
-      AC_CHECK_HEADER(mpfr.h, HAVE_MPFR_HEADER=yes,[],
-      [
-#if HAVE_SUPPRESS_COMPILER_WARNING_H
-#include <SUPPRESS_COMPILER_WARNING.h>
-#endif
-      ])
+      AC_CHECK_HEADER(mpfr.h, HAVE_MPFR_HEADER=yes)
 
       if test "x$HAVE_MPFR_HEADER" = "xyes"; then
-          AC_CHECK_LIB(mpfr, mpfr_init, [mpack_LIBS="$mpack_LIBS -lmpfr"; HAVE_MPFR=yes])
+          AC_CHECK_LIB(mpfr, mpfr_init, [mpack_LIBS="$mpack_LIBS -lmpfr"; HAVE_MPFR=yes; AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [MPFR])])
       fi
 
       if test "x$HAVE_MPFR" != "xyes"; then
@@ -144,15 +150,10 @@ if test "$enable_mpack" = "yes"; then
   fi
 
   if test "$NEED_LIB_MPC" = "1"; then
-      AC_CHECK_HEADER(mpc.h, HAVE_MPC_HEADER=yes,[],
-      [
-#if HAVE_SUPPRESS_COMPILER_WARNING_H
-#include <SUPPRESS_COMPILER_WARNING.h>
-#endif
-      ])
+      AC_CHECK_HEADER(mpc.h, HAVE_MPC_HEADER=yes)
 
       if test "x$HAVE_MPC_HEADER" = "xyes"; then
-          AC_CHECK_LIB(mpc, mpc_init2, [mpack_LIBS="$mpack_LIBS -lmpc"; HAVE_MPC=yes])
+          AC_CHECK_LIB(mpc, mpc_init2, [mpack_LIBS="$mpack_LIBS -lmpc"; HAVE_MPC=yes;  AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [MPC])])
       fi
 
       if test "x$HAVE_MPC" != "xyes"; then
@@ -161,15 +162,10 @@ if test "$enable_mpack" = "yes"; then
   fi
 
   if test "$NEED_LIB_QD" = "1"; then
-      AC_CHECK_HEADER(qd/qd_real.h, HAVE_QD_HEADER=yes,[],
-      [
-#if HAVE_SUPPRESS_COMPILER_WARNING_H
-#include <SUPPRESS_COMPILER_WARNING.h>
-#endif
-      ])
+      AC_CHECK_HEADER(qd/qd_real.h, HAVE_QD_HEADER=yes)
 
       if test "x$HAVE_QD_HEADER" = "xyes"; then
-          AC_CHECK_LIB(qd, c_qd_sqrt, [mpack_LIBS="$mpack_LIBS -lqd"; HAVE_QD=yes])
+          AC_CHECK_LIB(qd, c_qd_sqrt, [mpack_LIBS="$mpack_LIBS -lqd"; HAVE_QD=yes;  AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [QD])])
       fi
 
       if test "x$HAVE_QD" != "xyes"; then
@@ -215,8 +211,7 @@ https://github.com/nakatamaho/mpack
 
 fi
 
-AM_CONDITIONAL(with_MPACK, 
+AM_CONDITIONAL(with_MPACK,
         [test "$enable_mpack" = "yes"])
-        
 ])
 
