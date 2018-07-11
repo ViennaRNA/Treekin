@@ -6,7 +6,7 @@ dist_man_MANS = treekin.1
 
 SUFFIXES = .1 .ggo
 
-vpath %.ggo = ../
+vpath %.ggo = ../src
 
 if TREEKIN_AM_SWITCH_HAS_HELP2MAN
 

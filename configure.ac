@@ -2,13 +2,14 @@ dnl Autoconf initialization.
 dnl Bug reports are sent to mtw@tbi.univie.ac.at
 
 AC_INIT([Treekin],
-        m4_esyscmd_s([cat VERSION.txt]),        
+        m4_esyscmd_s([cat VERSION.txt]),
         [mtw@tbi.univie.ac.at], [Treekin], [http://www.tbi.univie.ac.at/RNA/Treekin])
+
 AC_CONFIG_AUX_DIR(config)
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_CONFIG_SRCDIR(calc.cpp)
+AC_CONFIG_SRCDIR([src/calc.cpp])
 AC_CONFIG_HEADERS(config.h)
 
 AM_SILENT_RULES([yes])
@@ -168,7 +169,7 @@ dnl ---------------------------------------------------------------------------
 dnl Output
 dnl ---------------------------------------------------------------------------
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile])
 AC_CONFIG_FILES([packaging/treekin.spec packaging/PKGBUILD])
 AC_CONFIG_FILES([man/Makefile man/cmdlopt.sh],[chmod +x man/cmdlopt.sh])
 

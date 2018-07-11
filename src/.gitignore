@@ -1,0 +1,6 @@
+.deps
+treekin
+*.o
+*~
+treekin_cmdline.c
+treekin_cmdline.h
