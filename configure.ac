@@ -65,20 +65,11 @@ AC_PATH_PROG([AR],[ar],[ar])
 dnl ---------------------------------------------------------------------------
 dnl Checks for gengetopt
 dnl ---------------------------------------------------------------------------
-AC_DEFUN([AX_TREEKIN_GENGETOPT],[
-  AC_PATH_PROG([GENGETOPT],[gengetopt],[],[])
-  # if gengetopt is unavailable, check whether commandline parser sources are present
-  AS_IF([ test "x$GENGETOPT" = "x"],[
-    create_commandline_parser="no"
-    AS_IF([ ! test -f treekin_cmdline.c ], [
-      AC_MSG_ERROR(gengetopt not found)
-    ])
-  ])
-  AM_CONDITIONAL(MAKE_CMDLINE_PARSER, test "x$create_commandline_parser" != "xno")
-])
 
-AX_TREEKIN_GENGETOPT
-
+AC_ARG_VAR([GENGETOPT], [the 'gengetopt' program to generate command line argument parsers for executable programs])
+AC_PATH_PROG([GENGETOPT], [gengetopt], [no])
+AC_SUBST([GENGETOPT])
+AM_CONDITIONAL(TREEKIN_AM_SWITCH_HAS_GENGETOPT, test "x$GENGETOPT" != "xno")
 
 
 dnl ---------------------------------------------------------------------------
