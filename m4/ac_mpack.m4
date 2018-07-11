@@ -4,28 +4,28 @@ dnl ---------------------------------------------------------------------------
 dnl Check for mlapack
 dnl ---------------------------------------------------------------------------
 
-AC_ARG_ENABLE([MPACK],
+AC_ARG_ENABLE([mpack],
               AC_HELP_STRING(
-                  [--disable-MPACK],
-                  [disable support for MPACK models (default=enabled)]
+                  [--disable-mpack],
+                  [disable support for MPack models (default=enabled)]
               ),
               [enable_mpack=$enableval],
               [enable_mpack=yes]
 )
 
-# MPACK package library path support, if not installed in usual directories
-AC_ARG_WITH([MPACK],
+# MPack package library path support, if not installed in usual directories
+AC_ARG_WITH([mpack],
             AC_HELP_STRING(
-                [--with-MPACK=PREFIX],
-                [alternative prefix path to MPACK library]
+                [--with-mpack=PREFIX],
+                [alternative prefix path to MPack library]
             ),
             MPACKPATHSET=1,
             MPACKPATHSET=0
 )
 
 AS_IF([test $MPACKPATHSET = 1],
-      [ CXXFLAGS="-I$with_MPACK/include $CXXFLAGS";
-        LDFLAGS="-L$with_MPACK/lib $LDFLAGS" ])
+      [ CXXFLAGS="-I$with_mpack/include $CXXFLAGS";
+        LDFLAGS="-L$with_mpack/lib $LDFLAGS" ])
 
 mpack_LIBS=""
 mpack_wanted_but_failed=""
@@ -183,7 +183,7 @@ if test "x$mpack_wanted_but_failed" != "x"; then
 **********************************************************************
 Failed to setup linking the program against the MPACK library.
 
-Couldn't find MPack in specified path '$with_MPACK'.
+Couldn't find MPack in specified path '$with_mpack'.
 If you haven't installed it yet, you can obtain the MPack library from
 
 https://github.com/nakatamaho/mpack
@@ -198,7 +198,7 @@ Failed to setup linking the program against the MPACK library.
 In case you have installed MPack in a non-standard directory, consider
 using the
 
-  --with-MPACK=/path/to/mpack
+  --with-mpack=/path/to/mpack
 
 parameter to specify the location where to find MPack.
 Otherwise, you can obtain the MPack library from
@@ -211,7 +211,7 @@ https://github.com/nakatamaho/mpack
 
 fi
 
-AM_CONDITIONAL(with_MPACK,
+AM_CONDITIONAL(with_mpack,
         [test "$enable_mpack" = "yes"])
 ])
 

@@ -224,7 +224,7 @@ mpc, gmp):
 
 Configure should automatically detect the lapack location according to
 the pkg-config file of MPACK. An alternative is to set the prefix path
-with `--with-MPACK=/prefix/`. In both cases you have to add the paths for
+with `--with-mpack=/prefix/`. In both cases you have to add the paths for
 the include and lib files of the dependencies that you already used in
 order to compile MPACK (qd, mpfr, mpc, gmp):
 
