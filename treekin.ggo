@@ -3,10 +3,19 @@ package "treekin" # don't use package if you're using automake
 purpose "Compute biopolymer macrostate dynamics"
 
 # Version of your program
-version "0.4.2"   # don't use version if you're using automake
+##version "0.4.2"   # don't use version if you're using automake
 
 # command line options passed to gengetopt
 args "--file-name=treekin_cmdline --include-getopt --default-optional --unamed-opts"
+
+description "treekin computes a reduced dynamics of biopolymer folding by means of \
+numeric integration of a Markov process that generally operates at the level of \
+macrostates, i.e. basins of attraction of the underlying energy landscape.\n\ntreekin \
+expects a .bar file via stdin, and optionally a rates file in the current working \
+directory. Both the .bar file and the rates file (default name is rates.out) can be \
+obtained from barriers. In case of -m I option (default) the program needs just the \
+rate file provided as standard input."
+
 
 # Options
 option "absorb"             a "Make a state absorbing" typestr="state" int no

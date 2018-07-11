@@ -154,6 +154,11 @@ dnl ---------------------------------------------------------------------------
 dnl Miscellaneous
 dnl ---------------------------------------------------------------------------
 
+AC_ARG_VAR([HELP2MAN], [the 'help2man' script to generate man pages from command line options of our executable programs])
+AC_PATH_PROG([HELP2MAN], [help2man], [no])
+AC_SUBST([HELP2MAN])
+AM_CONDITIONAL(TREEKIN_AM_SWITCH_HAS_HELP2MAN, test "x$HELP2MAN" != "xno")
+
 # Root directory
 # Translate path for native Windows compilers for use with 'make check'
 
@@ -174,6 +179,7 @@ dnl ---------------------------------------------------------------------------
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([packaging/treekin.spec packaging/PKGBUILD])
+AC_CONFIG_FILES([man/Makefile man/cmdlopt.sh],[chmod +x man/cmdlopt.sh])
 
 AC_OUTPUT
 

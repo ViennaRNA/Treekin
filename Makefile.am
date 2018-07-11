@@ -1,4 +1,5 @@
-dist_man_MANS = treekin.1
+
+SUBDIRS = man
 
 bin_PROGRAMS = treekin
 
@@ -12,8 +13,7 @@ treekin_SOURCES = mxccm.cpp mxccm.h \
                   exp_matrix.cpp  exp_matrix.h \
                   treekin_cmdline.c treekin_cmdline.h \
                   treekinCastableTypes.h main.cpp
-                  
-                  
+
 
 EXTRA_DIST = treekin.ggo treekin_cmdline.c treekin_cmdline.h VERSION.txt
 
