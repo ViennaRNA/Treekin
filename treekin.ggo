@@ -23,12 +23,13 @@ option "exponent"           - "Use matrix-expontent routines, rather than diagon
 option "dumpU"              - "Dump transition matrix U to file mx.txt (and to binary mx.bin - not fixed yet)" flag off
 option "mathematicamatrix"  - "Dump transition matrix U to Mathematica-readable file mxMat.txt" flag off
 option "bin"                b "Assume binary rates input" flag off
-option "bar"                B "Input barriers file. Required in case \"-m I\" (rates kinetics) AND \"-a\" (absorbing state) is given" string no
+option "bar"                B "Read barriers input from file instead of standard input. Required in case \"-m I\" (rates kinetics) AND \"-a\" (absorbing state) is given" string no
 option "fpt"                t "Compute first passage times (FPT). Arguments:\nall => compute all FPT (slow)\n<num> - compute FPT to state <num> from all states" string no
 option "recoverE"           r "Recover from pre-ccomputes eigenvalues and eigenvectors" flag off
 option "dumpE"              e "Dump eigenvalues and eigenvectors to a binary recovery file and continue with iteration" flag off
 option "dumpX"              x "Dump eigenvalues to ASCII file and exit (do not iterate)" flag off
 option "info"               - "Show settings" flag off
+option "ratesfile"          f "Read transition rates from file instead of standard input." string no
 option "verbose"            v "Verbose output" flag off
 option "quiet"              q "Be silent (do not print out the output)" flag off
 option "fptfile"            - "Filename of FPT file (provided -t option given)" string no

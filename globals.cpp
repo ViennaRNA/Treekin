@@ -42,37 +42,6 @@ Globals::parse_commandline(int argc, char **argv)
     fprintf(stderr, "error while parsing command-line options\n");
     exit(EXIT_FAILURE);
   }
-  /*
-  //input file:
-  if (args_info.inputs_num) {
-    char *infile=NULL;
-    to_basename(args_info.inputs[0]);
-    infile = (char *)calloc(strlen(opt.basename)+5, sizeof(char));
-    strncpy(infile, opt.basename, strlen(opt.basename));
-    if (opt.method == 'F') strcat(infile, ".sub");
-    else strcat(infile, ".bar");
-    opt.INFILE = fopen(infile, "r");
-    if (opt.INFILE == NULL) {
-      fprintf(stderr, "Error opening input file \"%s\".\n", infile);
-      free(infile);
-      exit(EXIT_FAILURE);
-    }
-    free(infile);
-  } else {
-    opt.INFILE = stdin;
-  }
-
-  // rate file?
-  if (args_info.ratesfile_given) {
-    opt.RATFILE = fopen(args_info.ratesfile_arg, "r");
-    if (opt.RATFILE == NULL) {
-      if (!opt.quiet) fprintf(stderr, "Cannot open rate file %s!\n", args_info.ratesfile_arg);
-    }
-  } else {
-    opt.RATFILE = NULL;
-  }
-  */
-  opt.INFILE = stdin;
 
   set_parameters();
 }
@@ -263,6 +232,14 @@ Globals::set_parameters(void)
     opt.vis_file = args_info.visualize_arg;
   }
 
+  if (args_info.ratesfile_given) {
+    opt.RATES = fopen(args_info.ratesfile_arg, "r");
+    if (opt.RATES == NULL) {
+      if (!opt.quiet) fprintf(stderr, "Cannot open rate file %s!\n", args_info.ratesfile_arg);
+      exit(EXIT_FAILURE);
+    }
+  }
+
   if (args_info.bar_given) {
     opt.BARFILE = fopen(args_info.bar_arg, "r");
     if (opt.BARFILE == NULL){
@@ -430,7 +407,8 @@ Globals::ini_globs(void)
   opt.equil_file      =          NULL;
   opt.times           =          1.0;
   opt.warnings        =          0;
-  opt.BARFILE         =          NULL;
+  opt.BARFILE         =          stdin;
+  opt.RATES           =          stdin;
 }
 
 /*==============================*/

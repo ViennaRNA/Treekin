@@ -53,14 +53,13 @@ int treekin_main_precision(Globals *globalParameters){
   Barparser *bp = new Barparser(opt,dim,E);
 
   switch (opt->method) {
-    /* case 'F': dim = bp->ParseInfile(opt->INFILE, opt->RATFILE, &tmpReadRates); break; */
     case 'I':
       if (!opt->quiet)
         fprintf(stderr,
                 "Using rates matrix from STDIN for constructing transition matrix\n");
       if (opt->binrates)
-        dim = bp->MxReadBinRates(opt->INFILE, &tmpReadRates, opt->n, opt->max_decrease);
-      else dim = bp->ParseRatesFile(opt->INFILE, &tmpReadRates);
+        dim = bp->MxReadBinRates(opt->RATES, &tmpReadRates, opt->n, opt->max_decrease);
+      else dim = bp->ParseRatesFile(opt->RATES, &tmpReadRates);
 
       if (opt->absrb){
         int dimb;
@@ -69,7 +68,7 @@ int treekin_main_precision(Globals *globalParameters){
                   "ERROR: bar file must be provided via --bar option for computing proper free energy/partition function for the absorbing state\n");
           exit(EXIT_FAILURE);}
         else{
-          dimb = bp->ParseBarfile(opt->BARFILE, &Data); /* NB: opt.BARFILE; not opt.INFILE ! */
+          dimb = bp->ParseBarfile(opt->BARFILE, &Data); /* NB: opt.BARFILE; not opt.RATES ! */
           if (dim != dimb){
             fprintf(stderr,
                     "ERROR: dimension mismatch among input rates file and bar file %d != %d\n",
@@ -90,7 +89,7 @@ int treekin_main_precision(Globals *globalParameters){
       break;
     case 'A':
       if (!opt->quiet) fprintf(stderr, "Using bar file from STDIN for constructing transition matrix\n");
-      dim = bp->ParseBarfile (opt->INFILE, &Data);
+      dim = bp->ParseBarfile (opt->BARFILE, &Data);
       break;
 
   }

@@ -39,8 +39,7 @@ typedef struct {         /* command-line options */
   double tinc;           /* time increment */
   double *pini;          /* start population at lmin xxx */
   char method;           /* method to build transition matrix */
-  FILE *INFILE;          /* input file (usually bar-file) */
-  /* FILE *RATFILE;     */     /* input file (rates) */
+  FILE *RATES;           /* Rates matrix input file */
   FILE *BARFILE;         /* input barriers file */
   char *sequence;        /* sequence */
   int  fpt;              /* switch for fpt-related calculations */
