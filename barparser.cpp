@@ -12,6 +12,9 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
 
 #include "barparser.h"
 
@@ -88,6 +91,11 @@ Barparser::ParseBarfile(FILE *fp, BarData **lmin)
   int count = 0, v = 0;
   int size = LMINBASE;
   BarData *tmp;
+
+  if ((fp == NULL) || (fcntl(fileno(fp), F_GETFD) == -1)) {
+    fprintf(stderr, "ERROR: Barrier file handle is either NULL or already closed!");
+    exit(EXIT_FAILURE);
+  }
 
   tmp = (BarData *) calloc (LMINBASE, sizeof(BarData));
   tmpseq = (char *) calloc (500, sizeof(char));
@@ -175,6 +183,12 @@ int Barparser::MxReadBinRates(FILE *rate_file, double **rate_mx, int nstates, in
 {
   int dimension = 0;
         int ref;
+
+  if ((rate_file == NULL) || (fcntl(fileno(rate_file), F_GETFD) == -1)) {
+    fprintf(stderr, "ERROR: Rates matrix (binary) file handle is either NULL or already closed!");
+    exit(EXIT_FAILURE);
+  }
+
   /* read dimension from file */
   ref = fread(&dimension,sizeof(int),1,rate_file);
   double *data = (double *)calloc(dimension*dimension, sizeof(double));
@@ -272,8 +286,8 @@ int Barparser::ParseRatesFile(FILE *rates_FP, double **Raten)
   double rate, *tmp_rates=NULL;
 
   // valid rate file?
-  if (rates_FP==NULL) {
-    fprintf(stderr, "ERROR: Rate file is NULL!\n");
+  if ((rates_FP == NULL) || (fcntl(fileno(rates_FP), F_GETFD) == -1)) {
+    fprintf(stderr, "ERROR: Rates matrix file handle is either NULL or already closed!");
     exit(EXIT_FAILURE);
   }
 
