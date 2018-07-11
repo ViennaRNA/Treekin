@@ -2,8 +2,7 @@
 /*=   globals.h                                                   =*/
 /*=   header file for global routines from treekin                =*/
 /*=   ---------------------------------------------------------   =*/
-/*=   Last changed Time-stamp: <2006-11-24 19:17:45 mtw>          =*/
-/*=   $Id: globals.h,v 1.15 2006/11/24 18:24:11 mtw Exp $         =*/
+/*=   Last changed Time-stamp: <2017-11-27 12:21:23 mtw>          =*/
 /*=   ---------------------------------------------------------   =*/
 /*=                 (c) Michael Thomas Wolfinger                  =*/
 /*=                      mtw@tbi.univie.ac.at                     =*/

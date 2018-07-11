@@ -1,3 +1,5 @@
+dnl Autoconf initialization.
+dnl Bug reports are sent to mtw@tbi.univie.ac.at
 
 AC_INIT([Treekin],
 	m4_esyscmd_s([cat VERSION.txt]),	
