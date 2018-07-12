@@ -11,6 +11,7 @@
 #define _MXCCM_H_
 
 #include <cstdlib>
+#include <cmath>
 
 #ifdef WITH_MPACK
 

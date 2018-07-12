@@ -73,6 +73,8 @@ AC_PATH_PROG([ACLOCAL],[aclocal],[aclocal])
 AC_PATH_PROG([MAKE],[make],[make])
 AC_PATH_PROG([AR],[ar],[ar])
 
+AX_CXX_COMPILE_STDCXX([11])
+
 dnl ---------------------------------------------------------------------------
 dnl Checks for gengetopt
 dnl ---------------------------------------------------------------------------

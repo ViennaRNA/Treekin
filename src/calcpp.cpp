@@ -1,8 +1,9 @@
 #include "calcpp.h"
-#include <gmp.h>
 
 
 #ifdef WITH_MPACK_GMP
+#include <gmp.h>
+
 /**
  * Takes a symmetric matrix U as input and computes the eigenvalues and eigenvectors by using the MPACK library.
  * @param U - INPUT - the symmetric matrix

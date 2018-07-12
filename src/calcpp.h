@@ -38,6 +38,7 @@
 #endif
 #endif
 
+#include <cmath>
 #include <lapacke.h>
 #include "bardata.h"
 #include "globals.h"
