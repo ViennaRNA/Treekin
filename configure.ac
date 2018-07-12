@@ -91,9 +91,7 @@ dnl ---------------------------------------------------------------------------
 
 AX_LAPACK([
       AC_CHECK_HEADERS([openblas/lapacke.h lapacke/lapacke.h lapacke.h],[treekin_lapacke_header=yes;break;],)
-      AS_IF([test "x$treekin_lapacke_header" = "xyes"],[
-        LDFLAGS="$LDFLAGS -llapack"
-      ],[
+      AS_IF([test "x$treekin_lapacke_header" = "xyes"],[],[
         AC_MSG_ERROR([could not find lapacke.h])
       ])
       ],[AC_MSG_ERROR([could not find required version of Lapack library])])

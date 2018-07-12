@@ -6,7 +6,7 @@ SUFFIXES = _cmdline.c _cmdline.h .ggo
 
 bin_PROGRAMS = treekin
 
-treekin_LDADD = $(mpack_LIBS)
+treekin_LDADD = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS) $(mpack_LIBS)
 
 treekin_SOURCES = \
         mxccm.cpp mxccm.h \
