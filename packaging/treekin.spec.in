@@ -27,9 +27,15 @@ BuildRequires:  automake
 BuildRequires:  rpm-devel
 
 BuildRequires:  libstdc++-devel
-BuildRequires:  gcc gcc-c++ glibc-devel info lapack-devel blas-devel
+BuildRequires:  gcc gcc-fortran gcc-c++ glibc-devel info lapack-devel blas-devel
+%if 0%{?suse_version}
+BuildRequires:  lapacke-devel
+%endif
 
-Requires:       libstdc++ glibc blas lapack
+Requires:       libstdc++ glibc blas lapack libgfortran
+%if 0%{?suse_version}
+Requires:       lapacke
+%endif
 
 %description
 The program treekin computes folding dynamics on coarse grained version of an energy landscape,
