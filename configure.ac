@@ -177,8 +177,8 @@ eval _includedir=$(eval printf "%s" $includedir)
 eval _datadir=$(eval printf "%s" $datadir)
 eval _mandir=$(eval printf "%s" $mandir)
 
-if test "x$mpack_wanted_but_failed" != "x"; then
-  drtrafo_note="Note, that the program DrTransformer requires Treekin to be linked against the MPACK library!"
+if test "x$mpack_wanted_but_failed" != "x" || test "x$enable_mpack" != "xyes" ; then
+  drtrafo_note="Note, that the most recent version of the DrTransformer program requires Treekin to be linked against the MPACK library!"
 else
   if test "x$mpack_data_types" != "x"; then
     mpack_types="( Supported Data Types: $mpack_data_types )"
