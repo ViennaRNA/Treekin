@@ -89,34 +89,14 @@ dnl ---------------------------------------------------------------------------
 dnl Checks for libraries.
 dnl ---------------------------------------------------------------------------
 
-AC_LANG(C)
-#AC_CHECK_LIB(gfortran, exp)
-dnl AC_SEARCH_LIBS([ddot_],[blas],[],[
-dnl                AC_MSG_ERROR([unable to find the ddot_() function in lblas])
-dnl                ])
-AC_CHECK_LIB(blas,ddot_,[],[
-        AC_MSG_ERROR([unable to find the ddot_() function in lblas. Is blas installed?])
-])                                
-AC_CHECK_LIB(lapack,dgeevx_,[],[
-        AC_MSG_ERROR([unable to find the dgeevx_() function in lblas. Is lapack installed?])
-])
-
-#search for the correct include path in the default locations
-AC_CHECK_HEADERS([/usr/include/lapacke.h], [
-  CXXFLAGS="-I/usr/include $CXXFLAGS"
-], [
-  AC_CHECK_HEADERS([/usr/include/lapacke/lapacke.h], [
-    CXXFLAGS="-I/usr/include/lapacke $CXXFLAGS"
-  ], [
-    AC_CHECK_HEADERS([/usr/local/include/lapacke.h], [
-      CXXFLAGS="-I/usr/local/include $CXXFLAGS"
-    ], [
-      AC_CHECK_HEADERS([/usr/local/include/lapacke/lapacke.h], [
-        CXXFLAGS="-I/usr/local/include/lapacke $CXXFLAGS"
-      ], [])
-    ])
-  ])
-])
+AX_LAPACK([
+      AC_CHECK_HEADERS([openblas/lapacke.h lapacke/lapacke.h lapacke.h],[treekin_lapacke_header=yes;break;],)
+      AS_IF([test "x$treekin_lapacke_header" = "xyes"],[
+        LDFLAGS="$LDFLAGS -llapack"
+      ],[
+        AC_MSG_ERROR([could not find lapacke.h])
+      ])
+      ],[AC_MSG_ERROR([could not find required version of Lapack library])])
 
 dnl AC_CHECK_LIB(m, isnan)
 dnl AC_CHECK_LIB(arpack,dseupd_)

@@ -39,7 +39,19 @@
 #endif
 
 #include <cmath>
-#include <lapacke.h>
+
+#ifdef HAVE_LAPACKE_H
+# include <lapacke.h>
+#else
+# ifdef HAVE_LAPACKE_LAPACKE_H
+#   include <lapacke/lapacke.h>
+# else
+#   ifdef HAVE_OPENBLAS_LAPACKE_H
+#     include <openblas/lapacke.h>
+#   endif
+# endif
+#endif
+
 #include "bardata.h"
 #include "globals.h"
 
