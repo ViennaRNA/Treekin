@@ -10,6 +10,11 @@
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
 
+/* If we use autoconf.  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <cstdio>
 #include <getopt.h>
 #include "treekin_cmdline.h"

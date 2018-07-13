@@ -24,8 +24,9 @@ AC_ARG_WITH([mpack],
 )
 
 AS_IF([test $MPACKPATHSET = 1],
-      [ CXXFLAGS="-I$with_mpack/include $CXXFLAGS";
-        LDFLAGS="-L$with_mpack/lib $LDFLAGS" ])
+      [ AX_APPEND_FLAG(CXXFLAGS, [-I$with_mpack/include])
+        AX_APPEND_FLAG(LDFLAGS, [-L$with_mpack/lib])
+      ])
 
 mpack_LIBS=""
 mpack_wanted_but_failed=""
@@ -50,11 +51,9 @@ if test "$enable_mpack" = "yes"; then
             ])
         AC_LANG_POP
   else
-        PKG_CHECK_MODULES([mpack],
-                          [mpack >= 0.8],
-                          [
-                            CXXFLAGS="$mpack_CFLAGS $CXXFLAGS"
-                          ],
+        PKG_CHECK_MODULES([mlapack],
+                          [mlapack >= 0.8],
+                          [],
                           [
                             mpack_wanted_but_failed="( mpack library missing or not of version 0.8 or higher )";
                             enable_mpack="no";
@@ -63,66 +62,63 @@ if test "$enable_mpack" = "yes"; then
 fi
 
 if test "$enable_mpack" = "yes"; then
-  ppFlags=" "
+  AC_DEFINE([WITH_MPACK], [1], [MPACK support])
 
   #test which libraries of the mpack package are installed and set the flags.
   AC_LANG_PUSH([C++])
 
   AC_CHECK_HEADER(mpack/mlapack_qd.h, [
-      ppFlags="-DWITH_MPACK_QD $ppFlags"
       AC_DEFINE([WITH_MPACK_QD], [1], [Quad Double support])
       NEED_LIB_QD=1
   ], [],
   [#include <mpack/mpack_config.h>])
 
   AC_CHECK_HEADER(mpack/mlapack_dd.h, [
-      ppFlags="-DWITH_MPACK_DD $ppFlags"
-      NEED_LIB_QD=1
+      AC_DEFINE([WITH_MPACK_DD], [1], [Double Double support])
       AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [DD])
+      NEED_LIB_QD=1
   ], [],
   [#include <mpack/mpack_config.h>])
 
   AC_CHECK_HEADER(mpack/mlapack_double.h, [
-      ppFlags="-DWITH_MPACK_DOUBLE $ppFlags"
+      AC_DEFINE([WITH_MPACK_DOUBLE], [1], [Double support])
       AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [double])
   ], [],
   [#include <mpack/mpack_config.h>])
 
   AC_CHECK_HEADER(mpack/mlapack_longdouble.h, [
-      ppFlags="-DWITH_MPACK_LD $ppFlags"
+      AC_DEFINE([WITH_MPACK_LD], [1], [Long Double support])
       AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [long double])
   ], [],
   [#include <mpack/mpack_config.h>])
 
   AC_CHECK_HEADER(mpack/mlapack___float128.h, [
-      ppFlags="-DWITH_MPACK___FLOAT128 $ppFlags"
-      mpack_LIBS="$mpack_LIBS -lquadmath"
+      AC_DEFINE([WITH_MPACK___FLOAT128], [1], [__float128 support])
       AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [__float128])
   ], [],
   [#include <mpack/mpack_config.h>])
 
   AC_CHECK_HEADER(mpack/mlapack_mpfr.h, [
-      ppFlags="-DWITH_MPACK_MPFR $ppFlags"
+      AC_DEFINE([WITH_MPACK_MPFR], [1], [MPFR support])
+      AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [MPFR])
       NEED_LIB_MPFR=1
       NEED_LIB_MPC=1
   ], [],
   [#include <mpack/mpack_config.h>])
 
   AC_CHECK_HEADER(mpack/mlapack_gmp.h, [
-      ppFlags="-DWITH_MPACK_GMP $ppFlags"
+      AC_DEFINE([WITH_MPACK_GMP], [1], [GMP support])
+      AC_TREEKIN_APPEND_VAR_COMMA(mpack_data_types, [GMP])
       NEED_LIB_GMP=1
   ], [],
   [#include <mpack/mpack_config.h>])
 
   AC_LANG_POP
-
-  CPPFLAGS=$CPPFLAGS$ppFlags
 fi
 
 
-if test "$enable_mpack" = "yes"; then
-  CPPFLAGS=" -DWITH_MPACK $CPPFLAGS"
-
+## try to determine libs to link against, if mpack is not provided through MPACK_LIBS or pkg-config
+if test "$MPACKPATHSET" = "1"; then
   # check for further dependencies of MPACK
   AC_LANG_PUSH([C++])
   if test "$NEED_LIB_GMP" = "1"; then
@@ -210,8 +206,4 @@ https://github.com/nakatamaho/mpack
     fi
 
 fi
-
-AM_CONDITIONAL(with_mpack,
-        [test "$enable_mpack" = "yes"])
 ])
-

@@ -10,6 +10,11 @@
 #ifndef _EXP_MATRIX_H_
 #define _EXP_MATRIX_H_
 
+/* If we use autoconf.  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef WITH_MPACK
 #ifdef WITH_MPACK_GMP
 #include <gmpxx.h>

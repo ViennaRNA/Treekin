@@ -1,6 +1,11 @@
 #ifndef _TREEKINCASTABLETYPES_
 #define _TREEKINCASTABLETYPES_
 
+/* If we use autoconf.  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 
 #ifdef WITH_MPACK_GMP
 # include <gmpxx.h>

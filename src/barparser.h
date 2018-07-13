@@ -10,6 +10,11 @@
 #ifndef _BARPARSER_H_
 #define _BARPARSER_H_
 
+/* If we use autoconf.  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <cstdlib>
 #include <cstring>
 #include "globals.h"
