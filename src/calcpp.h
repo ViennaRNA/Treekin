@@ -64,27 +64,6 @@
 # include "treekinCastableTypes.h"
 #endif
 
-namespace treekin {
-
-void default_dgesv(int *n, int *nrhs, double *a, int *lda, int *ipiv, double *b, int *ldb, int *info);
-void default_dsyevx( char* jobz, char* range, char* uplo, int* n, double* a,
-                int* lda, double* vl, double* vu, int* il, int* iu, double* abstol,
-                int* m, double* w, double* z, int* ldz, double* work, int* lwork,
-		int* iwork, int* ifail, int* info );
-void default_dgeevx(char *balanc, char *jobvl, char *jobvr,
-              char *sense,
-              int *n, double *A, int *lda,
-              double *lambda_re, double *lambda_im,
-              double *vl, int *ldvl,
-              double *vr, int *ldvr,
-              int *ilo, int *ihi,
-              double *scale, double *abnrm,
-              double *rconde, double *rcondv,
-              double *work, int *lwork,
-              int *iwork, int *info);
-}
-
-
 class Calccpp {
   treekin_options *opt;
   SubInfo *E;
@@ -282,7 +261,7 @@ Calccpp::Mx_Dgesv(int *n,
       double *AA = (double *)A;
       double *BB = (double *)B;
 
-      treekin::default_dgesv(n, nrhs, AA, m, ipiv, BB, l, nfo);
+      ::dgesv_(n, nrhs, AA, m, ipiv, BB, l, nfo);
       break;
   }
 }
@@ -330,7 +309,7 @@ Calccpp::Mx_Dsyevx(const char *jobz,
 #endif
     default:
       /*default standard lapack */
-      treekin::default_dsyevx((char *)jobz, (char *)range, (char *)uplo, n, (double *)a, lda, (double *)vl,
+      ::dsyevx_((char *)jobz, (char *)range, (char *)uplo, n, (double *)a, lda, (double *)vl,
               (double *)vu, il, iu, (double *)abstol, m, (double *)w,
               (double *)z, ldz, (double *)work, lwork, iwork, ifail, info);
       break;
@@ -384,7 +363,7 @@ Calccpp::Mx_Dgeevx(const char *balanc,
 #endif
     default:
       /*default standard lapack */
-      treekin::default_dgeevx((char *)balanc, (char *)jobvl, (char *)jobvr, (char *)sense, n, (double *)a, lda,
+      ::dgeevx_((char *)balanc, (char *)jobvl, (char *)jobvr, (char *)sense, n, (double *)a, lda,
               (double *)wr, (double *)wi, (double *)vl, ldvl,
               (double *)vr, ldvr, ilo, ihi, (double *)scale, (double *)abnrm, (double *)rconde,
               (double *)rcondv, (double *)work,
