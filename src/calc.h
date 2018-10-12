@@ -1345,7 +1345,7 @@ Calc<T>::MxIterate(T  *p0,
       PrintProb(pt, dim, _opt->t8);
   }
 
-  /*printf("# of iterations: %d\n", count);*/
+  printf("# of iterations: %d\n", count);
 
   /*** end solve fundamental equation ***/
 
