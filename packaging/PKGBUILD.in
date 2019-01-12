@@ -7,7 +7,7 @@ pkgdesc="Efficient computation of RNA folding dynamics"
 arch=('x86_64' 'i686')
 license=('Custom')
 url="@PACKAGE_URL@"
-depends=('blas' 'lapack' 'lapacke')
+depends=('blas' 'lapack' 'lapacke' 'mlapack>=0.8.1')
 optdepends=('barriers: Compute generated transition rate matrices')
 makedepends=('gcc-fortran')
 provides=()

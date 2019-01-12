@@ -32,7 +32,7 @@ BuildRequires:  gcc gcc-fortran gcc-c++ glibc-devel info lapack-devel blas-devel
 BuildRequires:  lapacke-devel
 %endif
 
-Requires:       libstdc++ glibc blas lapack libgfortran
+Requires:       libstdc++ glibc blas lapack libgfortran mlapack
 %if 0%{?suse_version}
 Requires:       lapacke
 %endif

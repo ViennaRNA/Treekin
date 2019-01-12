@@ -2,13 +2,13 @@ Source: treekin
 Section: science
 Priority: optional
 Maintainer: Ronny Lorenz <ronny@tbi.univie.ac.at>
-Build-Depends: debhelper (>= 8.0.0), autotools-dev, libblas-dev, liblapack-dev, liblapacke-dev, gfortran
+Build-Depends: debhelper (>= 8.0.0), autotools-dev, libblas-dev, liblapack-dev, liblapacke-dev, gfortran, mlapack-dev
 Standards-Version: 3.9.3
 Homepage: http://www.tbi.univie.ac.at/RNA/Treekin
 
 Package: treekin
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libblas3, liblapack3, liblapacke, gfortran
+Depends: ${shlibs:Depends}, ${misc:Depends}, libblas3, liblapack3, liblapacke, gfortran, mlapack-dev
 Description: Efficient computation of RNA folding dynamics
  The program  treekin  computes folding dynamics on coarse grained version of an energy landscape, where all conformations belonging to the same local minimum have been contracted into a single macro-state. 
  Treekin reads in the a list of local minima (macro-states) and effective refolding rates between these minima as computed by barriers --rates. Since the the number of macro-states is small (typically on the order of 100—1000), folding dynamics can be computed by direct numerical integration of the master equation conformations (i.e. diagonalization of the rate matrix). 
