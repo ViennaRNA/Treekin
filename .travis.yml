@@ -30,8 +30,8 @@ script:
 before_deploy:
 - make dist-gzip
 - make dist-zip
-- export DIST_GZIP=$(ls treekin-*.tar.gz)
-- export DIST_ZIP=$(ls treekin-*.zip)
+- export DIST_GZIP=$(ls Treekin-*.tar.gz)
+- export DIST_ZIP=$(ls Treekin-*.zip)
 - echo "Deploying autoconf's dists (${DIST_GZIP} and ${DIST_ZIP}) to GitHub releases"
 
 
