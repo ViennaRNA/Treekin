@@ -924,47 +924,47 @@ Calc<T>::MxDiagonalize(T  *U,
   if (_opt->absrb) {
     MxEVLapackNonSym(U);
   } else {
-    switch (_opt->mpackMethod) {
-#if defined(WITH_MPACK_GMP)
-      case MPACK_GMP:
-        solver->MxEV_Mpack_Sym_gmp((const mpf_class *)U,
+    switch (_opt->mlapackMethod) {
+#if defined(WITH_MLAPACK_GMP)
+      case MLAPACK_GMP:
+        solver->MxEV_Mlapack_Sym_gmp((const mpf_class *)U,
                                    dim,
                                    (mpf_class *)evals,
                                    (mpf_class *)evecs,
-                                   _opt->mpackMethod_Bits);
+                                   _opt->mlapackMethod_Bits);
         break;
 #endif
-#if defined(WITH_MPACK_QD)
-      case MPACK_QD:
-        solver->MxEV_Mpack_Sym_qd((const qd_real *)U, dim, (qd_real *)evals, (qd_real *)evecs);
+#if defined(WITH_MLAPACK_QD)
+      case MLAPACK_QD:
+        solver->MxEV_Mlapack_Sym_qd((const qd_real *)U, dim, (qd_real *)evals, (qd_real *)evecs);
         break;
 #endif
-#if defined(WITH_MPACK_MPFR)
-      case MPACK_MPFR:
-        solver->MxEV_Mpack_Sym_mpfr((const mpfr::mpreal *)U, dim, (mpfr::mpreal *)evals,
-                                    (mpfr::mpreal *)evecs, _opt->mpackMethod_Bits);
+#if defined(WITH_MLAPACK_MPFR)
+      case MLAPACK_MPFR:
+        solver->MxEV_Mlapack_Sym_mpfr((const mpfr::mpreal *)U, dim, (mpfr::mpreal *)evals,
+                                    (mpfr::mpreal *)evecs, _opt->mlapackMethod_Bits);
         break;
 #endif
-#if defined(WITH_MPACK___FLOAT128)
-      case MPACK_FLOAT128:
-        solver->MxEV_Mpack_Sym_float128((const __float128 *)U, dim, (__float128 *)evals,
+#if defined(WITH_MLAPACK___FLOAT128)
+      case MLAPACK_FLOAT128:
+        solver->MxEV_Mlapack_Sym_float128((const __float128 *)U, dim, (__float128 *)evals,
                                         (__float128 *)evecs);
         break;
 #endif
-#if defined(WITH_MPACK_LD)
-      case MPACK_LD:
-        solver->MxEV_Mpack_Sym_longdouble((const long double *)U, dim, (long double *)evals,
+#if defined(WITH_MLAPACK_LD)
+      case MLAPACK_LD:
+        solver->MxEV_Mlapack_Sym_longdouble((const long double *)U, dim, (long double *)evals,
                                           (long double *)evecs);
         break;
 #endif
-#if defined(WITH_MPACK_DD)
-      case MPACK_DD:
-        solver->MxEV_Mpack_Sym_dd((const dd_real *)U, dim, (dd_real *)evals, (dd_real *)evecs);
+#if defined(WITH_MLAPACK_DD)
+      case MLAPACK_DD:
+        solver->MxEV_Mlapack_Sym_dd((const dd_real *)U, dim, (dd_real *)evals, (dd_real *)evecs);
         break;
 #endif
-#if defined(WITH_MPACK_DOUBLE)
-      case MPACK_DOUBLE:
-        solver->MxEV_Mpack_Sym_double((const double *)U, dim, (double *)evals, (double *)evecs);
+#if defined(WITH_MLAPACK_DOUBLE)
+      case MLAPACK_DOUBLE:
+        solver->MxEV_Mlapack_Sym_double((const double *)U, dim, (double *)evals, (double *)evecs);
         break;
 #endif
       default:
@@ -2157,7 +2157,7 @@ Calc<T>::MxExponent(T *p0,
         exit(EXIT_FAILURE);
       }
 
-      printf("%e ", (double)(T)abs(pt[i])); /*abs for mpack */
+      printf("%e ", (double)(T)abs(pt[i])); /*abs for mlapack */
       check += abs(pt[i]);
     }
     printf("\n");

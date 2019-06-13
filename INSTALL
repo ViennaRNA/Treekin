@@ -208,25 +208,25 @@ find the X include and library files automatically, but if it doesn't,
 you can use the `configure' options `--x-includes=DIR' and
 `--x-libraries=DIR' to specify their locations.
 
-Linking to MPACK for high precision computations
+Linking to MLAPACK for high precision computations
 ================================================
 
-At first you should download and install MPACK. It can be obtained from:
+At first you should download and install MLAPACK. It can be obtained from:
 
- https://github.com/nakatamaho/mpack/
+ https://github.com/RaumZeit/mlapack/
 
 After the installation, the LD_LIBRARY_PATH has to be set for shared 
-libraries. This should be done for MPACK and its dependencies (qd, mpfr, 
+libraries. This should be done for MLAPACK and its dependencies (qd, mpfr, 
 mpc, gmp):
 
- LD_LIBRARY_PATH="${LD_LIBRARY_PATH}":/pathTo/mpack/lib/
+ LD_LIBRARY_PATH="${LD_LIBRARY_PATH}":/pathTo/mlapack/lib/
  LD_LIBRARY_PATH="${LD_LIBRARY_PATH}":/pathTo/qd/lib/
 
 Configure should automatically detect the lapack location according to
-the pkg-config file of MPACK. An alternative is to set the prefix path
-with `--with-mpack=/prefix/`. In both cases you have to add the paths for
+the pkg-config file of MLAPACK. An alternative is to set the prefix path
+with `--with-mlapack=/prefix/`. In both cases you have to add the paths for
 the include and lib files of the dependencies that you already used in
-order to compile MPACK (qd, mpfr, mpc, gmp):
+order to compile MLAPACK (qd, mpfr, mpc, gmp):
 
  ./configure CXXFLAGS="-I/pathTo/qd/include -I/pathTo/mpfr/include 
  -I/pathTo/mpc/include -I/pathTo/gmp/include" LDFLAGS="-L/pathTo/qd/lib 

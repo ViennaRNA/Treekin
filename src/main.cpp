@@ -16,7 +16,7 @@
 #include "calc.h"
 using namespace std;
 
-#ifdef WITH_MPACK
+#ifdef WITH_MLAPACK
 # include "treekinCastableTypes.h"
 using namespace treekinCastableTypes;
 #endif
@@ -274,41 +274,41 @@ main(int  argc,
 
   int     error;
 
-  switch (globalParameters->opt.mpackMethod) {
-#ifdef WITH_MPACK_DOUBLE
-    case MPACK_DOUBLE:
+  switch (globalParameters->opt.mlapackMethod) {
+#ifdef WITH_MLAPACK_DOUBLE
+    case MLAPACK_DOUBLE:
       error = treekin_main_precision<double>(globalParameters);
       break;
 #endif
-#ifdef WITH_MPACK_LD
-    case MPACK_LD:
+#ifdef WITH_MLAPACK_LD
+    case MLAPACK_LD:
       error = treekin_main_precision<long double>(globalParameters);
       break;
 #endif
-#ifdef WITH_MPACK___FLOAT128
-    case MPACK_FLOAT128:
+#ifdef WITH_MLAPACK___FLOAT128
+    case MLAPACK_FLOAT128:
       error = treekin_main_precision<__float128>(globalParameters);
       break;
 #endif
-#ifdef WITH_MPACK_MPFR
-    case MPACK_MPFR:
-      mpfr::mpreal::set_default_prec(globalParameters->opt.mpackMethod_Bits);
+#ifdef WITH_MLAPACK_MPFR
+    case MLAPACK_MPFR:
+      mpfr::mpreal::set_default_prec(globalParameters->opt.mlapackMethod_Bits);
       error = treekin_main_precision<mpreal_castable>(globalParameters);
       break;
 #endif
-#ifdef WITH_MPACK_DD
-    case MPACK_DD:
+#ifdef WITH_MLAPACK_DD
+    case MLAPACK_DD:
       error = treekin_main_precision<dd_real_castable>(globalParameters);
       break;
 #endif
-#ifdef WITH_MPACK_QD
-    case MPACK_QD:
+#ifdef WITH_MLAPACK_QD
+    case MLAPACK_QD:
       error = treekin_main_precision<qd_real_castable>(globalParameters);
       break;
 #endif
-#ifdef WITH_MPACK_GMP
-    case MPACK_GMP:
-      mpf_set_default_prec(globalParameters->opt.mpackMethod_Bits);
+#ifdef WITH_MLAPACK_GMP
+    case MLAPACK_GMP:
+      mpf_set_default_prec(globalParameters->opt.mlapackMethod_Bits);
       error = treekin_main_precision<mpf_real_castable>(globalParameters);
       break;
 #endif

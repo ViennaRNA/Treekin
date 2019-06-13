@@ -7,39 +7,39 @@
 #endif
 
 
-#ifdef WITH_MPACK
-#ifdef WITH_MPACK_GMP
+#ifdef WITH_MLAPACK
+#ifdef WITH_MLAPACK_GMP
 #include <gmpxx.h>
-#include <mpack/mblas_gmp.h>
-#include <mpack/mlapack_gmp.h>
+#include <mlapack/mblas_gmp.h>
+#include <mlapack/mlapack_gmp.h>
 #endif
-#ifdef WITH_MPACK_QD
+#ifdef WITH_MLAPACK_QD
 #include <qd/qd_real.h>
-#include <mpack/mblas_qd.h>
-#include <mpack/mlapack_qd.h>
+#include <mlapack/mblas_qd.h>
+#include <mlapack/mlapack_qd.h>
 #endif
-#ifdef WITH_MPACK_DD
+#ifdef WITH_MLAPACK_DD
 #include <qd/dd_real.h>
-#include <mpack/mblas_dd.h>
-#include <mpack/mlapack_dd.h>
+#include <mlapack/mblas_dd.h>
+#include <mlapack/mlapack_dd.h>
 #endif
-#ifdef WITH_MPACK_MPFR
-#include <mpack/mpreal.h>
-#include <mpack/mblas_mpfr.h>
-#include <mpack/mlapack_mpfr.h>
+#ifdef WITH_MLAPACK_MPFR
+#include <mlapack/mpreal.h>
+#include <mlapack/mblas_mpfr.h>
+#include <mlapack/mlapack_mpfr.h>
 #endif
-#ifdef WITH_MPACK___FLOAT128
-#include <mpack/mutils___float128.h>
-#include <mpack/mblas___float128.h>
-#include <mpack/mlapack___float128.h>
+#ifdef WITH_MLAPACK___FLOAT128
+#include <mlapack/mutils___float128.h>
+#include <mlapack/mblas___float128.h>
+#include <mlapack/mlapack___float128.h>
 #endif
-#ifdef WITH_MPACK_DOUBLE
-#include <mpack/mblas_double.h>
-#include <mpack/mlapack_double.h>
+#ifdef WITH_MLAPACK_DOUBLE
+#include <mlapack/mblas_double.h>
+#include <mlapack/mlapack_double.h>
 #endif
-#ifdef WITH_MPACK_LD
-#include <mpack/mblas_longdouble.h>
-#include <mpack/mlapack_longdouble.h>
+#ifdef WITH_MLAPACK_LD
+#include <mlapack/mblas_longdouble.h>
+#include <mlapack/mlapack_longdouble.h>
 #endif
 #endif
 
@@ -60,7 +60,7 @@
 #include "bardata.h"
 #include "globals.h"
 
-#ifdef WITH_MPACK
+#ifdef WITH_MLAPACK
 # include "treekinCastableTypes.h"
 #endif
 
@@ -105,8 +105,8 @@ public:
                    int  dim);
 
 
-#if defined(WITH_MPACK_GMP)
-  void MxEV_Mpack_Sym_gmp(const mpf_class *U,
+#if defined(WITH_MLAPACK_GMP)
+  void MxEV_Mlapack_Sym_gmp(const mpf_class *U,
                           int             dim,
                           mpf_class       *evals,
                           mpf_class       *evecs,
@@ -114,24 +114,24 @@ public:
 
 
 #endif
-#if defined(WITH_MPACK_QD)
-  void MxEV_Mpack_Sym_qd(const qd_real  *U,
+#if defined(WITH_MLAPACK_QD)
+  void MxEV_Mlapack_Sym_qd(const qd_real  *U,
                          int            dim,
                          qd_real        *evals,
                          qd_real        *evecs);
 
 
 #endif
-#if defined(WITH_MPACK_DD)
-  void MxEV_Mpack_Sym_dd(const dd_real  *U,
+#if defined(WITH_MLAPACK_DD)
+  void MxEV_Mlapack_Sym_dd(const dd_real  *U,
                          int            dim,
                          dd_real        *evals,
                          dd_real        *evecs);
 
 
 #endif
-#if defined(WITH_MPACK_MPFR)
-  void MxEV_Mpack_Sym_mpfr(const mpfr::mpreal *U,
+#if defined(WITH_MLAPACK_MPFR)
+  void MxEV_Mlapack_Sym_mpfr(const mpfr::mpreal *U,
                            int                dim,
                            mpfr::mpreal       *evals,
                            mpfr::mpreal       *evecs,
@@ -139,24 +139,24 @@ public:
 
 
 #endif
-#if defined(WITH_MPACK___FLOAT128)
-  void MxEV_Mpack_Sym_float128(const __float128 *U,
+#if defined(WITH_MLAPACK___FLOAT128)
+  void MxEV_Mlapack_Sym_float128(const __float128 *U,
                                int              dim,
                                __float128       *evals,
                                __float128       *evecs);
 
 
 #endif
-#if defined(WITH_MPACK_LD)
-  void MxEV_Mpack_Sym_longdouble(const long double  *U,
+#if defined(WITH_MLAPACK_LD)
+  void MxEV_Mlapack_Sym_longdouble(const long double  *U,
                                  int                dim,
                                  long double        *evals,
                                  long double        *evecs);
 
 
 #endif
-#if defined(WITH_MPACK_DOUBLE)
-  void MxEV_Mpack_Sym_double(const double *U,
+#if defined(WITH_MLAPACK_DOUBLE)
+  void MxEV_Mlapack_Sym_double(const double *U,
                              int          dim,
                              double       *evals,
                              double       *evecs);
@@ -237,15 +237,15 @@ Calccpp::Mx_Dgesv(int *n,
                   int *nfo)
 {
   /*DGESV computes the solution to a real system of linear equations A * X = B */
-  switch (opt->mpackMethod) {
-#if defined(WITH_MPACK)
-    case MPACK_GMP:
-    case MPACK_QD:
-    case MPACK_MPFR:
-    case MPACK_FLOAT128:
-    case MPACK_LD:
-    case MPACK_DD:
-    case MPACK_DOUBLE:
+  switch (opt->mlapackMethod) {
+#if defined(WITH_MLAPACK)
+    case MLAPACK_GMP:
+    case MLAPACK_QD:
+    case MLAPACK_MPFR:
+    case MLAPACK_FLOAT128:
+    case MLAPACK_LD:
+    case MLAPACK_DD:
+    case MLAPACK_DOUBLE:
       Rgesv((mpackint) * n,
             (mpackint) * nrhs,
             A,
@@ -292,15 +292,15 @@ Calccpp::Mx_Dsyevx(const char *jobz,
                    int        *info)
 {
   /*DGESV computes the solution to a real system of linear equations A * X = B */
-  switch (opt->mpackMethod) {
-#if defined(WITH_MPACK)
-    case MPACK_GMP:
-    case MPACK_QD:
-    case MPACK_MPFR:
-    case MPACK_FLOAT128:
-    case MPACK_LD:
-    case MPACK_DD:
-    case MPACK_DOUBLE:
+  switch (opt->mlapackMethod) {
+#if defined(WITH_MLAPACK)
+    case MLAPACK_GMP:
+    case MLAPACK_QD:
+    case MLAPACK_MPFR:
+    case MLAPACK_FLOAT128:
+    case MLAPACK_LD:
+    case MLAPACK_DD:
+    case MLAPACK_DOUBLE:
       Rsyevx(jobz, range, uplo, (mpackint) * n, a, (mpackint) * lda, *vl,
              *vu, (mpackint) * il, (mpackint) * iu, *abstol, (mpackint *)m, w,
              z, (mpackint) * ldz, work, (mpackint) * lwork, (mpackint *)iwork, (mpackint *)ifail,
@@ -345,15 +345,15 @@ Calccpp::Mx_Dgeevx(const char *balanc,
                    int        *info)
 {
   /*DGESV computes the solution to a real system of linear equations A * X = B */
-  switch (opt->mpackMethod) {
-#if defined(WITH_MPACK)
-    case MPACK_GMP:
-    case MPACK_QD:
-    case MPACK_MPFR:
-    case MPACK_FLOAT128:
-    case MPACK_LD:
-    case MPACK_DD:
-    case MPACK_DOUBLE:
+  switch (opt->mlapackMethod) {
+#if defined(WITH_MLAPACK)
+    case MLAPACK_GMP:
+    case MLAPACK_QD:
+    case MLAPACK_MPFR:
+    case MLAPACK_FLOAT128:
+    case MLAPACK_LD:
+    case MLAPACK_DD:
+    case MLAPACK_DOUBLE:
       Rgeevx(balanc, jobvl, jobvr, sense, (mpackint) * n, a, (mpackint) * lda, wr,
              wi, vl, *ldvl, vr, (mpackint) * ldvr,
              (mpackint *)ilo, (mpackint *)ihi, scale, abnrm, rconde,

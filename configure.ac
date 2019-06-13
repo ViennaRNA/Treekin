@@ -120,7 +120,7 @@ dnl ---------------------------------------------------------------------------
 dnl Check for mlapack
 dnl ---------------------------------------------------------------------------
 
-AC_TREEKIN_MPACK
+AC_TREEKIN_MLAPACK
 
 dnl ---------------------------------------------------------------------------
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -161,7 +161,7 @@ dnl ---------------------------------------------------------------------------
 
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_CONFIG_FILES([packaging/treekin.spec packaging/PKGBUILD])
-AC_CONFIG_FILES([packaging/treekin-mpack.spec packaging/PKGBUILD-mpack])
+AC_CONFIG_FILES([packaging/treekin-mlapack.spec packaging/PKGBUILD-mlapack])
 AC_CONFIG_FILES([man/Makefile man/cmdlopt.sh],[chmod +x man/cmdlopt.sh])
 
 AC_OUTPUT
@@ -178,11 +178,11 @@ eval _includedir=$(eval printf "%s" $includedir)
 eval _datadir=$(eval printf "%s" $datadir)
 eval _mandir=$(eval printf "%s" $mandir)
 
-if test "x$mpack_wanted_but_failed" != "x" || test "x$enable_mpack" != "xyes" ; then
-  drtrafo_note="Note, that the most recent version of the DrTransformer program requires Treekin to be linked against the MPACK library!"
+if test "x$mlapack_wanted_but_failed" != "x" || test "x$enable_mlapack" != "xyes" ; then
+  drtrafo_note="Note, that the most recent version of the DrTransformer program requires Treekin to be linked against the MLAPACK library!"
 else
-  if test "x$mpack_data_types" != "x"; then
-    mpack_types="( Supported Data Types: $mpack_data_types )"
+  if test "x$mlapack_data_types" != "x"; then
+    mlapack_types="( Supported Data Types: $mlapack_data_types )"
   fi
 fi
 
@@ -197,7 +197,7 @@ Configured successful with the following options:
 
 Extra Libraries
 ---------------
-  * MPack             : ${enable_mpack:-no} $mpack_wanted_but_failed $mpack_types
+  * MLapack             : ${enable_mlapack:-no} $mlapack_wanted_but_failed $mlapack_types
 
 Install Directories
 -------------------

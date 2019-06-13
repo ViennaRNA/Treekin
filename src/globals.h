@@ -20,10 +20,10 @@
 #include "treekin_cmdline.h"
 
 typedef enum {
-  MPACK_GMP     = 2, MPACK_MPFR = 4, MPACK_DD = 8, MPACK_QD = 16, MPACK_FLOAT128 = 32,
-  MPACK_LD      = 64,
-  MPACK_DOUBLE  = 128
-} MPackMethod;
+  MLAPACK_GMP     = 2, MLAPACK_MPFR = 4, MLAPACK_DD = 8, MLAPACK_QD = 16, MLAPACK_FLOAT128 = 32,
+  MLAPACK_LD      = 64,
+  MLAPACK_DOUBLE  = 128
+} MLAPackMethod;
 
 typedef struct {
   /* command-line options */
@@ -64,8 +64,8 @@ typedef struct {
   double  hard_rescale;     /* hard rescale rates? */
   char    *equil_file;      /* file for equilibrium distribution */
   double  times;            /* multiply the rates matrix? */
-  int     mpackMethod_Bits; /* use mpack library for eigenvalue computation with the given number of bits */
-  int     mpackMethod;      /* MPackMethod (compromise between precision and speed) */
+  int     mlapackMethod_Bits; /* use mlapack library for eigenvalue computation with the given number of bits */
+  int     mlapackMethod;      /* MLAPackMethod (compromise between precision and speed) */
   int     warnings;         /* all warnings on? */
 } treekin_options;
 

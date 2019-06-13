@@ -19,7 +19,7 @@
 
 /* determines double precision machine parameters
  * it is only used for lapack.
- * The mpack methods use the smallest possible epsilon for each
+ * The mlapack methods use the smallest possible epsilon for each
  * data type.
  */
 extern "C" double dlamch_(char *cmach);
@@ -86,7 +86,7 @@ Globals::to_basename(char *arg)
 }
 
 
-#ifdef WITH_MPACK_QD
+#ifdef WITH_MLAPACK_QD
 int
 is_QD_available()
 {
@@ -103,7 +103,7 @@ is_QD_available()
 
 
 #endif
-#ifdef WITH_MPACK_DD
+#ifdef WITH_MLAPACK_DD
 int
 is_DD_available()
 {
@@ -120,7 +120,7 @@ is_DD_available()
 
 
 #endif
-#ifdef WITH_MPACK_GMP
+#ifdef WITH_MLAPACK_GMP
 int
 is_GMP_available()
 {
@@ -137,7 +137,7 @@ is_GMP_available()
 
 
 #endif
-#ifdef WITH_MPACK_MPFR
+#ifdef WITH_MLAPACK_MPFR
 int
 is_MPFR_available()
 {
@@ -154,7 +154,7 @@ is_MPFR_available()
 
 
 #endif
-#ifdef WITH_MPACK___FLOAT128
+#ifdef WITH_MLAPACK___FLOAT128
 int
 is___FLOAT128_available()
 {
@@ -171,7 +171,7 @@ is___FLOAT128_available()
 
 
 #endif
-#ifdef WITH_MPACK_LD
+#ifdef WITH_MLAPACK_LD
 int
 is_LD_available()
 {
@@ -188,7 +188,7 @@ is_LD_available()
 
 
 #endif
-#ifdef WITH_MPACK_DOUBLE
+#ifdef WITH_MLAPACK_DOUBLE
 int
 is_DOUBLE_available()
 {
@@ -429,61 +429,61 @@ Globals::set_parameters(void)
       fprintf(stderr, "         disabling -w now, since they are mutually exclusive !\n");
   }
 
-  if (args_info.mpack_precision_given)
-    opt.mpackMethod_Bits = args_info.mpack_precision_arg;
+  if (args_info.mlapack_precision_given)
+    opt.mlapackMethod_Bits = args_info.mlapack_precision_arg;
 
-  if (args_info.mpack_method_given) {
-    if (strcmp(args_info.mpack_method_arg, "QD") == 0) {
+  if (args_info.mlapack_method_given) {
+    if (strcmp(args_info.mlapack_method_arg, "QD") == 0) {
       if (!is_QD_available()) {
-        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        fprintf(stderr, "The mlapack library %s is not available!\n", args_info.mlapack_method_arg);
         exit(EXIT_FAILURE);
       }
 
-      opt.mpackMethod = MPACK_QD;
-    } else if (strcmp(args_info.mpack_method_arg, "DD") == 0) {
+      opt.mlapackMethod = MLAPACK_QD;
+    } else if (strcmp(args_info.mlapack_method_arg, "DD") == 0) {
       if (!is_DD_available()) {
-        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        fprintf(stderr, "The mlapack library %s is not available!\n", args_info.mlapack_method_arg);
         exit(EXIT_FAILURE);
       }
 
-      opt.mpackMethod = MPACK_DD;
-    } else if (strcmp(args_info.mpack_method_arg, "GMP") == 0) {
+      opt.mlapackMethod = MLAPACK_DD;
+    } else if (strcmp(args_info.mlapack_method_arg, "GMP") == 0) {
       if (!is_GMP_available()) {
-        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        fprintf(stderr, "The mlapack library %s is not available!\n", args_info.mlapack_method_arg);
         exit(EXIT_FAILURE);
       }
 
-      opt.mpackMethod = MPACK_GMP;
-    } else if (strcmp(args_info.mpack_method_arg, "MPFR") == 0) {
+      opt.mlapackMethod = MLAPACK_GMP;
+    } else if (strcmp(args_info.mlapack_method_arg, "MPFR") == 0) {
       if (!is_MPFR_available()) {
-        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        fprintf(stderr, "The mlapack library %s is not available!\n", args_info.mlapack_method_arg);
         exit(EXIT_FAILURE);
       }
 
-      opt.mpackMethod = MPACK_MPFR;
-    } else if (strcmp(args_info.mpack_method_arg, "FLOAT128") == 0) {
+      opt.mlapackMethod = MLAPACK_MPFR;
+    } else if (strcmp(args_info.mlapack_method_arg, "FLOAT128") == 0) {
       if (!is___FLOAT128_available()) {
-        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        fprintf(stderr, "The mlapack library %s is not available!\n", args_info.mlapack_method_arg);
         exit(EXIT_FAILURE);
       }
 
-      opt.mpackMethod = MPACK_FLOAT128;
-    } else if (strcmp(args_info.mpack_method_arg, "LD") == 0) {
+      opt.mlapackMethod = MLAPACK_FLOAT128;
+    } else if (strcmp(args_info.mlapack_method_arg, "LD") == 0) {
       if (!is_LD_available()) {
-        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        fprintf(stderr, "The mlapack library %s is not available!\n", args_info.mlapack_method_arg);
         exit(EXIT_FAILURE);
       }
 
-      opt.mpackMethod = MPACK_LD;
-    } else if (strcmp(args_info.mpack_method_arg, "DOUBLE") == 0) {
+      opt.mlapackMethod = MLAPACK_LD;
+    } else if (strcmp(args_info.mlapack_method_arg, "DOUBLE") == 0) {
       if (!is_DOUBLE_available()) {
-        fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+        fprintf(stderr, "The mlapack library %s is not available!\n", args_info.mlapack_method_arg);
         exit(EXIT_FAILURE);
       }
 
-      opt.mpackMethod = MPACK_DOUBLE;
+      opt.mlapackMethod = MLAPACK_DOUBLE;
     } else {
-      fprintf(stderr, "The mpack library %s is not available!\n", args_info.mpack_method_arg);
+      fprintf(stderr, "The mlapack library %s is not available!\n", args_info.mlapack_method_arg);
       exit(EXIT_FAILURE);
     }
   }

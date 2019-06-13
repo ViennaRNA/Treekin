@@ -5,11 +5,11 @@
 
 #include "calcpp.h"
 
-#ifdef WITH_MPACK_GMP
+#ifdef WITH_MLAPACK_GMP
 #include <gmp.h>
 
 /**
- * Takes a symmetric matrix U as input and computes the eigenvalues and eigenvectors by using the MPACK library.
+ * Takes a symmetric matrix U as input and computes the eigenvalues and eigenvectors by using the MLAPACK library.
  * @param U - INPUT - the symmetric matrix
  * @param dim - INPUT - the number of rows or columns
  * @param evals - OUTPUT - the eigenvalues
@@ -17,7 +17,7 @@
  * @param precision - INPUT - the precision is the number of bits for the values of the matrix
  */
 void
-Calccpp::MxEV_Mpack_Sym_gmp(const mpf_class *U,
+Calccpp::MxEV_Mlapack_Sym_gmp(const mpf_class *U,
                             int             dim,
                             mpf_class       *evals,
                             mpf_class       *evecs,
@@ -59,9 +59,9 @@ Calccpp::MxEV_Mpack_Sym_gmp(const mpf_class *U,
 
 #endif
 
-#ifdef WITH_MPACK_QD
+#ifdef WITH_MLAPACK_QD
 void
-Calccpp::MxEV_Mpack_Sym_qd(const qd_real  *U,
+Calccpp::MxEV_Mlapack_Sym_qd(const qd_real  *U,
                            int            dim,
                            qd_real        *evals,
                            qd_real        *evecs)
@@ -98,9 +98,9 @@ Calccpp::MxEV_Mpack_Sym_qd(const qd_real  *U,
 
 #endif
 
-#ifdef WITH_MPACK_DD
+#ifdef WITH_MLAPACK_DD
 void
-Calccpp::MxEV_Mpack_Sym_dd(const dd_real  *U,
+Calccpp::MxEV_Mlapack_Sym_dd(const dd_real  *U,
                            int            dim,
                            dd_real        *evals,
                            dd_real        *evecs)
@@ -138,9 +138,9 @@ Calccpp::MxEV_Mpack_Sym_dd(const dd_real  *U,
 
 #endif
 
-#ifdef WITH_MPACK_MPFR
+#ifdef WITH_MLAPACK_MPFR
 void
-Calccpp::MxEV_Mpack_Sym_mpfr(const mpreal *U,
+Calccpp::MxEV_Mlapack_Sym_mpfr(const mpreal *U,
                              int          dim,
                              mpreal       *evals,
                              mpreal       *evecs,
@@ -180,9 +180,9 @@ Calccpp::MxEV_Mpack_Sym_mpfr(const mpreal *U,
 
 #endif
 
-#ifdef WITH_MPACK___FLOAT128
+#ifdef WITH_MLAPACK___FLOAT128
 void
-Calccpp::MxEV_Mpack_Sym_float128(const __float128 *U,
+Calccpp::MxEV_Mlapack_Sym_float128(const __float128 *U,
                                  int              dim,
                                  __float128       *evals,
                                  __float128       *evecs)
@@ -219,9 +219,9 @@ Calccpp::MxEV_Mpack_Sym_float128(const __float128 *U,
 
 #endif
 
-#ifdef WITH_MPACK_LD
+#ifdef WITH_MLAPACK_LD
 void
-Calccpp::MxEV_Mpack_Sym_longdouble(const long double  *U,
+Calccpp::MxEV_Mlapack_Sym_longdouble(const long double  *U,
                                    int                dim,
                                    long double        *evals,
                                    long double        *evecs)
@@ -258,9 +258,9 @@ Calccpp::MxEV_Mpack_Sym_longdouble(const long double  *U,
 
 #endif
 
-#ifdef WITH_MPACK_DOUBLE
+#ifdef WITH_MLAPACK_DOUBLE
 void
-Calccpp::MxEV_Mpack_Sym_double(const double *U,
+Calccpp::MxEV_Mlapack_Sym_double(const double *U,
                                int          dim,
                                double       *evals,
                                double       *evecs)

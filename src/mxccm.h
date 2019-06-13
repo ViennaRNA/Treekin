@@ -18,7 +18,7 @@
 #include <cstdlib>
 #include <cmath>
 
-#ifdef WITH_MPACK
+#ifdef WITH_MLAPACK
 
 # include "treekinCastableTypes.h"
 using namespace treekinCastableTypes;
