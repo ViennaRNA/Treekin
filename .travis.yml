@@ -1,0 +1,49 @@
+dist: xenial
+
+compiler:
+- g++
+
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc
+    - g++
+    - libblas-dev
+    - liblapack-dev
+    - liblapacke-dev
+    - gfortran
+    - gengetopt
+    - help2man
+
+before_script:
+- autoreconf -i
+
+script:
+- ./configure
+- make -j${CPU_COUNT}
+- make check
+
+
+before_deploy:
+- make dist-gzip
+- make dist-zip
+- export DIST_GZIP=$(ls treekin-*.tar.gz)
+- export DIST_ZIP=$(ls treekin-*.zip)
+- echo "Deploying autoconf's dists (${DIST_GZIP} and ${DIST_ZIP}) to GitHub releases"
+
+
+deploy:
+  provider: releases
+  api-key: $GITHUB_TOKEN
+  skip_cleanup: true
+  file_glob: true
+  overwrite: true
+  file:
+  - "${DIST_GZIP}"
+  - "${DIST_ZIP}"
+  on:
+    repo: ViennaRNA/Treekin
+    tags: true
