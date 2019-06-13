@@ -162,7 +162,8 @@ dnl ---------------------------------------------------------------------------
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_CONFIG_FILES([packaging/treekin.spec packaging/PKGBUILD])
 AC_CONFIG_FILES([packaging/treekin-mlapack.spec packaging/PKGBUILD-mlapack])
-AC_CONFIG_FILES([man/Makefile man/cmdlopt.sh],[chmod +x man/cmdlopt.sh])
+AC_CONFIG_FILES([man/Makefile])
+AC_CONFIG_FILES([man/cmdlopt.sh],[chmod +x man/cmdlopt.sh])
 
 AC_OUTPUT
 
